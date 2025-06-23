@@ -17,7 +17,7 @@ O **SGLM** é uma aplicação desenvolvida com o objetivo de automatizar o proce
 - **Front-end**: Vite + React + TypeScript
 - **Gerenciador de Pacotes**: npm
 - **Back-end**: Firebase (Autenticação, Firestore)
-- **Componentes UI**: shadcn/ui (em alguns casos)
+- **Componentes UI**: Chackra UI (em alguns casos)
 
 ## 🔧 Configuração do Ambiente
 
@@ -61,6 +61,8 @@ npm run dev
 ```
 SGLM/
 ├── src/
+│   ├── components/       # Recursos do Design System Chackra UI (Não mexer)
+│   ├── lib/              # Recursos do Design System Chackra UI (Não mexer)
 │   ├── assets/           # Recursos estáticos da aplicação (imagens, ícones, fontes etc.)
 │   ├── features/         # Funcionalidades ou módulos principais da aplicação, agrupando componentes, lógica e estilos específicos a cada feature
 │   ├── routes/           # Definição das rotas e páginas da aplicação
@@ -83,6 +85,7 @@ SGLM/
 ## 📚 Documentação
 
 - [Requisitos, Estimativas, Protótipos](https://docs.google.com/document/d/1Xex4aP1tCsKe45UkSGv53z8S6qXWfaMmSoEfx87UPuY/edit?tab=t.0)
+- [ChackraUI] (https://chakra-ui.com/docs/components/concepts/overview)
 
 ## 🤝 Como Contribuir
 
