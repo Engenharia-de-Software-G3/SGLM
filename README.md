@@ -85,7 +85,7 @@ SGLM/
 ## 📚 Documentação
 
 - [Requisitos, Estimativas, Protótipos](https://docs.google.com/document/d/1Xex4aP1tCsKe45UkSGv53z8S6qXWfaMmSoEfx87UPuY/edit?tab=t.0)
-- [ChackraUI] (https://chakra-ui.com/docs/components/concepts/overview)
+- [Chackra UI](https://chakra-ui.com/docs/components/concepts/overview)
 
 ## 🤝 Como Contribuir
 
