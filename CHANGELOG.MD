@@ -29,20 +29,20 @@
 
 ### Corrigido
 
--   Erro `ReferenceError: module is not defined in ES module scope` ao usar `require()` e `module.exports` em arquivos `.js` dentro do diretório `functions/`, devido à configuração `"type": "module"` no `package.json` raiz.
-    -   **Correção:** Refatoração dos arquivos `functions/index.js`, `functions/cliente.js` e `functions/veiculo.js` para usar a sintaxe de módulos ES (`import`/`export`).
--   Erro `ReferenceError: exports is not defined in ES module scope` em `functions/index.js` causado pela exportação da Cloud Function principal usando `exports.api = ...` em um arquivo tratado como módulo ES.
-    -   **Correção:** Mudança da exportação da Cloud Function principal em `functions/index.js` para usar a sintaxe ESM `export const api = ...;`.
--   Erro `TypeError: db.collection is not a function` ao interagir com o Firestore a partir das funções.
-    -   **Causa:** A instância `db` usada nos arquivos `firestore*` não era a instância correta do Firestore obtida do Firebase Admin SDK.
+-   Problemas de resolução de módulos (conflitos entre ESM e CommonJS) devido à configuração `"type": "module"` no `package.json` raiz e o uso misto de sintaxe `require`/`import`.
+    -   Erro `ReferenceError: module is not defined in ES module scope` ao usar `module.exports` em arquivos tratados como ESM.
+    -   Erro `ReferenceError: exports is not defined in ES module scope` ao usar `exports.api = ...` em arquivos tratados como ESM.
+    -   Aviso `Warning: Module typeless package.json` ao tratar arquivos `.js` em `functions/` como módulos ES automaticamente sem um `package.json` local.
+    -   **Correção:** Padronização para a sintaxe de módulos ES (`import`/`export`) nos arquivos `functions/index.js`, `functions/cliente.js` e `functions/veiculo.js`. Adição da linha `"type": "module"` ao arquivo `functions/package.json`.
+-   Problema de acesso à instância do Firestore (`db`) e métodos do Admin SDK.
+    -   Erro `TypeError: db.collection is not a function` ao tentar usar a instância incorreta do Firestore.
+    -   **Causa:** A instância `db` usada nos arquivos `firestore*` não era a instância correta do Firestore obtida do Firebase Admin SDK, e a inicialização não estava centralizada ou acessível corretamente.
     -   **Correção:** Centralização da inicialização do Firebase Admin SDK e obtenção da instância do Firestore (`db`) no arquivo `firebaseConfig.js`. Adaptação dos arquivos em `src/scripts/firestore/` para importar a instância `db` do Admin SDK a partir de `firebaseConfig.js` e usar os métodos correspondentes do Admin SDK.
--   Erro `Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './admin' is not defined by "exports"` ao importar `admin` do pacote `firebase` em vez de `firebase-admin`.
-    -   **Correção:** Mudança da importação para `import admin from 'firebase-admin';`.
--   Erro `Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'firebase-admin'` ao importar `firebase-admin` do `firebaseConfig.js`.
-    -   **Causa:** O pacote `firebase-admin` não estava instalado na raiz do projeto.
-    -   **Correção:** Instalação do pacote `firebase-admin` na raiz do projeto usando `npm install firebase-admin --save`.
--   Aviso `Warning: Module typeless package.json` ao tratar arquivos `.js` em `functions/` como módulos ES automaticamente.
-    -   **Correção:** Adição da linha `"type": "module"` ao arquivo `functions/package.json` para definir explicitamente o tipo de módulo para os arquivos `.js` dentro desse diretório.
+-   Problemas relacionados à importação e instalação do Firebase Admin SDK.
+    -   Erro `Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './admin' is not defined by "exports"` ao importar `admin` do pacote `firebase` (SDK do cliente) em vez de `firebase-admin` (Admin SDK).
+    -   Erro `Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'firebase-admin' imported from ...\firebaseConfig.js` ao importar `firebase-admin` sem que o pacote estivesse instalado no local correto.
+    -   **Correção:** Mudança da importação para `import admin from 'firebase-admin';`. Instalação do pacote `firebase-admin` na raiz do projeto usando `npm install firebase-admin --save`.
+
 
 ### Alterado
 
