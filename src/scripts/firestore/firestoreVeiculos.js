@@ -1,13 +1,16 @@
 import { db } from '../../firebaseConfig';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Cadastra um novo veículo no Firestore.
- * Valida chassi único e formata dados.
+ * Cadastra um novo veículo com:
+ * - ID aleatório (UUID)
+ * - Chassi como campo único imutável
+ * - Placa como campo normal (atualizável)
  */
 export const criarVeiculo = async (veiculoData) => {
   try {
-    const { placa, chassi } = veiculoData;
-    const placaSemHifen = placa.replace(/-/g, '');
+    const id = uuidv4(); // ID aleatório universal
+    const { chassi, placa } = veiculoData;
 
     // 1. Validar chassi único
     const chassiExistente = await db.collection('veiculos')
@@ -20,16 +23,17 @@ export const criarVeiculo = async (veiculoData) => {
     }
 
     // 2. Criar documento com estrutura completa
-    await db.collection('veiculos').doc(placaSemHifen).set({
+    await db.collection('veiculos').doc(id).set({
       // Identificação
-      placa: placaSemHifen,
-      chassi, // PK imutável
-      renavam: veiculoData.renavam,
-      numeroDocumento: veiculoData.numeroDocumento,
+      id, // UUID (redundante para facilidade em queries)
+      chassi, // Campo único imutável
+      placa: placa.replace(/-/g, ''), // Formato sem hífen
 
-      // Dados técnicos
+      // Dados técnicos (do Figma)
       modelo: veiculoData.modelo,
       marca: veiculoData.marca,
+      renavam: veiculoData.renavam,
+      numeroDocumento: veiculoData.numeroDocumento,
       anoModelo: {
         fabricacao: parseInt(veiculoData.anoFabricacao),
         modelo: parseInt(veiculoData.anoModelo)
@@ -48,10 +52,11 @@ export const criarVeiculo = async (veiculoData) => {
 
       // Controle
       status: 'disponivel',
-      dataCadastro: new Date().toISOString()
+      dataCadastro: new Date().toISOString(),
+      dataAtualizacao: new Date().toISOString()
     });
 
-    return { success: true, id: placaSemHifen };
+    return { success: true, id };
 
   } catch (error) {
     console.error('Erro ao criar veículo:', error);
@@ -60,14 +65,11 @@ export const criarVeiculo = async (veiculoData) => {
 };
 
 /**
- * Atualiza a placa de um veículo (mantendo chassi imutável).
- * Cria novo documento e deleta o antigo.
+ * Atualiza a placa de um veículo (via chassi)
  */
 export const atualizarPlaca = async (chassi, novaPlaca) => {
   try {
-    const novaPlacaSemHifen = novaPlaca.replace(/-/g, '');
-
-    // 1. Buscar veículo por chassi
+    // 1. Buscar veículo por chassi (campo único)
     const snapshot = await db.collection('veiculos')
       .where('chassi', '==', chassi)
       .limit(1)
@@ -77,22 +79,13 @@ export const atualizarPlaca = async (chassi, novaPlaca) => {
       throw new Error('Veículo não encontrado.');
     }
 
-    // 2. Transação em lote para garantir atomicidade
-    const batch = db.batch();
-    const veiculoAntigo = snapshot.docs[0];
-    const veiculoRefNovo = db.collection('veiculos').doc(novaPlacaSemHifen);
-
-    // Copia todos os campos, atualiza placa e mantém chassi
-    batch.set(veiculoRefNovo, {
-      ...veiculoAntigo.data(),
-      placa: novaPlacaSemHifen,
-      dataAtualizacao: new Date().toISOString() // Novo campo de auditoria
+    // 2. Atualizar apenas a placa (ID do documento permanece o mesmo)
+    const veiculoRef = snapshot.docs[0].ref;
+    await veiculoRef.update({
+      placa: novaPlaca.replace(/-/g, ''),
+      dataAtualizacao: new Date().toISOString()
     });
 
-    // Remove documento antigo
-    batch.delete(veiculoAntigo.ref);
-
-    await batch.commit();
     return { success: true };
 
   } catch (error) {
@@ -115,7 +108,8 @@ export const registrarVenda = async (chassi, dataVenda) => {
 
     await snapshot.docs[0].ref.update({
       status: 'vendido',
-      dataVenda: new Date(dataVenda).toISOString()
+      dataVenda: new Date(dataVenda).toISOString(),
+      dataAtualizacao: new Date().toISOString()
     });
 
     return { success: true };
@@ -127,7 +121,7 @@ export const registrarVenda = async (chassi, dataVenda) => {
 };
 
 /**
- * Busca veículo por chassi (PK imutável)
+ * Busca veículo por chassi (campo único)
  */
 export const buscarPorChassi = async (chassi) => {
   const snapshot = await db.collection('veiculos')
@@ -135,5 +129,38 @@ export const buscarPorChassi = async (chassi) => {
     .limit(1)
     .get();
 
-  return snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+  return snapshot.empty ? null : snapshot.docs[0].data();
+};
+
+/**
+ * Lista veículos com paginação (startAfter)
+ */
+export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
+  try {
+    let query = db.collection('veiculos')
+      .orderBy('placa')
+      .limit(limite);
+
+    // Filtros opcionais
+    if (filtros.placa) {
+      query = query.where('placa', '==', filtros.placa.replace(/-/g, ''));
+    }
+
+    // Paginação eficiente
+    if (ultimoDoc) {
+      query = query.startAfter(ultimoDoc);
+    }
+
+    const snapshot = await query.get();
+    const veiculos = snapshot.docs.map(doc => doc.data());
+
+    return {
+      veiculos,
+      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null
+    };
+
+  } catch (error) {
+    console.error('Erro ao listar veículos:', error);
+    throw error;
+  }
 };

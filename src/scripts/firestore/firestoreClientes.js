@@ -55,9 +55,9 @@ export const criarCliente = async (clienteData) => {
 };
 
 // Listar clientes com filtros (para T19.01)
-export const listarClientes = async ({ pagina = 1, limite = 10, filtros = {} }) => {
+export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   try {
-    let query = db.collection('clientes');
+    let query = db.collection('clientes').orderBy('nomeCompleto').limit(limite);
 
     // Aplicar filtros
     if (filtros.nome) {
@@ -65,16 +65,19 @@ export const listarClientes = async ({ pagina = 1, limite = 10, filtros = {} }) 
                   .where('nomeCompleto', '<=', filtros.nome + '\uf8ff');
     }
 
-    // Paginação
-    const totalSnapshot = await query.count().get();
-    const total = totalSnapshot.data().count;
-    const snapshot = await query.limit(limite).offset((pagina - 1) * limite).get();
+    // Paginação (startAfter)
+    if (ultimoDoc) {
+      query = query.startAfter(ultimoDoc);
+    }
+
+    const snapshot = await query.get();
+    const clientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     return {
-      clientes: snapshot.docs.map(doc => doc.data()),
-      total,
-      paginas: Math.ceil(total / limite)
+      clientes,
+      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null
     };
+
   } catch (error) {
     console.error('Erro ao listar clientes:', error);
     throw error;
