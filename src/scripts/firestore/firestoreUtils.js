@@ -1,10 +1,11 @@
-import { db } from '../../firebaseConfig';
+import { db } from '../../../firebaseConfig.js';
 
 // Validar CPF/CNPJ duplicado
 export const verificarDocumentoExistente = async (tipo, valor) => {
-  const snapshot = await db.collection('clientes')
-                          .where(tipo === 'CPF' ? 'cpf' : 'cnpj', '==', valor)
-                          .get();
+  const snapshot = await db
+    .collection('clientes')
+    .where(tipo === 'CPF' ? 'cpf' : 'cnpj', '==', valor)
+    .get();
   return !snapshot.empty;
 };
 

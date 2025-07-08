@@ -1,4 +1,4 @@
-import { db } from '../../firebaseConfig';
+import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -13,7 +13,8 @@ export const criarVeiculo = async (veiculoData) => {
     const { chassi, placa } = veiculoData;
 
     // 1. Validar chassi único
-    const chassiExistente = await db.collection('veiculos')
+    const chassiExistente = await db
+      .collection('veiculos')
       .where('chassi', '==', chassi)
       .limit(1)
       .get();
@@ -23,41 +24,43 @@ export const criarVeiculo = async (veiculoData) => {
     }
 
     // 2. Criar documento com estrutura completa
-    await db.collection('veiculos').doc(id).set({
-      // Identificação
-      id, // UUID (redundante para facilidade em queries)
-      chassi, // Campo único imutável
-      placa: placa.replace(/-/g, ''), // Formato sem hífen
+    await db
+      .collection('veiculos')
+      .doc(id)
+      .set({
+        // Identificação
+        id, // UUID (redundante para facilidade em queries)
+        chassi, // Campo único imutável
+        placa: placa.replace(/-/g, ''), // Formato sem hífen
 
-      // Dados técnicos (do Figma)
-      modelo: veiculoData.modelo,
-      marca: veiculoData.marca,
-      renavam: veiculoData.renavam,
-      numeroDocumento: veiculoData.numeroDocumento,
-      anoModelo: {
-        fabricacao: parseInt(veiculoData.anoFabricacao),
-        modelo: parseInt(veiculoData.anoModelo)
-      },
+        // Dados técnicos (do Figma)
+        modelo: veiculoData.modelo,
+        marca: veiculoData.marca,
+        renavam: veiculoData.renavam,
+        numeroDocumento: veiculoData.numeroDocumento,
+        anoModelo: {
+          fabricacao: parseInt(veiculoData.anoFabricacao),
+          modelo: parseInt(veiculoData.anoModelo),
+        },
 
-      // Histórico
-      quilometragem: parseInt(veiculoData.quilometragem),
-      quilometragemNaCompra: parseInt(veiculoData.quilometragemNaCompra || '0'),
-      dataCompra: new Date(veiculoData.dataCompra).toISOString(),
-      dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
+        // Histórico
+        quilometragem: parseInt(veiculoData.quilometragem),
+        quilometragemNaCompra: parseInt(veiculoData.quilometragemNaCompra || '0'),
+        dataCompra: new Date(veiculoData.dataCompra).toISOString(),
+        dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
 
-      // Localização
-      local: veiculoData.local,
-      nome: veiculoData.nome,
-      observacoes: veiculoData.observacoes,
+        // Localização
+        local: veiculoData.local,
+        nome: veiculoData.nome,
+        observacoes: veiculoData.observacoes,
 
-      // Controle
-      status: 'disponivel',
-      dataCadastro: new Date().toISOString(),
-      dataAtualizacao: new Date().toISOString()
-    });
+        // Controle
+        status: 'disponivel',
+        dataCadastro: new Date().toISOString(),
+        dataAtualizacao: new Date().toISOString(),
+      });
 
     return { success: true, id };
-
   } catch (error) {
     console.error('Erro ao criar veículo:', error);
     return { success: false, error: error.message };
@@ -70,10 +73,7 @@ export const criarVeiculo = async (veiculoData) => {
 export const atualizarPlaca = async (chassi, novaPlaca) => {
   try {
     // 1. Buscar veículo por chassi (campo único)
-    const snapshot = await db.collection('veiculos')
-      .where('chassi', '==', chassi)
-      .limit(1)
-      .get();
+    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
 
     if (snapshot.empty) {
       throw new Error('Veículo não encontrado.');
@@ -83,11 +83,10 @@ export const atualizarPlaca = async (chassi, novaPlaca) => {
     const veiculoRef = snapshot.docs[0].ref;
     await veiculoRef.update({
       placa: novaPlaca.replace(/-/g, ''),
-      dataAtualizacao: new Date().toISOString()
+      dataAtualizacao: new Date().toISOString(),
     });
 
     return { success: true };
-
   } catch (error) {
     console.error('Erro ao atualizar placa:', error);
     return { success: false, error: error.message };
@@ -99,21 +98,17 @@ export const atualizarPlaca = async (chassi, novaPlaca) => {
  */
 export const registrarVenda = async (chassi, dataVenda) => {
   try {
-    const snapshot = await db.collection('veiculos')
-      .where('chassi', '==', chassi)
-      .limit(1)
-      .get();
+    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
 
     if (snapshot.empty) throw new Error('Veículo não encontrado.');
 
     await snapshot.docs[0].ref.update({
       status: 'vendido',
       dataVenda: new Date(dataVenda).toISOString(),
-      dataAtualizacao: new Date().toISOString()
+      dataAtualizacao: new Date().toISOString(),
     });
 
     return { success: true };
-
   } catch (error) {
     console.error('Erro ao registrar venda:', error);
     return { success: false, error: error.message };
@@ -124,10 +119,7 @@ export const registrarVenda = async (chassi, dataVenda) => {
  * Busca veículo por chassi (campo único)
  */
 export const buscarPorChassi = async (chassi) => {
-  const snapshot = await db.collection('veiculos')
-    .where('chassi', '==', chassi)
-    .limit(1)
-    .get();
+  const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
 
   return snapshot.empty ? null : snapshot.docs[0].data();
 };
@@ -137,9 +129,7 @@ export const buscarPorChassi = async (chassi) => {
  */
 export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   try {
-    let query = db.collection('veiculos')
-      .orderBy('placa')
-      .limit(limite);
+    let query = db.collection('veiculos').orderBy('placa').limit(limite);
 
     // Filtros opcionais
     if (filtros.placa) {
@@ -152,13 +142,12 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
     }
 
     const snapshot = await query.get();
-    const veiculos = snapshot.docs.map(doc => doc.data());
+    const veiculos = snapshot.docs.map((doc) => doc.data());
 
     return {
       veiculos,
-      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null
+      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null,
     };
-
   } catch (error) {
     console.error('Erro ao listar veículos:', error);
     throw error;

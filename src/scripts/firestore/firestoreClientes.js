@@ -1,4 +1,4 @@
-import { db } from '../../firebaseConfig';
+import { db } from '../../../firebaseConfig.js';
 
 // Cadastrar cliente (dados pessoais + documentos)
 export const criarCliente = async (clienteData) => {
@@ -11,7 +11,7 @@ export const criarCliente = async (clienteData) => {
       tipo: 'PF',
       nomeCompleto: dadosPessoais.nome,
       dataNascimento: dadosPessoais.dataNascimento, // Formato: 'YYYY-MM-DD'
-      status: 'ativo'
+      status: 'ativo',
     });
 
     // 2. Subcoleções (endereco, contato, documentos)
@@ -26,14 +26,14 @@ export const criarCliente = async (clienteData) => {
       bairro: endereco.bairro,
       cidade: endereco.cidade,
       estado: endereco.estado,
-      isPrincipal: true
+      isPrincipal: true,
     });
 
     // Contato
     batch.set(clienteRef.collection('contatos').doc('principal'), {
       email: contato.email,
       telefone: contato.telefone, // Formato: '(XX) XXXXX-XXXX'
-      isPrincipal: true
+      isPrincipal: true,
     });
 
     // CNH (documento)
@@ -42,7 +42,7 @@ export const criarCliente = async (clienteData) => {
         tipo: 'CNH',
         numero: documentos.cnh.numero,
         categoria: documentos.cnh.categoria,
-        dataValidade: documentos.cnh.dataValidade // 'YYYY-MM-DD'
+        dataValidade: documentos.cnh.dataValidade, // 'YYYY-MM-DD'
       });
     }
 
@@ -61,8 +61,9 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
 
     // Aplicar filtros
     if (filtros.nome) {
-      query = query.where('nomeCompleto', '>=', filtros.nome)
-                  .where('nomeCompleto', '<=', filtros.nome + '\uf8ff');
+      query = query
+        .where('nomeCompleto', '>=', filtros.nome)
+        .where('nomeCompleto', '<=', filtros.nome + '\uf8ff');
     }
 
     // Paginação (startAfter)
@@ -71,13 +72,12 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
     }
 
     const snapshot = await query.get();
-    const clientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const clientes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
     return {
       clientes,
-      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null
+      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null,
     };
-
   } catch (error) {
     console.error('Erro ao listar clientes:', error);
     throw error;

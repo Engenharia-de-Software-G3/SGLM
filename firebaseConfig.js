@@ -1,6 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
+import { getDocFromCache } from 'firebase/firestore';
+import admin from 'firebase-admin';
+//import { getAnalytics } from 'firebase/analytics';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -16,6 +18,14 @@ const firebaseConfig = {
   measurementId: 'G-B2D95MWEJD',
 };
 
+// Inicialize o Firebase Admin SDK se ainda não estiver inicializado
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const db = admin.firestore();
+//const analytics = getAnalytics(app);
+
+export { app, db };
