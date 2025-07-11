@@ -1,4 +1,4 @@
-import { db } from '../../firebaseConfig.js';
+import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -17,7 +17,8 @@ export const criarFornecedor = async (fornecedorData) => {
     const { cnpj } = fornecedorData;
 
     // Validar CNPJ único
-    const cnpjExistente = await db.collection('fornecedores')
+    const cnpjExistente = await db
+      .collection('fornecedores')
       .where('cnpj', '==', cnpj)
       .limit(1)
       .get();
@@ -34,7 +35,7 @@ export const criarFornecedor = async (fornecedorData) => {
       tipo: 'PJ',
       status: 'ativo',
       dataCadastro: new Date().toISOString(),
-      dataAtualizacao: new Date().toISOString()
+      dataAtualizacao: new Date().toISOString(),
     });
 
     // Subcoleções em batch
@@ -42,11 +43,11 @@ export const criarFornecedor = async (fornecedorData) => {
     const fornecedorRef = db.collection('fornecedores').doc(id);
 
     // Serviços (como subcoleção)
-    fornecedorData.servicos.forEach(servico => {
+    fornecedorData.servicos.forEach((servico) => {
       const servicoRef = fornecedorRef.collection('servicos').doc(uuidv4());
       batch.set(servicoRef, {
         nome: servico,
-        dataCadastro: new Date().toISOString()
+        dataCadastro: new Date().toISOString(),
       });
     });
 
@@ -54,7 +55,7 @@ export const criarFornecedor = async (fornecedorData) => {
     if (fornecedorData.contato) {
       batch.set(fornecedorRef.collection('contatos').doc('principal'), {
         ...fornecedorData.contato,
-        isPrincipal: true
+        isPrincipal: true,
       });
     }
 
@@ -62,13 +63,12 @@ export const criarFornecedor = async (fornecedorData) => {
     if (fornecedorData.endereco) {
       batch.set(fornecedorRef.collection('enderecos').doc('principal'), {
         ...fornecedorData.endereco,
-        isPrincipal: true
+        isPrincipal: true,
       });
     }
 
     await batch.commit();
     return { success: true, id };
-
   } catch (error) {
     console.error('Erro ao criar fornecedor:', error);
     return { success: false, error: error.message };
@@ -85,15 +85,11 @@ export const criarFornecedor = async (fornecedorData) => {
  */
 export const listarFornecedores = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   try {
-    let query = db.collection('fornecedores')
-      .orderBy('nome')
-      .limit(limite);
+    let query = db.collection('fornecedores').orderBy('nome').limit(limite);
 
     // Aplicar filtros
     if (filtros.nome) {
-      query = query
-        .where('nome', '>=', filtros.nome)
-        .where('nome', '<=', filtros.nome + '\uf8ff');
+      query = query.where('nome', '>=', filtros.nome).where('nome', '<=', filtros.nome + '\uf8ff');
     }
 
     if (filtros.cnpj) {
@@ -106,13 +102,12 @@ export const listarFornecedores = async ({ limite = 10, ultimoDoc = null, filtro
     }
 
     const snapshot = await query.get();
-    const fornecedores = snapshot.docs.map(doc => doc.data());
+    const fornecedores = snapshot.docs.map((doc) => doc.data());
 
     return {
       fornecedores,
-      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null
+      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null,
     };
-
   } catch (error) {
     console.error('Erro ao listar fornecedores:', error);
     throw error;
@@ -125,10 +120,7 @@ export const listarFornecedores = async ({ limite = 10, ultimoDoc = null, filtro
  * @returns {Promise<Object|null>}
  */
 export const buscarPorCnpj = async (cnpj) => {
-  const snapshot = await db.collection('fornecedores')
-    .where('cnpj', '==', cnpj)
-    .limit(1)
-    .get();
+  const snapshot = await db.collection('fornecedores').where('cnpj', '==', cnpj).limit(1).get();
 
   return snapshot.empty ? null : snapshot.docs[0].data();
 };

@@ -37,7 +37,7 @@ app.get('/hello-world', (req, res) => {
   return res.status(200).send('Hello World!');
 });
 
-// Rota cliente (importada de cliente.js que exporta com export default)
+// Rota cliente
 /**
  * Importa e monta o roteador para as operações relacionadas a clientes.
  * Todas as rotas definidas em './cliente' serão acessíveis sob o prefixo '/clientes'.
@@ -46,7 +46,7 @@ app.get('/hello-world', (req, res) => {
 import clientesRouter from './cliente.js';
 app.use('/clientes', clientesRouter);
 
-// Rota veículo (importada de cliente.js que exporta com export default)
+// Rota veículo
 /**
  * Importa e monta o roteador para as operações relacionadas a veículos.
  * Todas as rotas definidas em './veiculo' serão acessíveis sob o prefixo '/veiculos'.
@@ -54,6 +54,15 @@ app.use('/clientes', clientesRouter);
  */
 import veiculosRouter from './veiculo.js';
 app.use('/veiculos', veiculosRouter);
+
+// Rota fornecedor
+/**
+ * Importa e monta o roteador para as operações relacionadas a fornecedores.
+ * Todas as rotas definidas em './fornecedores' serão acessíveis sob o prefixo '/fornecedores'.
+ * @type {express.Router}
+ */
+import fornecedoresRouter from './fornecedores.js';
+app.use('/fornecedores', fornecedoresRouter);
 
 /**
  * Exporta o aplicativo Express como uma Cloud Function HTTP.
