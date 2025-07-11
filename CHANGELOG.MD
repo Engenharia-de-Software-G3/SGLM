@@ -48,3 +48,14 @@
 
 -   Atualização da documentação (Docstrings) de `functions/index.js` e `functions/cliente.js` para refletir as mudanças na inicialização do Admin SDK e na sintaxe de módulos.
 -   Ajuste dos caminhos de importação em vários arquivos (`functions/*.js`, `src/scripts/firestore/*.js`) para usar caminhos relativos corretos e a sintaxe `import`.
+
+## [0.0.0b] - 09/07/2025
+
+### Adicionado
+- Implementação do schema de fornecedores
+  - Coleção principal `fornecedores` com ID aleatório (UUID)
+  - Subcoleções `servicos`, `contatos` e `enderecos`
+  - Validação de CNPJ único
+- Rota POST `/fornecedores` para cadastro
+- Rota GET `/fornecedores` para listagem paginada
+- Documentação JSDoc para todas as funções
