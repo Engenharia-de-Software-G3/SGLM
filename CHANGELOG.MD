@@ -52,18 +52,35 @@
 ## [0.0.0b] - 09/07/2025
 
 ### Adicionado
-- Implementação do schema de fornecedores
-  - Coleção principal `fornecedores` com ID aleatório (UUID)
-  - Subcoleções `servicos`, `contatos` e `enderecos`
-  - Validação de CNPJ único
-- Rota POST `/fornecedores` para cadastro
-- Rota GET `/fornecedores` para listagem paginada
-- Documentação JSDoc para todas as funções
+
+-   Implementação do schema de fornecedores
+    -   Coleção principal `fornecedores` com ID aleatório (UUID)
+    -   Subcoleções `servicos`, `contatos` e `enderecos`
+    -   Validação de CNPJ único
+-   Rota POST `/fornecedores` para cadastro
+-   Rota GET `/fornecedores` para listagem paginada
+-   Documentação JSDoc para todas as funções
+-   Implementação da API de Cloud Functions para criação de fornecedores.
+    -   Criação do arquivo de roteamento `functions/fornecedores.js`.
+    -   Definição da rota POST `/` no roteador de fornecedores para criação de fornecedores.
+    -   Integração da rota POST `/` com a função `criarFornecedor` do arquivo `src/scripts/firestore/firestoreFornecedores.js`.
+    -   Adição do roteador de fornecedores ao aplicativo Express principal em `functions/index.js` sob o prefixo `/fornecedores`.
+    -   Implementação básica da rota GET `/` como placeholder em `functions/fornecedores.js`.
+    -   Exemplo de JSON para testar a rota POST de fornecedores via Postman.
+
 ### Corrigido
-- Implementação completa da rota GET /clientes com paginação e filtros
-- Melhoria no tratamento de erros
+
+-   Implementação completa da rota GET /clientes com paginação e filtros
+-   Melhoria no tratamento de erros
+
 ### Documentação
-- Adicionada documentação para os serviços de cliente em `firestoreClientes.js`
-  - Especificação detalhada de todos os parâmetros e tipos de retorno
-  - Documentação dos formatos exigidos (CPF, datas, telefones)
-  - Descrição dos filtros disponíveis para listagem (nome, tipo PF/PJ)
+
+-   Adicionada documentação para os serviços de cliente em `firestoreClientes.js`
+    -   Especificação detalhada de todos os parâmetros e tipos de retorno
+    -   Documentação dos formatos exigidos (CPF, datas, telefones)
+    -   Descrição dos filtros disponíveis para listagem (nome, tipo PF/PJ)
+-   **Documentação inicial (Docstrings JSDoc) para o arquivo `functions/fornecedores.js`.**
+
+### Alterado
+
+-   **Atualização do arquivo `functions/index.js` para importar e usar o novo roteador de fornecedores.**
