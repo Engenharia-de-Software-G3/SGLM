@@ -59,3 +59,11 @@
 - Rota POST `/fornecedores` para cadastro
 - Rota GET `/fornecedores` para listagem paginada
 - Documentação JSDoc para todas as funções
+### Corrigido
+- Implementação completa da rota GET /clientes com paginação e filtros
+- Melhoria no tratamento de erros
+### Documentação
+- Adicionada documentação para os serviços de cliente em `firestoreClientes.js`
+  - Especificação detalhada de todos os parâmetros e tipos de retorno
+  - Documentação dos formatos exigidos (CPF, datas, telefones)
+  - Descrição dos filtros disponíveis para listagem (nome, tipo PF/PJ)

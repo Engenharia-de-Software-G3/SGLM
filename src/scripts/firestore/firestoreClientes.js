@@ -1,6 +1,30 @@
 import { db } from '../../../firebaseConfig.js';
 
-// Cadastrar cliente (dados pessoais + documentos)
+/**
+ * Cadastra um novo cliente no Firestore
+ * @param {Object} clienteData - Dados do cliente
+ * @param {string} clienteData.cpf - CPF do cliente (formato: 'XXX.XXX.XXX-XX')
+ * @param {Object} clienteData.dadosPessoais - Dados pessoais
+ * @param {string} clienteData.dadosPessoais.nome - Nome completo
+ * @param {string} clienteData.dadosPessoais.dataNascimento - Data (formato: 'YYYY-MM-DD')
+ * @param {Object} clienteData.endereco - Endereço principal
+ * @param {string} clienteData.endereco.cep - CEP (formato: 'XXXXX-XXX')
+ * @param {string} clienteData.endereco.rua - Logradouro
+ * @param {string} clienteData.endereco.numero - Número
+ * @param {string} clienteData.endereco.bairro - Bairro
+ * @param {string} clienteData.endereco.cidade - Cidade
+ * @param {string} clienteData.endereco.estado - Sigla do estado (ex: 'SP')
+ * @param {Object} clienteData.contato - Contato principal
+ * @param {string} clienteData.contato.email - E-mail válido
+ * @param {string} clienteData.contato.telefone - Telefone (formato: '(XX) XXXXX-XXXX')
+ * @param {Object} [clienteData.documentos] - Documentos opcionais
+ * @param {Object} [clienteData.documentos.cnh] - Dados da CNH
+ * @param {string} clienteData.documentos.cnh.numero - Número da CNH
+ * @param {string} clienteData.documentos.cnh.categoria - Categoria (ex: 'AB')
+ * @param {string} clienteData.documentos.cnh.dataValidade - Data (formato: 'YYYY-MM-DD')
+ * @returns {Promise<{success: boolean, error?: string}>} 
+ * @throws {Error} Em caso de erro no Firestore
+ */
 export const criarCliente = async (clienteData) => {
   try {
     const { cpf, dadosPessoais, endereco, contato, documentos } = clienteData;
@@ -10,7 +34,7 @@ export const criarCliente = async (clienteData) => {
       id: cpf,
       tipo: 'PF',
       nomeCompleto: dadosPessoais.nome,
-      dataNascimento: dadosPessoais.dataNascimento, // Formato: 'YYYY-MM-DD'
+      dataNascimento: dadosPessoais.dataNascimento,
       status: 'ativo',
     });
 
@@ -32,7 +56,7 @@ export const criarCliente = async (clienteData) => {
     // Contato
     batch.set(clienteRef.collection('contatos').doc('principal'), {
       email: contato.email,
-      telefone: contato.telefone, // Formato: '(XX) XXXXX-XXXX'
+      telefone: contato.telefone,
       isPrincipal: true,
     });
 
@@ -42,7 +66,7 @@ export const criarCliente = async (clienteData) => {
         tipo: 'CNH',
         numero: documentos.cnh.numero,
         categoria: documentos.cnh.categoria,
-        dataValidade: documentos.cnh.dataValidade, // 'YYYY-MM-DD'
+        dataValidade: documentos.cnh.dataValidade,
       });
     }
 
@@ -54,7 +78,17 @@ export const criarCliente = async (clienteData) => {
   }
 };
 
-// Listar clientes com filtros (para T19.01)
+/**
+ * Lista clientes com paginação e filtros
+ * @param {Object} params
+ * @param {number} [params.limite=10] - Número máximo de resultados
+ * @param {firebase.firestore.DocumentSnapshot} [params.ultimoDoc] - Último documento da página anterior (para startAfter)
+ * @param {Object} [params.filtros] - Filtros de busca
+ * @param {string} [params.filtros.nome] - Filtro por nome (busca parcial case-insensitive)
+ * @param {'PF'|'PJ'} [params.filtros.tipo] - Filtro por tipo de cliente
+ * @returns {Promise<{clientes: Array<Object>, ultimoDoc: firebase.firestore.DocumentSnapshot|null}>}
+ * @throws {Error} Em caso de erro no Firestore
+ */
 export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   try {
     let query = db.collection('clientes').orderBy('nomeCompleto').limit(limite);
@@ -64,6 +98,10 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
       query = query
         .where('nomeCompleto', '>=', filtros.nome)
         .where('nomeCompleto', '<=', filtros.nome + '\uf8ff');
+    }
+
+    if (filtros.tipo) {
+      query = query.where('tipo', '==', filtros.tipo);
     }
 
     // Paginação (startAfter)
