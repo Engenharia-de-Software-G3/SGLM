@@ -84,3 +84,16 @@
 ### Alterado
 
 -   **Atualização do arquivo `functions/index.js` para importar e usar o novo roteador de fornecedores.**
+
+# [0.0.0c] - 12/07/2025
+
+### Adicionado
+
+-   Implementação do schema de serviços adicionais
+    -   Coleção principal `servicosAdicionais` com ID aleatório (UUID)
+
+### Corrigido
+
+-   Implementação completa do schema servicosAdicionais 
+-   Melhoria no tratamento de erros e filtros do schema
+-   Comentários de tipagem e documentação
