@@ -64,6 +64,15 @@ app.use('/veiculos', veiculosRouter);
 import fornecedoresRouter from './fornecedores.js';
 app.use('/fornecedores', fornecedoresRouter);
 
+// Rota serviço
+/**
+ * Importa e monta o roteador para as operações relacionadas a serviços.
+ * Todas as rotas definidas em './servicos' serão acessíveis sob o prefixo '/servicos'.
+ * @type {express.Router}
+ */
+import servicosRouter from './servicos.js';
+app.use('/servicos', servicosRouter);
+
 /**
  * Exporta o aplicativo Express como uma Cloud Function HTTP.
  * Esta função será o ponto de entrada para todas as requisições HTTP
