@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
+
+.login-container {
+    min-height: 100vh;
+    background: linear-gradient(to right, #ffffff 0%, #d5dae6 100%);
+}
+
+.title-container-login {
+    margin-bottom: 170px;
+    font-size: 120px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    color: black;
+}
