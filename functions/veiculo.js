@@ -63,18 +63,63 @@ router.post('/', async (req, res) => {
  * @param {object} res - Objeto de resposta do Express.
  * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
  */
+/**
+ * Rota GET para listar veículos com paginação e filtros.
+ * @name GET /
+ * @function
+ * @memberof module:veiculo
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} [req.query.limite=10] - Número de itens por página
+ * @param {string} [req.query.ultimoDocId] - ID do último documento para paginação
+ * @param {string} [req.query.filtros] - JSON stringificado com filtros (placa, status)
+ * @param {object} res - Objeto de resposta do Express.
+ * @returns {Promise<void>}
+ */
 router.get('/', async (req, res) => {
   try {
-    /**
-     * @todo Implementar corretamente a listagem de veículos.
-     * Extrair filtros e paginação de req.query.
-     * Chamar uma função de listagem de veículos do firestoreVeiculos.js (se existir/for criada).
-     * Formatar e enviar a resposta com os dados dos veículos, total e paginação.
-     */
-    res.status(200).send({ message: 'Rota GET /veiculos implementada em breve.' });
+    const { limite = '10', ultimoDocId, filtros = '{}' } = req.query;
+
+    // Converter e validar parâmetros
+    const limiteNum = Math.min(parseInt(limite) || 10, 100); // Limite máximo de 100 itens
+    let filtrosParsed;
+    
+    try {
+      filtrosParsed = JSON.parse(filtros);
+    } catch {
+      filtrosParsed = {};
+    }
+
+    // Obter documento de referência para paginação
+    let ultimoDoc = null;
+    if (ultimoDocId) {
+      ultimoDoc = await db.collection('veiculos').doc(ultimoDocId).get();
+      if (!ultimoDoc.exists) {
+        return res.status(400).json({ error: 'ID do último documento inválido' });
+      }
+    }
+
+    // Chamar função de listagem
+    const { veiculos, ultimoDoc: ultimoDocSnapshot } = await listarVeiculos({
+      limite: limiteNum,
+      ultimoDoc,
+      filtros: filtrosParsed
+    });
+
+    // Formatar resposta
+    res.status(200).json({
+      veiculos,
+      paginacao: {
+        possuiMais: !!ultimoDocSnapshot,
+        proximoDocId: ultimoDocSnapshot?.id || null
+      }
+    });
+
   } catch (error) {
     console.error('Erro na rota GET /veiculos:', error);
-    res.status(500).send('Erro interno do servidor.');
+    res.status(500).json({ 
+      error: 'Erro interno no servidor',
+      ...(process.env.NODE_ENV === 'development' && { detalhes: error.message })
+    });
   }
 });
 

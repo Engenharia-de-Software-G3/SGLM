@@ -131,23 +131,38 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
   try {
     let query = db.collection('veiculos').orderBy('placa').limit(limite);
 
-    // Filtros opcionais
+    // Aplicar filtros
     if (filtros.placa) {
       query = query.where('placa', '==', filtros.placa.replace(/-/g, ''));
     }
 
-    // Paginação eficiente
+    if (filtros.status) {
+      query = query.where('status', '==', filtros.status);
+    }
+
+    if (filtros.marca) {
+      query = query.where('marca', '==', filtros.marca);
+    }
+
+    // Paginação
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);
     }
 
     const snapshot = await query.get();
-    const veiculos = snapshot.docs.map((doc) => doc.data());
+    const veiculos = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      // Garantir que datas sejam formatadas como strings ISO
+      dataCadastro: doc.data().dataCadastro?.toISOString(),
+      dataAtualizacao: doc.data().dataAtualizacao?.toISOString()
+    }));
 
     return {
       veiculos,
-      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null
     };
+
   } catch (error) {
     console.error('Erro ao listar veículos:', error);
     throw error;
