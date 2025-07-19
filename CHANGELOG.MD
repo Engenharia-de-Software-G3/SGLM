@@ -98,22 +98,21 @@
 -   Melhoria no tratamento de erros e filtros do schema
 -   Comentários de tipagem e documentação
 
-# [0.0.0c] - 16/07/2025
+# [0.0.0d] - 19/07/2025
 
-### Implementado
+### Adicionado
 
-- Histórico de Manutenção
-  - Subcoleção `manutencoes` adicionada a `veiculos/{id}`.
-  - Funções `adicionarManutencao` e `listarManutencoes` criadas em `firestoreManutencao.js`.
-- Locações
-  - Nova coleção `locacoes` no Firestore.
-  - Funções `criarLocacao` e `listarLocacoes` criadas em `firestoreLocacoes.js`.
-- Rota GET `/veiculos` com:
-  - Paginação via cursor (`startAfter`)
-  - Filtros por placa, status e marca
-  - Rota GET `/veiculos`
-  - Função `listarVeiculos`
-- Formatação consistente de datas na resposta
+-   Implementação do schema de vistoria
+    -   Coleção principal `vistorias` com ID aleatório (UUID)
 
-### Melhorado
-- Validação de parâmetros na listagem de veículos
+### Corrigido
+
+-   Implementação completa do schema vistorias 
+-   Melhoria no tratamento de erros e filtros do schema
+-   Comentários de tipagem e documentação
+
+### Alterado
+
+-   Arquivo /scripts/firestore/firestoreVeiculos.js alterado:
+    -   Adição da função listarQuilometragemVeiculo;
+    -   Adição da função atualizarQuilometragemVeiculo.

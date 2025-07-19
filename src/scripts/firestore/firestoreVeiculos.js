@@ -168,3 +168,51 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
     throw error;
   }
 };
+
+/**
+ * Listar quilometragem de um veículo específico
+ * @param {string} chassi - Chassi do veículo
+ * @returns {Promise<number|null>} - Retorna a quilometragem do veículo ou null se não encontrado
+ * @throws {Error} Em caso de erro no Firestore
+ */
+export const listarQuilometragemVeiculo = async (chassi) => {
+  try {
+    const veiculo = await buscarPorChassi(chassi);
+
+    if (!veiculo) return null;
+
+    return veiculo.quilometragem;
+  } catch (error) {
+    console.error('Erro ao buscar quilometragem:', error);
+    throw error;
+  }
+};
+
+/**
+ * Atualizar a quilometragem do veículo pelo chassi
+ * @param {string} chassi - Chassi do veículo
+ * @param {number} quilometragem - Nova quilometragem do veículo
+ * @returns {Promise<{success: boolean, error?: string}>}
+ * @throws {Error} Em caso de erro no Firestore
+ */
+export const atualizarQuilometragemVeiculo = async (chassi, quilometragem) => {
+  try {
+    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+
+    if (snapshot.empty) {
+      return { success: false, error: 'Veículo não encontrado.' };
+    }
+
+    const docId = snapshot.docs[0].id;
+
+    // Atualizar o campo quilometragem no documento encontrado
+    await db.collection('veiculos').doc(docId).update({ quilometragem });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('Erro ao atualizar quilometragem:', error);
+    return { success: false, error: error.message };
+  }
+};
