@@ -136,3 +136,28 @@
 -   Arquivo /scripts/firestore/firestoreVeiculos.js alterado:
     -   Adição da função listarQuilometragemVeiculo;
     -   Adição da função atualizarQuilometragemVeiculo.
+
+## [0.0.0e] - 19/07/2025
+
+### Adicionado
+
+-   Implementação da API de Cloud Functions para histórico de manutenções.
+    -   Criação do arquivo de roteamento `functions/manutencoes.js`.
+    -   Definição da rota GET `/:veiculoId` no roteador de manutenções para listar o histórico de manutenções de um veículo específico.
+    -   Integração da rota GET `/:veiculoId` com a função `listarManutencoes` do arquivo `src/scripts/firestore/firestoreManutencao.js`.
+    -   Adição do roteador de manutenções ao aplicativo Express principal em `functions/index.js` sob o prefixo `/manutencoes`.
+    -   Verificação explícita da existência do veículo solicitado na rota GET `/:veiculoId` antes de buscar as manutenções.
+    -   Busca direta do documento do veículo pelo ID (placa sem hífen) no Firestore.
+    -   Retorno de status 404 Not Found se o veículo não for encontrado.
+-   Documentação inicial (Docstrings JSDoc) para o arquivo `functions/manutencoes.js`.
+
+### Alterado
+
+-   Atualização do arquivo `functions/index.js` para importar e usar o novo roteador de manutenções.
+
+### Corrigido
+
+-   Tratamento de caso onde um ID de veículo inexistente é fornecido na rota GET de histórico de manutenções, retornando status 404.
+-   **Erro `TypeError: doc.data(...).dataCadastro.toDate is not a function` ao listar veículos.**
+    -   **Causa:** Tentativa de chamar o método `.toDate()` em campos de data que estavam armazenados no Firestore como strings ISO 8601, em vez de objetos `Timestamp`.
+    -   **Correção:** Modificação da função de listagem de veículos (`listarVeiculos` em `src/scripts/firestore/firestoreVeiculos.js`) para não tentar chamar `.toDate()` nesses campos, tratando-os como strings.

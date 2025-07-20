@@ -7,7 +7,7 @@ import express from 'express';
 const router = express.Router();
 
 // Importando funções da Firestore para veículos
-import { criarVeiculo, buscarPorChassi } from '../src/scripts/firestore/firestoreVeiculos.js';
+import { criarVeiculo, listarVeiculos } from '../src/scripts/firestore/firestoreVeiculos.js';
 // import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
 /**
@@ -82,7 +82,7 @@ router.get('/', async (req, res) => {
     // Converter e validar parâmetros
     const limiteNum = Math.min(parseInt(limite) || 10, 100); // Limite máximo de 100 itens
     let filtrosParsed;
-    
+
     try {
       filtrosParsed = JSON.parse(filtros);
     } catch {
@@ -102,7 +102,7 @@ router.get('/', async (req, res) => {
     const { veiculos, ultimoDoc: ultimoDocSnapshot } = await listarVeiculos({
       limite: limiteNum,
       ultimoDoc,
-      filtros: filtrosParsed
+      filtros: filtrosParsed,
     });
 
     // Formatar resposta
@@ -110,15 +110,14 @@ router.get('/', async (req, res) => {
       veiculos,
       paginacao: {
         possuiMais: !!ultimoDocSnapshot,
-        proximoDocId: ultimoDocSnapshot?.id || null
-      }
+        proximoDocId: ultimoDocSnapshot?.id || null,
+      },
     });
-
   } catch (error) {
     console.error('Erro na rota GET /veiculos:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro interno no servidor',
-      ...(process.env.NODE_ENV === 'development' && { detalhes: error.message })
+      ...(process.env.NODE_ENV === 'development' && { detalhes: error.message }),
     });
   }
 });

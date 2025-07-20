@@ -64,6 +64,15 @@ app.use('/veiculos', veiculosRouter);
 import fornecedoresRouter from './fornecedores.js';
 app.use('/fornecedores', fornecedoresRouter);
 
+// Rota manutenções
+/**
+ * Importa e monta o roteador para as operações relacionadas a histórico de manutenções.
+ * Todas as rotas definidas em './manutencoes' serão acessíveis sob o prefixo '/manutencoes'.
+ * @type {express.Router}
+ */
+import manutencoesRouter from './manutencoes.js'; // Importe o roteador de manutenções
+app.use('/manutencoes', manutencoesRouter); // Use o roteador com o prefixo '/manutencoes'
+
 /**
  * Exporta o aplicativo Express como uma Cloud Function HTTP.
  * Esta função será o ponto de entrada para todas as requisições HTTP

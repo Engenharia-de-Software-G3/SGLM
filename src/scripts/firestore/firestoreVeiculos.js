@@ -150,19 +150,18 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
     }
 
     const snapshot = await query.get();
-    const veiculos = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      // Garantir que datas sejam formatadas como strings ISO
-      dataCadastro: doc.data().dataCadastro?.toISOString(),
-      dataAtualizacao: doc.data().dataAtualizacao?.toISOString()
-    }));
+    const veiculos = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+      };
+    });
 
     return {
       veiculos,
-      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null
+      ultimoDoc: snapshot.docs[snapshot.docs.length - 1] || null,
     };
-
   } catch (error) {
     console.error('Erro ao listar veículos:', error);
     throw error;
