@@ -73,6 +73,15 @@ app.use('/fornecedores', fornecedoresRouter);
 import manutencoesRouter from './manutencoes.js'; // Importe o roteador de manutenções
 app.use('/manutencoes', manutencoesRouter); // Use o roteador com o prefixo '/manutencoes'
 
+// Rota vistoria
+/**
+ * Importa e monta o roteador para as operações relacionadas a vistorias.
+ * Todas as rotas definidas em './vistoria' serão acessíveis sob o prefixo '/vistoria'.
+ * @type {express.Router}
+ */
+import vistoriaRouter from './vistoria.js';
+app.use('/vistoria', vistoriaRouter);
+
 /**
  * Exporta o aplicativo Express como uma Cloud Function HTTP.
  * Esta função será o ponto de entrada para todas as requisições HTTP
