@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
 
     if (resultado.success) {
       // Use o ID retornado pela função criarVistoria
-      res.status(201).send({ message: 'Vistoria criada com sucesso!', id: resultado.id });
+      res.status(201).send({ message: 'Vistoria criada com sucesso!' });
     } else {
       res.status(500).send({ message: 'Erro ao criar Vistoria', error: resultado.error });
     }

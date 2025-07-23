@@ -7,7 +7,11 @@ import express from 'express';
 const router = express.Router();
 
 // Importando funções da Firestore para veículos
-import { criarVeiculo, listarVeiculos } from '../src/scripts/firestore/firestoreVeiculos.js';
+import {
+  atualizarQuilometragemVeiculo,
+  criarVeiculo,
+  listarVeiculos,
+} from '../src/scripts/firestore/firestoreVeiculos.js';
 // import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
 /**
@@ -119,6 +123,43 @@ router.get('/', async (req, res) => {
       error: 'Erro interno no servidor',
       ...(process.env.NODE_ENV === 'development' && { detalhes: error.message }),
     });
+  }
+});
+
+/**
+ * Rota PUT para atualizar a quilometragem de um veículo.
+ * Espera os dados do veículo no corpo da requisição em formato JSON.
+ * @name PUT /
+ * @function
+ * @memberof module:veiculo
+ * @param {object} req - Objeto de requisição do Express, contendo os dados do veículo em `req.body`.
+ * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
+ * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ */
+router.put('/', async (req, res) => {
+  try {
+    const veiculoData = req.body;
+
+    if (!veiculoData || !veiculoData.chassi || !veiculoData.quilometragem) {
+      return res
+        .status(400)
+        .send('Dados do veículo incompletos (chassi e quilometragem são obrigatórios).');
+    }
+
+    // Chame a função do Firestore para atualizar a quilometragem
+    const resultado = await atualizarQuilometragemVeiculo(
+      veiculoData.chassi,
+      veiculoData.quilometragem,
+    );
+
+    if (resultado.success) {
+      res.status(201).send({ message: 'Quilometragem atualizada com sucesso!' });
+    } else {
+      res.status(500).send({ message: 'Erro ao atualizar quilometragem', error: resultado.error });
+    }
+  } catch (error) {
+    console.error('Erro na rota PUT / veiculos/ quilometragem:', error);
+    res.status(500).send('Erro interno do servidor.');
   }
 });
 

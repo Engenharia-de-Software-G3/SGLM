@@ -79,8 +79,8 @@ app.use('/manutencoes', manutencoesRouter); // Use o roteador com o prefixo '/ma
  * Todas as rotas definidas em './vistoria' serão acessíveis sob o prefixo '/vistoria'.
  * @type {express.Router}
  */
-import vistoriaRouter from './vistoria.js';
-app.use('/vistoria', vistoriaRouter);
+import vistoriasRouter from './vistoria.js';
+app.use('/vistorias', vistoriasRouter);
 
 /**
  * Exporta o aplicativo Express como uma Cloud Function HTTP.
