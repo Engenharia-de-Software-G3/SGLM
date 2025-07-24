@@ -10,9 +10,9 @@ import { Plus, Edit } from 'lucide-react';
 import { AddServiceModal } from './components/additional-services-modal';
 
 const mockData = [
-  { id: 1, nome: 'Entrega', descricao: 'Lorem ipsum', data: '10/07/2025', valor: 'R$ 150,00' },
-  { id: 2, nome: 'Reboque', descricao: 'Descrição X', data: '09/07/2025', valor: 'R$ 250,00' },
-  { id: 3, nome: 'Transporte', descricao: 'Descrição Y', data: '08/07/2025', valor: 'R$ 100,00' },
+  { id: 1, nome: 'Entrega', descricao: 'Lorem ipsum', valor: 'R$ 150,00' },
+  { id: 2, nome: 'Reboque', descricao: 'Descrição X', valor: 'R$ 250,00' },
+  { id: 3, nome: 'Transporte', descricao: 'Descrição Y', valor: 'R$ 100,00' },
 ];
 
 export const AdditionalServices = () => {
@@ -60,7 +60,6 @@ export const AdditionalServices = () => {
           columns={[
             { key: 'nome', title: 'Nome' },
             { key: 'descricao', title: 'Descrição' },
-            { key: 'data', title: 'Data' },
             { key: 'valor', title: 'Valor' },
             { key: 'actions', title: 'Ações' },
           ]}
@@ -70,7 +69,6 @@ export const AdditionalServices = () => {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {service.descricao}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.data}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.valor}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className="flex items-center space-x-2">

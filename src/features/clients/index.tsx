@@ -8,6 +8,7 @@ import { SearchBar } from '@/shared/components/display-table/components/search-b
 import { ActionButton } from '@/shared/components/display-table/components/action-button';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { DeleteModal } from '@/shared/components/delete-modal';
+import { Badge } from '@/components/ui/badge';
 
 const clients = [
   {
@@ -16,6 +17,8 @@ const clients = [
     description: 'Desde DD/MM/AAAA',
     cnpj: '00.000.000/0000-00',
     cpf: '082.044.589-22',
+    status: 'Mau cliente',
+    statusColor: 'bg-red-100 text-red-800',
   },
   {
     id: 2,
@@ -23,6 +26,8 @@ const clients = [
     description: 'Desde DD/MM/AAAA',
     cnpj: '00.000.000/0000-00',
     cpf: '082.044.589-22',
+    status: 'Bom cliente',
+    statusColor: 'bg-green-100 text-green-800',
   },
   {
     id: 3,
@@ -30,6 +35,8 @@ const clients = [
     description: 'Desde DD/MM/AAAA',
     cnpj: '00.000.000/0000-00',
     cpf: '082.044.589-22',
+    status: 'Bom cliente',
+    statusColor: 'bg-green-100 text-green-800',
   },
   {
     id: 4,
@@ -37,6 +44,8 @@ const clients = [
     description: 'Desde DD/MM/AAAA',
     cnpj: '00.000.000/0000-00',
     cpf: '082.044.589-22',
+    status: 'Bom cliente',
+    statusColor: 'bg-green-100 text-green-800',
   },
   {
     id: 5,
@@ -44,6 +53,8 @@ const clients = [
     description: 'Desde DD/MM/AAAA',
     cnpj: '00.000.000/0000-00',
     cpf: '082.044.589-22',
+    status: 'Mau cliente',
+    statusColor: 'bg-red-100 text-red-800',
   },
   {
     id: 6,
@@ -51,6 +62,8 @@ const clients = [
     description: 'Desde DD/MM/AAAA',
     cnpj: '00.000.000/0000-00',
     cpf: '082.044.589-22',
+    status: 'Mau cliente',
+    statusColor: 'bg-red-100 text-red-800',
   },
 ];
 
@@ -91,6 +104,7 @@ export const Clients = () => {
             { key: 'client', title: 'Cliente' },
             { key: 'cnpj', title: 'CNPJ' },
             { key: 'cpf', title: 'CPF' },
+            { key: 'status', title: 'Status' },
             { key: 'actions', title: 'Ações' },
           ]}
           renderRow={(client) => (
@@ -113,6 +127,9 @@ export const Clients = () => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{client.cnpj}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{client.cpf}</td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <Badge className={client.statusColor}>{client.status}</Badge>
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className="flex items-center space-x-2">
                   <Button
