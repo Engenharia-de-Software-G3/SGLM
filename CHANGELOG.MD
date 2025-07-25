@@ -161,3 +161,9 @@
 -   **Erro `TypeError: doc.data(...).dataCadastro.toDate is not a function` ao listar veículos.**
     -   **Causa:** Tentativa de chamar o método `.toDate()` em campos de data que estavam armazenados no Firestore como strings ISO 8601, em vez de objetos `Timestamp`.
     -   **Correção:** Modificação da função de listagem de veículos (`listarVeiculos` em `src/scripts/firestore/firestoreVeiculos.js`) para não tentar chamar `.toDate()` nesses campos, tratando-os como strings.
+
+# [0.0.0f] - 25/07/2025
+
+### Adicionado
+
+-   Implementação do módulo de locação
