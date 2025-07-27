@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Calendar } from 'lucide-react';
 import { getAddressByCep } from '@/api/cep';
-import { IMaskInput } from 'react-imask';
+import { MaskedInput } from '@/shared/components/masked-input';
 
 export const StepOne = () => {
   const [cep, setCep] = useState('');
@@ -48,41 +48,27 @@ export const StepOne = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Data de Nascimento</label>
           <div className="relative">
-            <IMaskInput
-              mask="00/00/0000"
-              placeholder="00/00/0000"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            <MaskedInput type="date" />
             <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
-          <IMaskInput
-            mask="000.000.000-00"
-            placeholder="Insira seu CPF"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          />
+          <MaskedInput type="cpf" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-          <IMaskInput
-            mask="(00) 00000-0000"
-            placeholder="Insira seu celular"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          />
+          <MaskedInput type="phone" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">CEP</label>
-          <IMaskInput
-            mask="00000-000"
-            placeholder="Insira o CEP"
+          <MaskedInput
+            type="cep"
             value={cep}
             onAccept={(value) => setCep(value.replace(/\D/g, ''))}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
         <div>
