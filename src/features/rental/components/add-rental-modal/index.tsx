@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { AddRentalModalProps } from './@types';
+import { MaskedInput } from '@/shared/components/masked-input';
 
 export const AddRentalModal = ({
   open,
@@ -22,30 +23,29 @@ export const AddRentalModal = ({
         <div className="space-y-4">
           <div>
             <Label className="py-2">{clientType === 'fisica' ? 'CPF' : 'CNPJ'}</Label>
-            <Input
+            <MaskedInput
+              type={clientType === 'fisica' ? 'cpf' : 'cnpj'}
               value={formData.cpfCnpj}
-              onChange={(e) => onChange({ cpfCnpj: e.target.value })}
+              onChange={(e) => onChange({ cpfCnpj: e.currentTarget.value })}
             />
-          </div>
-          <div>
-            <Label className="py-2">Placa</Label>
-            <Input value={formData.placa} onChange={(e) => onChange({ placa: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="py-2">Início</Label>
-              <Input
+              <MaskedInput
+                type="date"
                 placeholder="DD/MM/YYYY"
                 value={formData.dataInicio}
-                onChange={(e) => onChange({ dataInicio: e.target.value })}
+                onChange={(e) => onChange({ dataInicio: e.currentTarget.value })}
               />
             </div>
             <div>
               <Label className="py-2">Fim</Label>
-              <Input
+              <MaskedInput
+                type="date"
                 placeholder="DD/MM/YYYY"
                 value={formData.dataFim}
-                onChange={(e) => onChange({ dataFim: e.target.value })}
+                onChange={(e) => onChange({ dataFim: e.currentTarget.value })}
               />
             </div>
           </div>

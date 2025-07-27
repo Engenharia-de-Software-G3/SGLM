@@ -45,10 +45,9 @@ export const Rental = () => {
 
   const [formData, setFormData] = useState({
     cpfCnpj: '',
-    placa: '',
+    placaVeiculo: '',
     dataInicio: '',
     dataFim: '',
-    placaVeiculo: '',
     valorLocacao: '',
   });
 
@@ -74,7 +73,6 @@ export const Rental = () => {
     console.log('Locação cadastrada:', formData, 'Tipo:', clientType);
     setFormData({
       cpfCnpj: '',
-      placa: '',
       dataInicio: '',
       dataFim: '',
       placaVeiculo: '',

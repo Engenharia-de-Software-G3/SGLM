@@ -1,9 +1,8 @@
 interface RentalFormData {
   cpfCnpj: string;
-  placa: string;
+  placaVeiculo: string;
   dataInicio: string;
   dataFim: string;
-  placaVeiculo: string;
   valorLocacao: string;
 }
 
