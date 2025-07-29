@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { DeleteModal } from '@/shared/components/delete-modal';
@@ -9,8 +9,16 @@ import { SearchBar } from '@/shared/components/display-table/components/search-b
 import { ActionButton } from '@/shared/components/display-table/components/action-button';
 import { RentalTypeModal } from './components/rental-type-modal';
 import { AddRentalModal } from './components/add-rental-modal';
+import type { AddRentalFormData } from './schemas/addRental';
 
-const rentals = [
+interface RentalData {
+  id: number;
+  locatario: string;
+  placa: string;
+  cpf: string;
+}
+
+const rentalsMock: RentalData[] = [
   {
     id: 1,
     locatario: 'Lorem Ipsum',
@@ -43,16 +51,29 @@ export const Rental = () => {
   const [isFormModalOpen, setFormModalOpen] = useState(false);
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
 
-  const [formData, setFormData] = useState({
-    cpfCnpj: '',
-    placaVeiculo: '',
-    dataInicio: '',
-    dataFim: '',
-    valorLocacao: '',
-  });
+  const [rentals, setRentals] = useState<RentalData[]>(rentalsMock);
+
+  const filteredRentals = useMemo(() => {
+    if (!rentals) return [];
+
+    return rentals.filter((rental) =>
+      rental.locatario.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [rentals, searchTerm]);
+
+  async function submitRental(rental: AddRentalFormData) {
+    const newRental: RentalData = {
+      id: rentals.length + 1,
+      locatario: rental.locatario,
+      placa: rental.placaVeiculo,
+      cpf: rental.cnpjcpf,
+    };
+
+    setRentals((prev) => [...prev, newRental]);
+  }
 
   const handleDeleteRental = (id: number) => {
-    console.log('Excluindo locação:', id);
+    setRentals((prev) => prev.filter((rental) => rental.id !== id));
   };
 
   const handleOpenForm = () => {
@@ -63,22 +84,6 @@ export const Rental = () => {
     setClientType(type);
     setTypeModalOpen(false);
     setFormModalOpen(true);
-  };
-
-  const handleFormChange = (changes: Partial<typeof formData>) => {
-    setFormData((prev) => ({ ...prev, ...changes }));
-  };
-
-  const handleFormSubmit = () => {
-    console.log('Locação cadastrada:', formData, 'Tipo:', clientType);
-    setFormData({
-      cpfCnpj: '',
-      dataInicio: '',
-      dataFim: '',
-      placaVeiculo: '',
-      valorLocacao: '',
-    });
-    setFormModalOpen(false);
   };
 
   return (
@@ -100,7 +105,7 @@ export const Rental = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
-          data={rentals}
+          data={filteredRentals}
           columns={[
             { key: 'client', title: 'Locatário' },
             { key: 'placa', title: 'Placa' },
@@ -169,9 +174,7 @@ export const Rental = () => {
         open={isFormModalOpen}
         onOpenChange={setFormModalOpen}
         clientType={clientType}
-        formData={formData}
-        onChange={handleFormChange}
-        onSubmit={handleFormSubmit}
+        onSubmit={submitRental}
       />
     </Layout>
   );

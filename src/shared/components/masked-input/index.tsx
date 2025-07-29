@@ -1,14 +1,18 @@
-import type { CSSProperties, FormEventHandler } from 'react';
 import { IMaskInput } from 'react-imask';
+import type { CSSProperties, FormEventHandler } from 'react';
 
 interface MaskedInputProps {
   type: 'cpf' | 'cnpj' | 'phone' | 'cep' | 'date';
+  id?: string;
   style?: CSSProperties;
   className?: string;
   placeholder?: string;
   value?: string;
+  disabled?: boolean;
   onAccept?: (value: string) => void;
   onChange?: FormEventHandler<HTMLInputElement>;
+  onBlur?: () => void;
+  name?: string;
 }
 
 const maskConfig = {
@@ -28,6 +32,11 @@ export function MaskedInput({
   className,
   onChange,
   onAccept,
+  onBlur,
+  id,
+  name,
+  value,
+  disabled,
   ...rest
 }: MaskedInputProps) {
   return (
@@ -37,6 +46,11 @@ export function MaskedInput({
       className={className || baseClassName}
       onAccept={onAccept}
       onChange={onChange}
+      onBlur={onBlur}
+      id={id}
+      name={name}
+      value={value}
+      disabled={disabled}
       {...rest}
     />
   );

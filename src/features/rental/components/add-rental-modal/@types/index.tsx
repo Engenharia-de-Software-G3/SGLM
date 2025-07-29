@@ -1,16 +1,8 @@
-interface RentalFormData {
-  cpfCnpj: string;
-  placaVeiculo: string;
-  dataInicio: string;
-  dataFim: string;
-  valorLocacao: string;
-}
+import type { AddRentalFormData } from '../../../schemas/addRental';
 
 export interface AddRentalModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientType: 'fisica' | 'juridica';
-  formData: RentalFormData;
-  onChange: (data: Partial<RentalFormData>) => void;
-  onSubmit: () => void;
+  onSubmit: (data: AddRentalFormData) => Promise<void>;
 }
