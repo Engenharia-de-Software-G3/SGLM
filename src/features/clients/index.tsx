@@ -67,7 +67,13 @@ export const Clients = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleViewClient = (clientId: number) => {
+  const handleViewClientWithReadOnly = (clientId: number) => {
+    localStorage.setItem('isReadOnly', 'true');
+    navigate(`/clientes/${clientId}`);
+  };
+
+  const handleViewClientWithoutReadOnly = (clientId: number) => {
+    localStorage.setItem('isReadOnly', 'false');
     navigate(`/clientes/${clientId}`);
   };
 
@@ -145,7 +151,7 @@ export const Clients = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleViewClient(client.id)}
+                    onClick={() => handleViewClientWithReadOnly(client.id)}
                     className="text-orange-600 border-orange-300 hover:bg-orange-50"
                   >
                     <FileText className="h-4 w-4" />
@@ -161,6 +167,7 @@ export const Clients = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => handleViewClientWithoutReadOnly(client.id)}
                     className="text-green-600 border-green-300 hover:bg-green-50"
                   >
                     <Edit className="h-4 w-4" />
