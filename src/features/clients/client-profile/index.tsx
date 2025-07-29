@@ -4,6 +4,7 @@ import { ReturnHeader } from '@/shared/components/return-header';
 import { ClientInfoCard } from './components/client-info-card';
 import { useState } from 'react';
 import type { ClientInfoCardData } from './components/client-info-card/@types';
+import { Toaster } from 'sonner';
 
 export const ClientProfile = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ export const ClientProfile = () => {
     <Layout showHeader={false}>
       <div className="flex-1 overflow-auto">
         <ReturnHeader title="Perfil do Cliente" onBack={() => navigate('/clientes')} />
-
+        <Toaster />
         <div className="p-6">
           <ClientInfoCard data={data} setData={setData} />
         </div>

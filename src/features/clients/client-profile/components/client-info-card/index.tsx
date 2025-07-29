@@ -108,6 +108,7 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Número</label>
           <Input
+            type="number"
             placeholder="Número da residência"
             value={data.number || ''}
             onChange={(e) => setData((old) => ({ ...old, number: e.target.value }))}
@@ -171,6 +172,7 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Agência</label>
           <Input
+            type="number"
             placeholder="Insira o número de sua agência"
             value={data.agency || ''}
             onChange={(e) => setData((old) => ({ ...old, agency: e.target.value }))}
@@ -180,7 +182,7 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Dígito</label>
           <Input
-            placeholder="99/99999"
+            type="number"
             value={data.agencyDigit || ''}
             onChange={(e) => setData((old) => ({ ...old, agencyDigit: e.target.value }))}
             readOnly={isReadOnly}
@@ -192,6 +194,7 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Conta</label>
           <Input
+            type="number"
             placeholder="Insira o número da conta"
             value={data.account || ''}
             onChange={(e) => setData((old) => ({ ...old, account: e.target.value }))}
@@ -201,7 +204,7 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Dígito</label>
           <Input
-            placeholder="99/99999"
+            type="number"
             value={data.accountDigit || ''}
             onChange={(e) => setData((old) => ({ ...old, accountDigit: e.target.value }))}
             readOnly={isReadOnly}
@@ -215,6 +218,7 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Nº da CNH</label>
           <Input
+            type="number"
             placeholder="Insira o número de CNH"
             value={data.cnhNumber || ''}
             onChange={(e) => setData((old) => ({ ...old, cnhNumber: e.target.value }))}
@@ -236,6 +240,7 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Registro</label>
           <Input
+            type="number"
             placeholder="Insira o número de registro da CNH"
             value={data.cnhRegister || ''}
             onChange={(e) => setData((old) => ({ ...old, cnhRegister: e.target.value }))}

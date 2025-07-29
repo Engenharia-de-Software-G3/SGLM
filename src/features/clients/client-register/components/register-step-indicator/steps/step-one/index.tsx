@@ -103,6 +103,7 @@ export const StepOne = ({ data, setData }: StepOneProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Número</label>
           <Input
+            type="number"
             placeholder="Número da residência"
             value={data.numero || ''}
             onChange={(e) => setData((old) => ({ ...old, numero: e.target.value }))}

@@ -9,6 +9,7 @@ export const StepThree = ({ data, setData }: StepThreeProps) => (
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Nº da CNH</label>
         <Input
+          type="number"
           placeholder="Insira o número de CNH"
           value={data.cnhNumero || ''}
           onChange={(e) => setData((old) => ({ ...old, cnhNumero: e.target.value }))}
@@ -28,6 +29,7 @@ export const StepThree = ({ data, setData }: StepThreeProps) => (
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Registro</label>
         <Input
+          type="number"
           placeholder="Insira o número de registro da CNH"
           value={data.registro || ''}
           onChange={(e) => setData((old) => ({ ...old, registro: e.target.value }))}
