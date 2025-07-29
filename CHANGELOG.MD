@@ -167,3 +167,26 @@
 ### Adicionado
 
 -   Implementação do módulo de locação
+
+## [0.0.0g] - 29/07/2025
+
+### Adicionado
+
+-   **Implementação da rota PUT para atualização de clientes (`functions/cliente.js`).**
+    -   Adição da rota PUT `/:cpf` para atualização parcial de clientes.
+    -   Criação da função `atualizarCliente` em `src/scripts/firestore/firestoreClientes.js` para manipular a lógica de atualização no Firestore.
+    -   A função `atualizarCliente` suporta atualização de dados pessoais, endereço, contato e documentos (CNH) com `merge: true` em subcoleções.
+    -   Tratamento de erros, incluindo cliente não encontrado.
+-   **Implementação da rota DELETE para exclusão de clientes (`functions/cliente.js`).**
+    -   Adição da rota DELETE `/:cpf` para remover um cliente.
+    -   Criação da função `deletarCliente` em `src/scripts/firestore/firestoreClientes.js` para remover o documento principal do cliente e suas subcoleções.
+    -   Tratamento de erros, incluindo cliente não encontrado.
+
+### Documentação
+
+-   Atualização das Docstrings JSDoc para as novas funções `atualizarCliente` e `deletarCliente` em `src/scripts/firestore/firestoreClientes.js`.
+-   Atualização das Docstrings JSDoc para as novas rotas PUT e DELETE em `functions/cliente.js`.
+
+### Melhorado
+
+-   Tratamento de erros e respostas HTTP mais específicas para as operações PUT e DELETE de clientes (e.g., 404 para cliente não encontrado).

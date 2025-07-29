@@ -116,6 +116,79 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * Rota PUT para atualizar um cliente existente.
+ * Espera o CPF do cliente como parâmetro na URL e os dados a serem atualizados no corpo da requisição.
+ * Realiza a atualização parcial do cliente no Firestore.
+ * @name PUT /:cpf
+ * @function
+ * @memberof module:cliente
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} req.params.cpf - CPF do cliente a ser atualizado.
+ * @param {object} req.body - Os dados a serem atualizados do cliente em formato JSON.
+ * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
+ * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ * @throws {Error} Em caso de erro interno no servidor ou no processo de atualização no Firestore.
+ */
+router.put('/:cpf', async (req, res) => {
+  try {
+    const { cpf } = req.params;
+    const updates = req.body;
+
+    // Validação básica: verifica se há dados para atualizar
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).send('Nenhum dado fornecido para atualização.');
+    }
+
+    // TODO: Adicionar validação mais robusta dos dados de entrada (formato de CPF, campos específicos, etc.)
+    // Considerar usar um esquema de validação (ex: Joi, Yup).
+
+    const resultado = await atualizarCliente(cpf, updates);
+
+    if (resultado.success) {
+      res.status(200).send({ message: `Cliente ${cpf} atualizado com sucesso!` });
+    } else {
+      // A função atualizarCliente já trata e loga erros do Firestore
+      const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
+      res.status(statusCode).send({ message: 'Erro ao atualizar cliente', error: resultado.error });
+    }
+  } catch (error) {
+    console.error('Erro inesperado na rota PUT /clientes/:cpf:', error);
+    res.status(500).send('Erro interno do servidor.');
+  }
+});
+
+/**
+ * Rota DELETE para remover um cliente existente.
+ * Espera o CPF do cliente como parâmetro na URL.
+ * Remove o documento do cliente e todas as suas subcoleções associadas no Firestore.
+ * @name DELETE /:cpf
+ * @function
+ * @memberof module:cliente
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} req.params.cpf - CPF do cliente a ser removido.
+ * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
+ * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ * @throws {Error} Em caso de erro interno no servidor ou no processo de exclusão no Firestore.
+ */
+router.delete('/:cpf', async (req, res) => {
+  try {
+    const { cpf } = req.params;
+
+    const resultado = await deletarCliente(cpf);
+
+    if (resultado.success) {
+      res.status(200).send({ message: `Cliente ${cpf} deletado com sucesso!` });
+    } else {
+      const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
+      res.status(statusCode).send({ message: 'Erro ao deletar cliente', error: resultado.error });
+    }
+  } catch (error) {
+    console.error('Erro inesperado na rota DELETE /clientes/:cpf:', error);
+    res.status(500).send('Erro interno do servidor.');
+  }
+});
+
+/**
  * Exporta o roteador Express para ser utilizado no arquivo principal (index.js).
  * @type {express.Router}
  */

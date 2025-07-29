@@ -121,3 +121,109 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
     throw error;
   }
 };
+
+/**
+ * Atualiza um cliente existente no Firestore.
+ * Os dados são mesclados com os existentes, permitindo atualização parcial.
+ * @param {string} cpf - CPF do cliente a ser atualizado.
+ * @param {Object} updates - Objeto com os campos a serem atualizados.
+ * @param {Object} [updates.dadosPessoais] - Dados pessoais a serem atualizados.
+ * @param {string} [updates.dadosPessoais.nome] - Novo nome completo.
+ * @param {string} [updates.dadosPessoais.dataNascimento] - Nova data de nascimento.
+ * @param {Object} [updates.endereco] - Endereço a ser atualizado (atualiza o endereço 'principal').
+ * @param {string} [updates.endereco.cep] - Novo CEP.
+ * @param {string} [updates.endereco.rua] - Nova rua.
+ * @param {string} [updates.endereco.numero] - Novo número.
+ * @param {string} [updates.endereco.bairro] - Novo bairro.
+ * @param {string} [updates.endereco.cidade] - Nova cidade.
+ * @param {string} [updates.endereco.estado] - Novo estado.
+ * @param {Object} [updates.contato] - Contato a ser atualizado (atualiza o contato 'principal').
+ * @param {string} [updates.contato.email] - Novo email.
+ * @param {string} [updates.contato.telefone] - Novo telefone.
+ * @param {Object} [updates.documentos] - Documentos a serem atualizados.
+ * @param {Object} [updates.documentos.cnh] - Dados da CNH a serem atualizados.
+ * @param {string} [updates.documentos.cnh.numero] - Novo número da CNH.
+ * @param {string} [updates.documentos.cnh.categoria] - Nova categoria da CNH.
+ * @param {string} [updates.documentos.cnh.dataValidade] - Nova data de validade da CNH.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const atualizarCliente = async (cpf, updates) => {
+  try {
+    const clienteRef = db.collection('clientes').doc(cpf);
+    const batch = db.batch();
+
+    // Verifica se o cliente existe antes de tentar atualizar
+    const doc = await clienteRef.get();
+    if (!doc.exists) {
+      return { success: false, error: 'Cliente não encontrado.' };
+    }
+
+    // Atualiza campos diretos do documento principal (clientes)
+    const mainDocUpdates = {};
+    if (updates.dadosPessoais?.nome) {
+      mainDocUpdates.nomeCompleto = updates.dadosPessoais.nome;
+    }
+    if (updates.dadosPessoais?.dataNascimento) {
+      mainDocUpdates.dataNascimento = updates.dadosPessoais.dataNascimento;
+    }
+    // Adicione outros campos diretos se necessário (ex: tipo, status)
+    if (Object.keys(mainDocUpdates).length > 0) {
+      batch.update(clienteRef, mainDocUpdates);
+    }
+
+    // Atualiza subcoleções
+    if (updates.endereco) {
+      batch.set(clienteRef.collection('enderecos').doc('principal'), updates.endereco, { merge: true });
+    }
+
+    if (updates.contato) {
+      batch.set(clienteRef.collection('contatos').doc('principal'), updates.contato, { merge: true });
+    }
+
+    if (updates.documentos?.cnh) {
+      batch.set(clienteRef.collection('documentos').doc('cnh'), updates.documentos.cnh, { merge: true });
+    }
+
+    await batch.commit();
+    return { success: true };
+  } catch (error) {
+    console.error(`Erro ao atualizar cliente ${cpf}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Deleta um cliente e suas subcoleções associadas do Firestore.
+ * @param {string} cpf - CPF do cliente a ser deletado.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const deletarCliente = async (cpf) => {
+  try {
+    const clienteRef = db.collection('clientes').doc(cpf);
+
+    // Verifica se o cliente existe
+    const doc = await clienteRef.get();
+    if (!doc.exists) {
+      return { success: false, error: 'Cliente não encontrado.' };
+    }
+
+    // Deleta subcoleções (Firestore não deleta subcoleções automaticamente com o documento pai)
+    const subcollections = ['enderecos', 'contatos', 'documentos'];
+    for (const subcollectionName of subcollections) {
+      const snapshot = await clienteRef.collection(subcollectionName).get();
+      const batch = db.batch();
+      snapshot.docs.forEach(subDoc => {
+        batch.delete(subDoc.ref);
+      });
+      await batch.commit();
+    }
+
+    // Deleta o documento principal do cliente
+    await clienteRef.delete();
+
+    return { success: true };
+  } catch (error) {
+    console.error(`Erro ao deletar cliente ${cpf}:`, error);
+    return { success: false, error: error.message };
+  }
+};
