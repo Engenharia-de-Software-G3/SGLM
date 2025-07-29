@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { CloudUpload } from 'lucide-react';
 import type { AddVehicleModalProps, VehicleFormData } from './@types';
 
 export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModalProps) => {
@@ -9,6 +10,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     placa: '',
     marca: '',
     modelo: '',
+    chassi: '',
     anoModelo: '',
     quilometragemCompra: '',
     numeroDocumento: '',
@@ -33,6 +35,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
       placa: '',
       marca: '',
       modelo: '',
+      chassi: '',
       anoModelo: '',
       quilometragemCompra: '',
       numeroDocumento: '',
@@ -61,16 +64,23 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               </label>
               <Input
                 id="placa"
-                placeholder="XXX-XXX"
+                placeholder="Insira a placa do veículo"
                 value={formData.placa}
                 onChange={handleChange}
+                required
               />
             </div>
             <div>
               <label htmlFor="marca" className="text-sm font-medium">
                 Marca
               </label>
-              <Input id="marca" value={formData.marca} onChange={handleChange} />
+              <Input
+                id="marca"
+                placeholder="Insira a marca do veículo"
+                value={formData.marca}
+                onChange={handleChange}
+                required
+              />
             </div>
           </div>
 
@@ -79,7 +89,13 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               <label htmlFor="modelo" className="text-sm font-medium">
                 Modelo
               </label>
-              <Input id="modelo" value={formData.modelo} onChange={handleChange} />
+              <Input
+                id="modelo"
+                placeholder="Insira o modelo do veículo"
+                value={formData.modelo}
+                onChange={handleChange}
+                required
+              />
             </div>
             <div>
               <label htmlFor="anoModelo" className="text-sm font-medium">
@@ -90,8 +106,22 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
                 placeholder="YYYY / MMMM"
                 value={formData.anoModelo}
                 onChange={handleChange}
+                required
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="chassi" className="text-sm font-medium">
+              Chassi
+            </label>
+            <Input
+              id="chassi"
+              placeholder="Insira o chassi do veículo"
+              value={formData.chassi}
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <div>
@@ -100,8 +130,10 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
             </label>
             <Input
               id="quilometragemCompra"
+              placeholder="Insira a quilometragem no dia da aquisição do veículo"
               value={formData.quilometragemCompra}
               onChange={handleChange}
+              required
             />
           </div>
 
@@ -112,8 +144,10 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               </label>
               <Input
                 id="numeroDocumento"
+                placeholder="Insira o Nº do documento"
                 value={formData.numeroDocumento}
                 onChange={handleChange}
+                required
               />
             </div>
             <div>
@@ -125,6 +159,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
                 placeholder="DD/MM/YYYY"
                 value={formData.dataCompra}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>
@@ -136,8 +171,10 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               </label>
               <Input
                 id="quilometragemAtual"
+                placeholder="Quilometragem atual"
                 value={formData.quilometragemAtual}
                 onChange={handleChange}
+                required
               />
             </div>
             <div>
@@ -149,6 +186,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
                 placeholder="DD/MM/YYYY"
                 value={formData.dataAtual}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>
@@ -157,14 +195,26 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
             <label htmlFor="local" className="text-sm font-medium">
               Local
             </label>
-            <Input id="local" value={formData.local} onChange={handleChange} />
+            <Input
+              id="local"
+              placeholder="Insira o local de aquisição do veículo"
+              value={formData.local}
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <div>
             <label htmlFor="nome" className="text-sm font-medium">
               Nome
             </label>
-            <Input id="nome" value={formData.nome} onChange={handleChange} />
+            <Input
+              id="nome"
+              placeholder="Insira o nome do dono do veículo"
+              value={formData.nome}
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <div>
@@ -173,16 +223,28 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
             </label>
             <textarea
               id="observacoes"
+              placeholder="Insira qualquer informação extra sobre o veículo"
               className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-none"
               value={formData.observacoes}
               onChange={handleChange}
             />
           </div>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <div className="text-gray-400 mb-2">↑</div>
+          <label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block hover:border-blue-400 transition">
+            <div className="flex justify-center mb-2 text-blue-500">
+              <CloudUpload className="w-10 h-10" />
+            </div>
             <p className="text-gray-600">Anexe o documento do veículo</p>
-          </div>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                console.log('Arquivo selecionado:', file);
+              }}
+            />
+          </label>
 
           <div className="flex space-x-3 pt-4">
             <Button

@@ -15,25 +15,25 @@ import type { VehicleFormData } from './components/add-vehicle-modal/@types';
 const vehicles = [
   {
     id: 1,
-    name: 'Lorem Ipsum',
     plate: 'XXX-001',
-    brand: 'Toyota',
+    brand: 'Honda',
+    model: 'Bross 160',
     status: 'Manuntenção',
     statusColor: 'bg-orange-100 text-orange-800',
   },
   {
     id: 2,
-    name: 'Lorem Ipsum',
     plate: 'XXX-002',
-    brand: 'BYD',
+    brand: 'Honda',
+    model: 'Fan 150',
     status: 'Locado',
     statusColor: 'bg-red-100 text-red-800',
   },
   {
     id: 3,
-    name: 'Lorem Ipsum',
     plate: 'XXX-003',
-    brand: 'Honda',
+    brand: 'Yamaha',
+    model: 'Scooter',
     status: 'Disponível',
     statusColor: 'bg-green-100 text-green-800',
   },
@@ -41,6 +41,7 @@ const vehicles = [
 
 export const Vehicles = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -59,6 +60,19 @@ export const Vehicles = () => {
     // Aqui você pode atualizar a lista de veículos ou fazer uma chamada para backend
   };
 
+  const filteredVehicles = vehicles.filter((vehicle) => {
+    const term = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      vehicle.plate.toLowerCase().includes(term) ||
+      vehicle.brand.toLowerCase().includes(term) ||
+      vehicle.model.toLowerCase().includes(term);
+
+    const matchesStatus = statusFilter === '' || vehicle.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <Layout title="Gerenciamento de Veículos" subtitle="Veja a lista de todos os seus veículos">
       <div className="flex-1 overflow-auto p-6">
@@ -68,6 +82,48 @@ export const Vehicles = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <div className="flex gap-4 ml-4">
+            <Button
+              onClick={() => setStatusFilter('')}
+              className={`
+                bg-white text-gray-700 border border-gray-300
+                hover:bg-blue-100 hover:text-blue-700
+                ${statusFilter === '' ? 'bg-blue-100 text-blue-700 font-bold' : ''}
+              `}
+            >
+              Todos
+            </Button>
+            <Button
+              onClick={() => setStatusFilter('Locado')}
+              className={`
+                 bg-white text-gray-700 border border-gray-300
+                 hover:bg-red-100 hover:text-red-700
+                 ${statusFilter === 'Locado' ? 'bg-red-100 text-red-700 font-bold' : ''}
+               `}
+            >
+              Locados
+            </Button>
+            <Button
+              onClick={() => setStatusFilter('Manuntenção')}
+              className={`
+                 bg-white text-gray-700 border border-gray-300
+                 hover:bg-orange-100 hover:text-orange-700
+                 ${statusFilter === 'Manuntenção' ? 'bg-orange-100 text-orange-700 font-bold' : ''}
+               `}
+            >
+              Manutenção
+            </Button>
+            <Button
+              onClick={() => setStatusFilter('Disponível')}
+              className={`
+                 bg-white text-gray-700 border border-gray-300
+                 hover:bg-green-100 hover:text-green-700
+                 ${statusFilter === 'Disponível' ? 'bg-green-100 text-green-700 font-bold' : ''}
+               `}
+            >
+              Disponíveis
+            </Button>
+          </div>
 
           <ActionButton
             label="Adicionar veículo"
@@ -78,11 +134,11 @@ export const Vehicles = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
-          data={vehicles}
+          data={filteredVehicles}
           columns={[
-            { key: 'veiculo', title: 'Veículo' },
+            { key: 'marca', title: 'Marca do veículo' },
+            { key: 'model', title: 'Modelo' },
             { key: 'placa', title: 'Placa' },
-            { key: 'marca', title: 'Marca' },
             { key: 'status', title: 'Status' },
             { key: 'actions', title: 'Ações' },
           ]}
@@ -93,11 +149,11 @@ export const Vehicles = () => {
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <Car className="w-4 h-4 text-blue-600" />
                   </div>
-                  <div className="font-medium">{vehicle.name}</div>
+                  <div className="font-medium">{vehicle.brand}</div>
                 </div>
               </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.model}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.plate}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.brand}</td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <Badge className={vehicle.statusColor}>{vehicle.status}</Badge>
               </td>

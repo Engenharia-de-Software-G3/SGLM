@@ -8,6 +8,7 @@ export interface VehicleFormData {
   placa: string;
   marca: string;
   modelo: string;
+  chassi: string;
   anoModelo: string;
   quilometragemCompra: string;
   numeroDocumento: string;
