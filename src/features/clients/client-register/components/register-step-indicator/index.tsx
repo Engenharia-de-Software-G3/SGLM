@@ -1,16 +1,23 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Check, ArrowRight } from 'lucide-react';
 import { StepOne } from './steps/step-one';
 import { StepTwo } from './steps/step-two';
 import { StepThree } from './steps/step-three';
-import { useNavigate } from 'react-router-dom';
-
-interface RegisterStepIndicatorProps {
-  currentStep: number;
-  setCurrentStep: (step: number) => void;
-  setShowSuccess: (value: boolean) => void;
-}
+import {
+  stepOneSchema,
+  stepTwoSchema,
+  stepThreeSchema,
+  type RegisterStepIndicatorProps,
+  type StepOneData,
+  type StepTwoData,
+  type StepThreeData,
+  initialStepOneData,
+  initialStepTwoData,
+  initialStepThreeData,
+} from './@types';
+import { useState } from 'react';
 
 const steps = [
   { title: 'Dados Pessoais', subtitle: 'dados pessoais do cliente' },
@@ -22,28 +29,72 @@ export const RegisterStepIndicator = ({
   currentStep,
   setCurrentStep,
   setShowSuccess,
+  onFinish,
 }: RegisterStepIndicatorProps) => {
-  const navigate = useNavigate();
+  const [stepOneData, setStepOneData] = useState<StepOneData>(initialStepOneData);
+  const [stepTwoData, setStepTwoData] = useState<StepTwoData>(initialStepTwoData);
+  const [stepThreeData, setStepThreeData] = useState<StepThreeData>(initialStepThreeData);
 
   const handleNext = () => {
+    if (currentStep === 1) {
+      const parsed = stepOneSchema.safeParse(stepOneData);
+      if (!parsed.success) {
+        toast('Preencha todos os campos obrigatórios no passo 1.');
+        return;
+      }
+    }
+
+    if (currentStep === 2) {
+      const parsed = stepTwoSchema.safeParse(stepTwoData);
+      if (!parsed.success) {
+        toast('Preencha todos os campos obrigatórios no passo 2.');
+        return;
+      }
+    }
+
+    if (currentStep === 3) {
+      const parsed = stepThreeSchema.safeParse(stepThreeData);
+      if (!parsed.success) {
+        toast('Preencha todos os campos obrigatórios no passo 3.');
+        return;
+      }
+    }
+
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     } else {
+      const hoje = new Date();
+      const formattedDate = hoje.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+
+      const newClient = {
+        id: Date.now(),
+        name: stepOneData.nome,
+        description: `Desde ${formattedDate}`,
+        ...stepOneData,
+        ...stepTwoData,
+        ...stepThreeData,
+        status: 'Ativo',
+        statusColor: 'bg-green-100 text-green-800',
+      };
+
       setShowSuccess(true);
-      setTimeout(() => {
-        navigate('/clientes');
-      }, 2000);
+
+      if (onFinish) onFinish(newClient);
     }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <StepOne />;
+        return <StepOne data={stepOneData} setData={setStepOneData} />;
       case 2:
-        return <StepTwo />;
+        return <StepTwo data={stepTwoData} setData={setStepTwoData} />;
       case 3:
-        return <StepThree />;
+        return <StepThree data={stepThreeData} setData={setStepThreeData} />;
       default:
         return null;
     }

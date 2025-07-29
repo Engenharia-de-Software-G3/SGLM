@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, Edit } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
 import { ActionButton } from '@/shared/components/display-table/components/action-button';
@@ -10,75 +10,84 @@ import { DisplayTableHeader } from '@/shared/components/display-table/components
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { Badge } from '@/components/ui/badge';
 
-const clients = [
+const initialClients = [
   {
     id: 1,
-    name: 'Lorem Ipsum',
+    name: 'Lorem Ipsum1',
     description: 'Desde DD/MM/AAAA',
-    cnpj: '00.000.000/0000-00',
-    cpf: '082.044.589-22',
-    status: 'Mau cliente',
+    cpfcnpj: '00.000.000/0000-00',
+    status: 'Inativo',
     statusColor: 'bg-red-100 text-red-800',
   },
   {
     id: 2,
-    name: 'Lorem Ipsum',
+    name: 'Lorem Ipsum2',
     description: 'Desde DD/MM/AAAA',
-    cnpj: '00.000.000/0000-00',
-    cpf: '082.044.589-22',
-    status: 'Bom cliente',
+    cpfcnpj: '082.044.589-22',
+    status: 'Ativo',
     statusColor: 'bg-green-100 text-green-800',
   },
   {
     id: 3,
-    name: 'Lorem Ipsum',
+    name: 'Lorem Ipsum3',
     description: 'Desde DD/MM/AAAA',
-    cnpj: '00.000.000/0000-00',
-    cpf: '082.044.589-22',
-    status: 'Bom cliente',
+    cpfcnpj: '00.000.000/0000-00',
+    status: 'Ativo',
     statusColor: 'bg-green-100 text-green-800',
   },
   {
     id: 4,
-    name: 'Lorem Ipsum',
+    name: 'Lorem Ipsum4',
     description: 'Desde DD/MM/AAAA',
-    cnpj: '00.000.000/0000-00',
-    cpf: '082.044.589-22',
-    status: 'Bom cliente',
+    cpfcnpj: '00.000.000/0000-00',
+    status: 'Ativo',
     statusColor: 'bg-green-100 text-green-800',
   },
   {
     id: 5,
-    name: 'Lorem Ipsum',
+    name: 'Lorem Ipsum5',
     description: 'Desde DD/MM/AAAA',
-    cnpj: '00.000.000/0000-00',
-    cpf: '082.044.589-22',
-    status: 'Mau cliente',
+    cpfcnpj: '082.044.589-22',
+    status: 'Inativo',
     statusColor: 'bg-red-100 text-red-800',
   },
   {
     id: 6,
-    name: 'Lorem Ipsum',
+    name: 'Lorem Ipsum6',
     description: 'Desde DD/MM/AAAA',
-    cnpj: '00.000.000/0000-00',
-    cpf: '082.044.589-22',
-    status: 'Mau cliente',
+    cpfcnpj: '00.000.000/0000-00',
+    status: 'Inativo',
     statusColor: 'bg-red-100 text-red-800',
   },
 ];
 
 export const Clients = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [clients, setClients] = useState(initialClients);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleViewClient = (clientId: number) => {
     navigate(`/clientes/${clientId}`);
   };
 
   const handleDeleteClient = (clientId: number) => {
-    console.log('Excluindo cliente:', clientId);
-    // Aqui seria implementada a lógica de exclusão
+    setClients((prevClients) => prevClients.filter((c) => c.id !== clientId));
   };
+
+  const filteredClients = clients.filter((c) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  const addedRef = useRef(false);
+
+  useEffect(() => {
+    if (location.state?.newClient && !addedRef.current) {
+      setClients((prev) => [...prev, location.state.newClient]);
+      addedRef.current = true;
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   return (
     <Layout title="Gerenciamento de clientes" subtitle="Veja a lista de todos os seus clientes">
@@ -99,11 +108,11 @@ export const Clients = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
-          data={clients}
+          key={searchTerm}
+          data={filteredClients}
           columns={[
             { key: 'client', title: 'Cliente' },
-            { key: 'cnpj', title: 'CNPJ' },
-            { key: 'cpf', title: 'CPF' },
+            { key: 'cpf/cnpj', title: 'CPF/CNPJ' },
             { key: 'status', title: 'Status' },
             { key: 'actions', title: 'Ações' },
           ]}
@@ -125,8 +134,9 @@ export const Clients = () => {
                   </div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{client.cnpj}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{client.cpf}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {client.cpfcnpj}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <Badge className={client.statusColor}>{client.status}</Badge>
               </td>
@@ -145,7 +155,7 @@ export const Clients = () => {
                     title="Tem certeza que você deseja excluir esse cliente?"
                     description="Todos os dados salvos serão excluídos."
                     actionText="Excluir cliente"
-                    onConfirm={() => handleDeleteClient}
+                    onConfirm={() => handleDeleteClient(client.id)}
                   />
 
                   <Button

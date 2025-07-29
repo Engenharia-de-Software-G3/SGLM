@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { ReturnHeader } from '@/shared/components/return-header';
 import { SuccessRegisterCard } from './components/success-register-card';
 import { RegisterStepIndicator } from './components/register-step-indicator';
+import { Toaster } from 'sonner';
+import type { NewClient } from './components/register-step-indicator/@types';
 
 export const ClientRegister = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -16,6 +18,10 @@ export const ClientRegister = () => {
     } else {
       navigate('/clientes');
     }
+  };
+
+  const handleFinish = (newClient: NewClient) => {
+    navigate('/clientes', { state: { newClient } });
   };
 
   if (showSuccess) {
@@ -32,10 +38,12 @@ export const ClientRegister = () => {
     <Layout showHeader={false}>
       <div className="flex-1 overflow-auto">
         <ReturnHeader title="Cadastro" onBack={handleBack} />
+        <Toaster />
         <RegisterStepIndicator
           currentStep={currentStep}
           setCurrentStep={setCurrentStep}
           setShowSuccess={setShowSuccess}
+          onFinish={handleFinish}
         />
       </div>
     </Layout>
