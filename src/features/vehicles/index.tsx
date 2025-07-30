@@ -13,12 +13,6 @@ import { Button } from '@/components/ui/button';
 import type { VehicleFormData } from './components/add-vehicle-modal/@types';
 import { useNavigate } from 'react-router-dom';
 
-export interface VehicleActionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  vehicleId: string | number | null;
-}
-
 export const Vehicles = () => {
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState([

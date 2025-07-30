@@ -305,7 +305,7 @@ export const VehicleProfile = () => {
       <VehicleActionDialog
         isOpen={isActionDialogOpen}
         onClose={() => setIsActionDialogOpen(false)}
-        vehicleId={vehicle.id}
+        vehicleId={Number(vehicle.id)}
       />
     </div>
   );
