@@ -11,53 +11,66 @@ import { VehicleActionDialog } from './components/vehicle-action-dialog';
 import { AddVehicleModal } from './components/add-vehicle-modal';
 import { Button } from '@/components/ui/button';
 import type { VehicleFormData } from './components/add-vehicle-modal/@types';
+import { useNavigate } from 'react-router-dom';
 
-const vehicles = [
-  {
-    id: 1,
-    plate: 'XXX-001',
-    brand: 'Honda',
-    model: 'Bross 160',
-    status: 'Manuntenção',
-    statusColor: 'bg-orange-100 text-orange-800',
-  },
-  {
-    id: 2,
-    plate: 'XXX-002',
-    brand: 'Honda',
-    model: 'Fan 150',
-    status: 'Locado',
-    statusColor: 'bg-red-100 text-red-800',
-  },
-  {
-    id: 3,
-    plate: 'XXX-003',
-    brand: 'Yamaha',
-    model: 'Scooter',
-    status: 'Disponível',
-    statusColor: 'bg-green-100 text-green-800',
-  },
-];
+export interface VehicleActionDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  vehicleId: string | number | null;
+}
 
 export const Vehicles = () => {
+  const navigate = useNavigate();
+  const [vehicles, setVehicles] = useState([
+    {
+      id: 1,
+      plate: 'ABC-1234',
+      brand: 'Toyota',
+      model: 'Corolla',
+      status: 'Disponível',
+      statusColor: 'bg-green-100 text-green-800',
+    },
+    {
+      id: 2,
+      plate: 'XXX-002',
+      brand: 'Honda',
+      model: 'Fan 150',
+      status: 'Locado',
+      statusColor: 'bg-red-100 text-red-800',
+    },
+    {
+      id: 3,
+      plate: 'XXX-003',
+      brand: 'Yamaha',
+      model: 'Scooter',
+      status: 'Disponível',
+      statusColor: 'bg-green-100 text-green-800',
+    },
+  ]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showActionDialog, setShowActionDialog] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<number | null>(null);
+  const [selectedVehicle] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const handleActions = (id: number) => {
-    setSelectedVehicle(id);
-    setShowActionDialog(true);
+    navigate(`/veiculos/${id}`);
   };
 
   const handleDelete = (id: number) => {
-    console.log('Excluir veículo', id);
+    setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
   };
 
   const handleAddVehicleSubmit = (data: VehicleFormData) => {
-    console.log('Novo veículo cadastrado:', data);
-    // Aqui você pode atualizar a lista de veículos ou fazer uma chamada para backend
+    const newVehicle = {
+      id: vehicles.length + 1,
+      plate: data.placa,
+      brand: data.marca,
+      model: data.modelo,
+      status: 'Disponível',
+      statusColor: 'bg-green-100 text-green-800',
+    };
+    setVehicles([...vehicles, newVehicle]);
   };
 
   const filteredVehicles = vehicles.filter((vehicle) => {
@@ -192,13 +205,13 @@ export const Vehicles = () => {
       <VehicleActionDialog
         isOpen={showActionDialog}
         onClose={() => setShowActionDialog(false)}
-        vehicleId={selectedVehicle}
+        vehicleId={selectedVehicle ?? null}
       />
 
       <AddVehicleModal
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-        onSubmit={handleAddVehicleSubmit}
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddVehicleSubmit}
       />
     </Layout>
   );
