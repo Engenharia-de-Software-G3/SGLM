@@ -20,6 +20,10 @@ export const addRentalSchema = z.object({
   ),
 
   valorLocacao: requiredString,
+
+  periodicidadePagamento: z.string().refine((val) => val !== '', {
+    message: 'Campo obrigatório',
+  }),
 });
 // .refine((data: { inicio: string; fim: string }) => {
 //   const inicioDate = new Date(data.inicio);

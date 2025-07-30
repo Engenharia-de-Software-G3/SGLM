@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { addRentalSchema, type AddRentalFormData } from '../../schemas/addRental';
 import { MaskedFormInput } from '@/shared/components/masked-form-input';
 import { FormInput } from '@/shared/components/form-input';
+import { FormSelect } from '@/shared/components/form-select';
 
 export const AddRentalModal = ({
   open,
@@ -27,6 +28,7 @@ export const AddRentalModal = ({
       fim: '',
       placaVeiculo: '',
       valorLocacao: '',
+      periodicidadePagamento: '',
     },
   });
 
@@ -110,6 +112,22 @@ export const AddRentalModal = ({
               error={errors.valorLocacao?.message}
               required
               type="number"
+            />
+          </div>
+
+          <div className="col-span-2">
+            <FormSelect
+              name="periodicidadePagamento"
+              control={control}
+              label="Periodicidade do pagamento"
+              required
+              error={errors.periodicidadePagamento?.message}
+              options={[
+                { value: 'Diária', label: 'Diária' },
+                { value: 'Semanal', label: 'Semanal' },
+                { value: 'Quinzenal', label: 'Quinzenal' },
+                { value: 'Mensal', label: 'Mensal' },
+              ]}
             />
           </div>
 

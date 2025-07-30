@@ -9,6 +9,7 @@ interface MaskedInputProps {
   placeholder?: string;
   value?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   onAccept?: (value: string) => void;
   onChange?: FormEventHandler<HTMLInputElement>;
   onBlur?: () => void;
@@ -37,6 +38,7 @@ export function MaskedInput({
   name,
   value,
   disabled,
+  readOnly,
   ...rest
 }: MaskedInputProps) {
   return (
@@ -51,6 +53,7 @@ export function MaskedInput({
       name={name}
       value={value}
       disabled={disabled}
+      readOnly={readOnly}
       {...rest}
     />
   );
