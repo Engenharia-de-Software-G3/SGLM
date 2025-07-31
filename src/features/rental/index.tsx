@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { DeleteModal } from '@/shared/components/delete-modal';
-import { FileText, Plus } from 'lucide-react';
+import { ExternalLinkIcon, FileText, Plus } from 'lucide-react';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
@@ -170,9 +170,9 @@ export const Rental = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-green-600 border-green-300 hover:bg-green-50"
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
                   >
-                    <FileText className="h-4 w-4" />
+                    <ExternalLinkIcon className="h-4 w-4" />
                   </Button>
                 </div>
               </td>
