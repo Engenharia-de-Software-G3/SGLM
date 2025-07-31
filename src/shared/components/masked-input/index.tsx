@@ -46,14 +46,22 @@ export function MaskedInput({
       mask={maskConfig[type]}
       placeholder={placeholder || maskConfig[type]}
       className={className || baseClassName}
-      onAccept={onAccept}
-      onChange={onChange}
-      onBlur={onBlur}
       id={id}
       name={name}
       value={value}
       disabled={disabled}
       readOnly={readOnly}
+      onBlur={onBlur}
+      onAccept={(val: string) => {
+        if (onChange) {
+          onChange({
+            target: { value: val, name },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
+        if (onAccept) {
+          onAccept(val);
+        }
+      }}
       {...rest}
     />
   );
