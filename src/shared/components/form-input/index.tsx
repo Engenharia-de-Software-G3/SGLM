@@ -1,9 +1,23 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
+import type { ReactNode, ChangeEvent } from 'react';
+
+interface FieldProps {
+  id: string;
+  name: string;
+  type?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  value: string | number;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onBlur: () => void;
+  [key: string]: unknown;
+}
 
 interface FormInputProps<T extends FieldValues> {
-  label: string;
+  label?: string;
   id: string;
   type?: 'text' | 'email' | 'password' | 'number' | 'date' | 'tel' | 'url';
   placeholder?: string;
@@ -13,6 +27,7 @@ interface FormInputProps<T extends FieldValues> {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  children?: ReactNode | ((props: FieldProps) => ReactNode);
 }
 
 export function FormInput<T extends FieldValues>({
@@ -25,30 +40,47 @@ export function FormInput<T extends FieldValues>({
   error,
   required = false,
   disabled = false,
+  className = '',
+  children,
   ...props
 }: FormInputProps<T>) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-sm font-medium">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </Label>
+      {label && (
+        <Label htmlFor={id} className="text-sm font-medium">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+      )}
       <Controller
         control={control}
         name={name}
-        render={({ field: { onChange, onBlur, value, name: fieldName } }) => (
-          <Input
-            id={id}
-            name={fieldName}
-            type={type}
-            placeholder={placeholder}
-            disabled={disabled}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-            {...props}
-          />
-        )}
+        render={({ field: { onChange, onBlur, value, name: fieldName } }) => {
+          const fieldProps: FieldProps = {
+            id,
+            name: fieldName,
+            type,
+            placeholder,
+            disabled,
+            className: `h-10 ${error ? 'border-red-500 focus:border-red-500' : ''} ${className}`,
+            value,
+            onChange,
+            onBlur,
+            ...props,
+          };
+
+          if (children) {
+            return (
+              <div className={error ? 'border-red-500' : ''}>
+                {typeof children === 'function'
+                  ? (children as (props: FieldProps) => ReactNode)(fieldProps)
+                  : children}
+              </div>
+            );
+          }
+
+          return <Input {...fieldProps} />;
+        }}
       />
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>

@@ -9,6 +9,7 @@ import { Maintenance } from '@/features/maintenance';
 import { Payments } from '@/features/payments';
 import { Reports } from '@/features/reports';
 import { Rental } from '@/features/rental';
+import { RentalProfile } from '@/features/rental/components/rental-profile';
 import { AdditionalServices } from '@/features/additional-services';
 import { Suppliers } from '@/features/suppliers';
 import { Vehicles } from '@/features/vehicles';
@@ -72,6 +73,11 @@ const routes = [
   {
     path: '/locacoes',
     element: <Rental />,
+    protected: true,
+  },
+  {
+    path: '/locacoes/:id',
+    element: <RentalProfile />,
     protected: true,
   },
   {

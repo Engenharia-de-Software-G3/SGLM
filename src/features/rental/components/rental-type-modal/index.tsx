@@ -33,32 +33,32 @@ export const RentalTypeModal = ({
           value={tempSelection}
           onValueChange={(v) => setTempSelection(v as 'fisica' | 'juridica')}
         >
-          <div className="flex justify-center mt-4 gap-20">
+          <div className="flex justify-between px-6 mt-2">
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="fisica" id="fisica" />
-              <Label htmlFor="fisica" className="text-blue-600">
+              <Label htmlFor="fisica" className="text-blue-500 font-semibold">
                 Pessoa física
               </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="juridica" id="juridica" />
-              <Label htmlFor="juridica" className="text-blue-600">
+              <Label htmlFor="juridica" className="text-blue-500 font-semibold">
                 Pessoa jurídica
               </Label>
             </div>
           </div>
         </RadioGroup>
 
-        <div className="flex justify-end space-x-2 mt-6">
+        <div className="flex justify-center mt-4 gap-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="text-blue-600 border-blue-600 hover:text-blue-700"
+            className="text-blue-600 border-blue-600 hover:text-blue-700 flex-1"
           >
             Cancelar
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 flex-1"
             onClick={() => {
               onSelect(tempSelection);
               onOpenChange(false);

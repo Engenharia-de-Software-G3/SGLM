@@ -49,7 +49,7 @@ export const AddRentalModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[600px] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Cadastro de locação</DialogTitle>
           <p className="text-sm text-gray-600">Insira os dados abaixo</p>
@@ -57,6 +57,7 @@ export const AddRentalModal = ({
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <FormInput
             label="Locatário"
+            placeholder="Digite o nome do locatário"
             id="locatario"
             control={control}
             name="locatario"

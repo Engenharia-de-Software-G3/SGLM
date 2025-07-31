@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { DeleteModal } from '@/shared/components/delete-modal';
-import { FileText, Edit, Plus } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
@@ -10,6 +10,7 @@ import { ActionButton } from '@/shared/components/display-table/components/actio
 import { RentalTypeModal } from './components/rental-type-modal';
 import { AddRentalModal } from './components/add-rental-modal';
 import type { AddRentalFormData } from './schemas/addRental';
+import { useNavigate } from 'react-router-dom';
 
 interface RentalData {
   id: number;
@@ -46,20 +47,24 @@ const rentalsMock: RentalData[] = [
 ];
 
 export const Rental = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchByName, setsearchByName] = useState('');
+  const [searchByPlate, setSearchByPlate] = useState('');
   const [isTypeModalOpen, setTypeModalOpen] = useState(false);
   const [isFormModalOpen, setFormModalOpen] = useState(false);
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
 
   const [rentals, setRentals] = useState<RentalData[]>(rentalsMock);
+  const navigate = useNavigate();
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
 
-    return rentals.filter((rental) =>
-      rental.locatario.toLowerCase().includes(searchTerm.toLowerCase()),
+    return rentals.filter(
+      (rental) =>
+        rental.locatario.toLowerCase().includes(searchByName.toLowerCase()) &&
+        rental.placa.toLowerCase().includes(searchByPlate.toLowerCase()),
     );
-  }, [rentals, searchTerm]);
+  }, [rentals, searchByName, searchByPlate]);
 
   async function submitRental(rental: AddRentalFormData) {
     const newRental: RentalData = {
@@ -86,15 +91,27 @@ export const Rental = () => {
     setFormModalOpen(true);
   };
 
+  function handleViewRental(id: number) {
+    navigate(`/locacoes/${id}`);
+  }
+
   return (
     <Layout title="Gerenciamento de locações" subtitle="Veja todas as locações">
       <div className="flex-1 overflow-auto p-6">
         <DisplayTableHeader>
-          <SearchBar
-            placeholder="Filtrar por locatário"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="flex gap-2 w-full pr-4">
+            <SearchBar
+              placeholder="Filtrar por locatário"
+              value={searchByName}
+              onChange={(e) => setsearchByName(e.target.value)}
+            />
+
+            <SearchBar
+              placeholder="Filtrar por placa"
+              value={searchByPlate}
+              onChange={(e) => setSearchByPlate(e.target.value)}
+            />
+          </div>
 
           <ActionButton
             label="Cadastrar locação"
@@ -109,7 +126,7 @@ export const Rental = () => {
           columns={[
             { key: 'client', title: 'Locatário' },
             { key: 'placa', title: 'Placa' },
-            { key: 'cpf', title: 'CPF' },
+            { key: 'cpf', title: 'CPF/CNPJ' },
             { key: 'actions', title: 'Ações' },
           ]}
           renderRow={(rental) => (
@@ -138,6 +155,7 @@ export const Rental = () => {
                     variant="outline"
                     size="sm"
                     className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                    onClick={() => handleViewRental(rental.id)}
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
@@ -154,7 +172,7 @@ export const Rental = () => {
                     size="sm"
                     className="text-green-600 border-green-300 hover:bg-green-50"
                   >
-                    <Edit className="h-4 w-4" />
+                    <FileText className="h-4 w-4" />
                   </Button>
                 </div>
               </td>
