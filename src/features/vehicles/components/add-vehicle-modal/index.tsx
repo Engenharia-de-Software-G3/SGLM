@@ -27,6 +27,19 @@ interface AddVehicleModalProps {
   onSave: (data: VehicleFormData) => void;
 }
 
+function maskAnoModelo(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  return digits.slice(0, 4) + '/' + digits.slice(4);
+}
+
+function maskData(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
+  return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+}
+
 export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProps) => {
   const [formData, setFormData] = useState<VehicleFormData>({
     placa: '',
@@ -46,7 +59,15 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    let maskedValue = value;
+
+    if (id === 'anoModelo') {
+      maskedValue = maskAnoModelo(value);
+    } else if (id === 'dataCompra' || id === 'dataAtual') {
+      maskedValue = maskData(value);
+    }
+
+    setFormData((prev) => ({ ...prev, [id]: maskedValue }));
   };
 
   const handleSubmit = (e: FormEvent) => {
