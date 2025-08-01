@@ -17,5 +17,5 @@ export interface VehicleFormData {
   dataAtual: string;
   local: string;
   nome: string;
-  observacoes: string;
+  observacoes?: string;
 }

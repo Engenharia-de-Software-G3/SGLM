@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CloudUpload } from 'lucide-react';
+import { vehicleFormSchema } from '../../schemas/vehicleFormSchema';
 
 export interface VehicleFormData {
   placa: string;
@@ -18,7 +19,7 @@ export interface VehicleFormData {
   dataAtual: string;
   local: string;
   nome: string;
-  observacoes: string;
+  observacoes?: string;
 }
 
 interface AddVehicleModalProps {
@@ -57,6 +58,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
     observacoes: '',
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     let maskedValue = value;
@@ -72,8 +75,22 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const result = vehicleFormSchema.safeParse(formData);
+
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as string;
+        fieldErrors[field] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setErrors({});
+    onSave(result.data);
     onClose();
+
     setFormData({
       placa: '',
       marca: '',
@@ -110,8 +127,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="Insira a placa do veículo"
                 value={formData.placa}
                 onChange={handleChange}
-                required
               />
+              {errors.placa && <p className="text-sm text-red-500">{errors.placa}</p>}
             </div>
             <div>
               <Label htmlFor="marca" className="text-sm font-medium">
@@ -122,8 +139,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="Insira a marca do veículo"
                 value={formData.marca}
                 onChange={handleChange}
-                required
               />
+              {errors.marca && <p className="text-sm text-red-500">{errors.marca}</p>}
             </div>
           </div>
 
@@ -137,8 +154,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="Insira o modelo do veículo"
                 value={formData.modelo}
                 onChange={handleChange}
-                required
               />
+              {errors.modelo && <p className="text-sm text-red-500">{errors.modelo}</p>}
             </div>
             <div>
               <Label htmlFor="ano/modelo" className="text-sm font-medium">
@@ -149,8 +166,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="YYYY / MMMM"
                 value={formData.anoModelo}
                 onChange={handleChange}
-                required
               />
+              {errors.anoModelo && <p className="text-sm text-red-500">{errors.anoModelo}</p>}
             </div>
           </div>
 
@@ -163,8 +180,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
               placeholder="Insira o chassi do veículo"
               value={formData.chassi}
               onChange={handleChange}
-              required
             />
+            {errors.chassi && <p className="text-sm text-red-500">{errors.chassi}</p>}
           </div>
 
           <div>
@@ -176,8 +193,10 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
               placeholder="Insira a quilometragem no dia da aquisição do veículo"
               value={formData.quilometragemCompra}
               onChange={handleChange}
-              required
             />
+            {errors.quilometragemCompra && (
+              <p className="text-sm text-red-500">{errors.quilometragemCompra}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -190,9 +209,12 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="Insira o Nº do documento"
                 value={formData.numeroDocumento}
                 onChange={handleChange}
-                required
               />
+              {errors.numeroDocumento && (
+                <p className="text-sm text-red-500">{errors.numeroDocumento}</p>
+              )}
             </div>
+
             <div>
               <Label htmlFor="dataCompra" className="text-sm font-medium">
                 Data da Compra
@@ -202,8 +224,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="DD/MM/YYYY"
                 value={formData.dataCompra}
                 onChange={handleChange}
-                required
               />
+              {errors.dataCompra && <p className="text-sm text-red-500">{errors.dataCompra}</p>}
             </div>
           </div>
 
@@ -217,8 +239,10 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="Quilometragem atual"
                 value={formData.quilometragemAtual}
                 onChange={handleChange}
-                required
               />
+              {errors.quilometragemAtual && (
+                <p className="text-sm text-red-500">{errors.quilometragemAtual}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="dataAtual" className="text-sm font-medium">
@@ -229,8 +253,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
                 placeholder="DD/MM/YYYY"
                 value={formData.dataAtual}
                 onChange={handleChange}
-                required
               />
+              {errors.dataAtual && <p className="text-sm text-red-500">{errors.dataAtual}</p>}
             </div>
           </div>
 
@@ -243,8 +267,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
               placeholder="Insira o local de aquisição do veículo"
               value={formData.local}
               onChange={handleChange}
-              required
             />
+            {errors.local && <p className="text-sm text-red-500">{errors.local}</p>}
           </div>
 
           <div>
@@ -256,8 +280,8 @@ export const AddVehicleModal = ({ isOpen, onClose, onSave }: AddVehicleModalProp
               placeholder="Insira o nome do dono do veículo"
               value={formData.nome}
               onChange={handleChange}
-              required
             />
+            {errors.nome && <p className="text-sm text-red-500">{errors.nome}</p>}
           </div>
 
           <div>
