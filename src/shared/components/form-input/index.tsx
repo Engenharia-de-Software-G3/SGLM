@@ -30,6 +30,29 @@ interface FormInputProps<T extends FieldValues> {
   children?: ReactNode | ((props: FieldProps) => ReactNode);
 }
 
+const formatCurrency = (value: string): string => {
+  const onlyNumbers = value.replace(/\D/g, '');
+  
+  const numberValue = parseInt(onlyNumbers, 10) / 100;
+  
+  return numberValue.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+const parseCurrency = (formattedValue: string): number => {
+  const numberString = formattedValue
+    .replace('R$', '')
+    .replace('.', '')
+    .replace(',', '.')
+    .trim();
+  
+  return parseFloat(numberString) || 0;
+};
+
 export function FormInput<T extends FieldValues>({
   label,
   id,
@@ -56,16 +79,38 @@ export function FormInput<T extends FieldValues>({
         control={control}
         name={name}
         render={({ field: { onChange, onBlur, value, name: fieldName } }) => {
+          const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+            if (type === 'number') {
+              const formattedValue = formatCurrency(e.target.value);
+              e.target.value = formattedValue;
+              onChange(parseCurrency(formattedValue));
+            } else {
+              onChange(e.target.value);
+            }
+          };
+
+          const handleBlur = () => {
+            if (type === 'number' && value) {
+              const formattedValue = formatCurrency(String(value));
+              onChange(parseCurrency(formattedValue));
+            }
+            onBlur();
+          };
+
+          const displayValue = type === 'number' 
+            ? value ? formatCurrency(String(value)) : ''
+            : value;
+
           const fieldProps: FieldProps = {
             id,
             name: fieldName,
-            type,
+            type: type === 'number' ? 'text' : type, 
             placeholder,
             disabled,
             className: `h-10 ${error ? 'border-red-500 focus:border-red-500' : ''} ${className}`,
-            value,
-            onChange,
-            onBlur,
+            value: displayValue,
+            onChange: handleChange,
+            onBlur: handleBlur,
             ...props,
           };
 
