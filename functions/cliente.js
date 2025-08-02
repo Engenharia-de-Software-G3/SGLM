@@ -5,7 +5,12 @@
 
 import express from 'express';
 const router = express.Router();
-import { criarCliente, listarClientes } from '../src/scripts/firestore/firestoreClientes.js';
+import {
+  criarCliente,
+  listarClientes,
+  atualizarCliente,
+  deletarCliente,
+} from '../src/scripts/firestore/firestoreClientes.js';
 //import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
 /**
