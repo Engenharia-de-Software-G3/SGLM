@@ -22,16 +22,28 @@ import { db } from '../../../firebaseConfig.js';
  * @param {string} clienteData.documentos.cnh.numero - Número da CNH
  * @param {string} clienteData.documentos.cnh.categoria - Categoria (ex: 'AB')
  * @param {string} clienteData.documentos.cnh.dataValidade - Data (formato: 'YYYY-MM-DD')
- * @returns {Promise<{success: boolean, error?: string}>} 
+ * @returns {Promise<{success: boolean, error?: string}>}
  * @throws {Error} Em caso de erro no Firestore
  */
 export const criarCliente = async (clienteData) => {
   try {
     const { cpf, dadosPessoais, endereco, contato, documentos } = clienteData;
 
+    const cpfFormatado = cpf.replace(/[-.]/g, '');
+
+    const cpfExistente = await db
+      .collection('clientes')
+      .where('id', '==', cpfFormatado)
+      .limit(1)
+      .get();
+
+    if (!cpfExistente.empty) {
+      throw new Error('CPF já cadastrado no sistema.');
+    }
+
     // 1. Documento principal na coleção 'clientes'
-    await db.collection('clientes').doc(cpf).set({
-      id: cpf,
+    await db.collection('clientes').doc(cpfFormatado).set({
+      id: cpfFormatado,
       tipo: 'PF',
       nomeCompleto: dadosPessoais.nome,
       dataNascimento: dadosPessoais.dataNascimento,
@@ -40,7 +52,7 @@ export const criarCliente = async (clienteData) => {
 
     // 2. Subcoleções (endereco, contato, documentos)
     const batch = db.batch();
-    const clienteRef = db.collection('clientes').doc(cpf);
+    const clienteRef = db.collection('clientes').doc(cpfFormatado);
 
     // Endereço
     batch.set(clienteRef.collection('enderecos').doc('principal'), {
@@ -173,15 +185,21 @@ export const atualizarCliente = async (cpf, updates) => {
 
     // Atualiza subcoleções
     if (updates.endereco) {
-      batch.set(clienteRef.collection('enderecos').doc('principal'), updates.endereco, { merge: true });
+      batch.set(clienteRef.collection('enderecos').doc('principal'), updates.endereco, {
+        merge: true,
+      });
     }
 
     if (updates.contato) {
-      batch.set(clienteRef.collection('contatos').doc('principal'), updates.contato, { merge: true });
+      batch.set(clienteRef.collection('contatos').doc('principal'), updates.contato, {
+        merge: true,
+      });
     }
 
     if (updates.documentos?.cnh) {
-      batch.set(clienteRef.collection('documentos').doc('cnh'), updates.documentos.cnh, { merge: true });
+      batch.set(clienteRef.collection('documentos').doc('cnh'), updates.documentos.cnh, {
+        merge: true,
+      });
     }
 
     await batch.commit();
@@ -212,7 +230,7 @@ export const deletarCliente = async (cpf) => {
     for (const subcollectionName of subcollections) {
       const snapshot = await clienteRef.collection(subcollectionName).get();
       const batch = db.batch();
-      snapshot.docs.forEach(subDoc => {
+      snapshot.docs.forEach((subDoc) => {
         batch.delete(subDoc.ref);
       });
       await batch.commit();

@@ -1,8 +1,0 @@
-{
-  "projects": {
-    "default": "slmg-es",
-    "slmg": "slmg-es"
-  },
-  "targets": {},
-  "etags": {}
-}
