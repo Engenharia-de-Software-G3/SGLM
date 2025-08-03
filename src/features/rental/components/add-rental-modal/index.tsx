@@ -112,6 +112,7 @@ export const AddRentalModal = ({
               name="valorLocacao"
               error={errors.valorLocacao?.message}
               required
+              placeholder="R$00,00"
               type="number"
             />
           </div>
