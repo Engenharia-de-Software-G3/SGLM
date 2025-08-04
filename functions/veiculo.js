@@ -1,6 +1,6 @@
 /**
  * @file Define as rotas da API relacionadas a veículos.
- * Inclui um endpoint para criar veículos.
+ * Inclui endpoints para criar, listar, atualizar e deletar veículos.
  */
 
 import express from 'express';
@@ -11,8 +11,12 @@ import {
   atualizarQuilometragemVeiculo,
   criarVeiculo,
   listarVeiculos,
+  atualizarPlaca,
+  registrarVenda,
+  buscarPorChassi, // Import this to help with DELETE and general updates
 } from '../src/scripts/firestore/firestoreVeiculos.js';
-// import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
+
+import { db } from '../firebaseConfig.js'; // Import db for direct Firestore operations if needed
 
 /**
  * Rota POST para criar um novo veículo.
@@ -44,10 +48,10 @@ router.post('/', async (req, res) => {
     const resultado = await criarVeiculo(veiculoData);
 
     if (resultado.success) {
-      // Use o ID retornado pela função criarVeiculo (que é a placa)
+      // Use o ID retornado pela função criarVeiculo
       res.status(201).send({ message: 'Veículo criado com sucesso!', id: resultado.id });
     } else {
-      res.status(500).send({ message: 'Erro ao criar veículo', error: resultado.error });
+      res.status(400).send({ message: 'Erro ao criar veículo', error: resultado.error });
     }
   } catch (error) {
     console.error('Erro na rota POST /veiculos:', error);
@@ -55,18 +59,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// TODO: Implementar outras rotas para veículos (PUT, DELETE)
-
-/**
- * Rota GET para listar veículos.
- * Atualmente um placeholder.
- * @name GET /
- * @function
- * @memberof module:veiculo
- * @param {object} req - Objeto de requisição do Express. Pode conter parâmetros de query para filtros e paginação.
- * @param {object} res - Objeto de resposta do Express.
- * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
- */
 /**
  * Rota GET para listar veículos com paginação e filtros.
  * @name GET /
@@ -75,18 +67,22 @@ router.post('/', async (req, res) => {
  * @param {object} req - Objeto de requisição do Express.
  * @param {string} [req.query.limite=10] - Número de itens por página
  * @param {string} [req.query.ultimoDocId] - ID do último documento para paginação
- * @param {string} [req.query.filtros] - JSON stringificado com filtros (placa, status)
+ * @param {string} [req.query.filtros] - JSON stringificado com filtros (placa, status, marca)
  * @param {object} res - Objeto de resposta do Express.
  * @returns {Promise<void>}
  */
 router.get('/', async (req, res) => {
   try {
-    const { limite = '10', ultimoDocId, filtros = '{}' } = req.query;
+    const { limite, ultimoDocId, filtros = '{}' } = req.query;
 
     // Converter e validar parâmetros
-    const limiteNum = Math.min(parseInt(limite) || 10, 100); // Limite máximo de 100 itens
-    let filtrosParsed;
+    const limiteNum = limite ? Math.min(parseInt(limite) || 10, 100) : 10; // Default 10, max 100
 
+    if (isNaN(limiteNum)) {
+      return res.status(400).json({ error: 'Value for "limite" is not a valid integer.' });
+    }
+
+    let filtrosParsed;
     try {
       filtrosParsed = JSON.parse(filtros);
     } catch {
@@ -96,10 +92,12 @@ router.get('/', async (req, res) => {
     // Obter documento de referência para paginação
     let ultimoDoc = null;
     if (ultimoDocId) {
-      ultimoDoc = await db.collection('veiculos').doc(ultimoDocId).get();
-      if (!ultimoDoc.exists) {
+      // Need to get the DocumentSnapshot for startAfter
+      const lastDocSnapshot = await db.collection('veiculos').doc(ultimoDocId).get();
+      if (!lastDocSnapshot.exists) {
         return res.status(400).json({ error: 'ID do último documento inválido' });
       }
+      ultimoDoc = lastDocSnapshot;
     }
 
     // Chamar função de listagem
@@ -127,39 +125,119 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * Rota PUT para atualizar a quilometragem de um veículo.
- * Espera os dados do veículo no corpo da requisição em formato JSON.
- * @name PUT /
+ * Rota PUT para atualizar um veículo.
+ * Espera o chassi do veículo no parâmetro da rota.
+ * Espera os dados a serem atualizados no corpo da requisição em formato JSON.
+ * Pode atualizar placa, quilometragem, status (venda), etc.
+ * @name PUT /:chassi
  * @function
  * @memberof module:veiculo
- * @param {object} req - Objeto de requisição do Express, contendo os dados do veículo em `req.body`.
- * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
- * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} req.params.chassi - Chassi do veículo a ser atualizado.
+ * @param {object} req.body - Objeto com os campos a serem atualizados.
+ * @param {string} [req.body.placa] - Nova placa do veículo.
+ * @param {number} [req.body.quilometragem] - Nova quilometragem do veículo.
+ * @param {string} [req.body.dataVenda] - Data da venda para registrar (formato YYYY-MM-DD).
+ * @param {object} res - Objeto de resposta do Express.
+ * @returns {Promise<void>}
  */
-router.put('/', async (req, res) => {
+router.put('/:chassi', async (req, res) => {
   try {
-    const veiculoData = req.body;
+    const chassi = req.params.chassi;
+    const updates = req.body;
 
-    if (!veiculoData || !veiculoData.chassi || !veiculoData.quilometragem) {
+    if (!chassi || !updates || Object.keys(updates).length === 0) {
+      return res.status(400).send('Chassi e/ou dados de atualização ausentes.');
+    }
+
+    // Check if vehicle exists first
+    const veiculo = await buscarPorChassi(chassi);
+    if (!veiculo) {
+      return res.status(404).send('Veículo não encontrado.');
+    }
+
+    let resultado;
+
+    // Handle specific updates using existing functions
+    if (updates.placa !== undefined) {
+      resultado = await atualizarPlaca(chassi, updates.placa);
+      if (!resultado.success) throw new Error(resultado.error);
+    }
+
+    if (updates.quilometragem !== undefined) {
+      if (isNaN(parseInt(updates.quilometragem))) {
+        return res.status(400).send('Quilometragem deve ser um número válido.');
+      }
+      resultado = await atualizarQuilometragemVeiculo(chassi, parseInt(updates.quilometragem));
+      if (!resultado.success) throw new Error(resultado.error);
+    }
+
+    if (updates.dataVenda !== undefined) {
+      // You might want more date validation here
+      resultado = await registrarVenda(chassi, updates.dataVenda);
+      if (!resultado.success) throw new Error(resultado.error);
+    }
+
+    // Handle other potential direct updates if needed (e.g., local, nome, observacoes)
+    // If there are other fields you want to allow updating directly on the main document,
+    // you would add logic here to call a generic update function or update directly.
+    // Example (assuming a generic update function exists or using batched writes):
+    // const directUpdates = {};
+    // if(updates.local !== undefined) directUpdates.local = updates.local;
+    // if(updates.nome !== undefined) directUpdates.nome = updates.nome;
+    // if(Object.keys(directUpdates).length > 0) {
+    //     await db.collection('veiculos').doc(veiculo.id).update(directUpdates);
+    // }
+
+    // If no specific update function was called, assume a generic success if vehicle was found
+    if (resultado === undefined) {
       return res
-        .status(400)
-        .send('Dados do veículo incompletos (chassi e quilometragem são obrigatórios).');
+        .status(200)
+        .send({ message: 'Veículo encontrado, mas nenhum campo atualizável fornecido.' });
     }
 
-    // Chame a função do Firestore para atualizar a quilometragem
-    const resultado = await atualizarQuilometragemVeiculo(
-      veiculoData.chassi,
-      veiculoData.quilometragem,
-    );
-
-    if (resultado.success) {
-      res.status(201).send({ message: 'Quilometragem atualizada com sucesso!' });
-    } else {
-      res.status(500).send({ message: 'Erro ao atualizar quilometragem', error: resultado.error });
-    }
+    res.status(200).send({ message: 'Veículo atualizado com sucesso!' });
   } catch (error) {
-    console.error('Erro na rota PUT / veiculos/ quilometragem:', error);
-    res.status(500).send('Erro interno do servidor.');
+    console.error(`Erro na rota PUT /veiculos/${req.params.chassi}:`, error);
+    res.status(500).send({ message: 'Erro ao atualizar veículo', error: error.message });
+  }
+});
+
+/**
+ * Rota DELETE para deletar um veículo.
+ * Espera o chassi do veículo no parâmetro da rota.
+ * @name DELETE /:chassi
+ * @function
+ * @memberof module:veiculo
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} req.params.chassi - Chassi do veículo a ser deletado.
+ * @param {object} res - Objeto de resposta do Express.
+ * @returns {Promise<void>}
+ */
+router.delete('/:chassi', async (req, res) => {
+  try {
+    const chassi = req.params.chassi;
+
+    if (!chassi) {
+      return res.status(400).send('Chassi do veículo ausente.');
+    }
+
+    // Find the vehicle document by chassi to get its ID
+    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+
+    if (snapshot.empty) {
+      return res.status(404).send('Veículo não encontrado.');
+    }
+
+    const veiculoDocRef = snapshot.docs[0].ref;
+
+    // Delete the document
+    await veiculoDocRef.delete();
+
+    res.status(200).send({ message: 'Veículo deletado com sucesso!' });
+  } catch (error) {
+    console.error(`Erro na rota DELETE /veiculos/${req.params.chassi}:`, error);
+    res.status(500).send({ message: 'Erro ao deletar veículo', error: error.message });
   }
 });
 
