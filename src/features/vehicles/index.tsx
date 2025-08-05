@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Car, Edit, FileText, Plus } from 'lucide-react';
 import { Layout } from '../../shared/components/layout';
 import { PaginatedTable } from '@/shared/components/display-table';
@@ -10,27 +10,70 @@ import { Badge } from '@/components/ui/badge';
 import { VehicleActionDialog } from './components/vehicle-action-dialog';
 import { AddVehicleModal } from './components/add-vehicle-modal';
 import { Button } from '@/components/ui/button';
-import type { VehicleFormData } from './components/add-vehicle-modal/@types';
 import { useNavigate } from 'react-router-dom';
+import { EditVehicleModal } from './components/edit-vehicle-modal';
+import { statusColorMap } from '@/lib/utils';
+import type { VeiculoFormulario } from '@/features/vehicles/types';
+import type { VehicleEdit } from './components/edit-vehicle-modal/@types';
 
 export const Vehicles = () => {
   const navigate = useNavigate();
-  const [vehicles, setVehicles] = useState([
+  const [vehicles, setVehicles] = useState<VehicleEdit[]>([
     {
       id: 1,
       plate: 'ABC-1234',
       brand: 'Toyota',
       model: 'Corolla',
       status: 'Disponível',
-      statusColor: 'bg-green-100 text-green-800',
+      statusColor: statusColorMap['Disponível'],
+      year: 2022,
+      color: 'Branco',
+      fuel: 'Flex',
+      category: 'Sedan',
+      currentMileage: 45000,
+      dailyRate: 120,
+      initialMileage: 20000,
+      renavam: '12345678901',
+      chassis: '9BWHE21JX24060831',
+      engine: '2.0 16V',
+      doors: 4,
+      seats: 5,
+      transmission: 'Automático',
+      acquisitionDate: '2022-01-15',
+      acquisitionValue: 85000,
+      insuranceCompany: 'Porto Seguro',
+      insurancePolicy: 'PS123456789',
+      insuranceExpiry: '2024-12-31',
+      licensePlateExpiry: '2024-08-15',
+      nextMaintenanceKm: 50000,
     },
     {
       id: 2,
       plate: 'XXX-002',
       brand: 'Honda',
       model: 'Fan 150',
-      status: 'Locado',
-      statusColor: 'bg-red-100 text-red-800',
+      status: 'Manutenção',
+      statusColor: statusColorMap['Manutenção'],
+      year: 2021,
+      color: 'Vermelho',
+      fuel: 'Gasolina',
+      category: 'Moto',
+      currentMileage: 25000,
+      dailyRate: 80,
+      initialMileage: 10000,
+      renavam: '98765432109',
+      chassis: '9BWHE21JX24060832',
+      engine: '150cc',
+      doors: 0,
+      seats: 2,
+      transmission: 'Manual',
+      acquisitionDate: '2021-06-10',
+      acquisitionValue: 15000,
+      insuranceCompany: 'Porto Seguro',
+      insurancePolicy: 'PS987654321',
+      insuranceExpiry: '2024-11-30',
+      licensePlateExpiry: '2024-07-20',
+      nextMaintenanceKm: 30000,
     },
     {
       id: 3,
@@ -38,7 +81,27 @@ export const Vehicles = () => {
       brand: 'Yamaha',
       model: 'Scooter',
       status: 'Disponível',
-      statusColor: 'bg-green-100 text-green-800',
+      statusColor: statusColorMap['Disponível'],
+      year: 2023,
+      color: 'Azul',
+      fuel: 'Gasolina',
+      category: 'Moto',
+      currentMileage: 15000,
+      dailyRate: 60,
+      initialMileage: 5000,
+      renavam: '45678912345',
+      chassis: '9BWHE21JX24060833',
+      engine: '125cc',
+      doors: 0,
+      seats: 2,
+      transmission: 'Automático',
+      acquisitionDate: '2023-03-05',
+      acquisitionValue: 12000,
+      insuranceCompany: 'Porto Seguro',
+      insurancePolicy: 'PS456789123',
+      insuranceExpiry: '2025-01-15',
+      licensePlateExpiry: '2024-09-10',
+      nextMaintenanceKm: 20000,
     },
   ]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +109,73 @@ export const Vehicles = () => {
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [selectedVehicle] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [vehicleToEdit, setVehicleToEdit] = useState<VehicleEdit | null>(null);
+
+  useEffect(() => {
+    console.log('Vehicles state updated:', vehicles);
+  }, [vehicles]);
+
+  const handleEdit = (id: number) => {
+    const vehicle = vehicles.find((v) => v.id === id);
+    if (vehicle) {
+      console.log('Vehicle to edit:', vehicle);
+      setVehicleToEdit(vehicle);
+      setShowEditModal(true);
+    }
+  };
+
+  const handleEditSave = (data: VeiculoFormulario) => {
+    if (vehicleToEdit) {
+      console.log('Received form data:', data);
+      console.log('Data status:', data.status);
+      console.log('Vehicle to edit status:', vehicleToEdit.status);
+      if (!data.status || !['Disponível', 'Locado', 'Manutenção'].includes(data.status)) {
+        console.error('Error: Invalid or missing status');
+        return;
+      }
+      const status = data.status;
+      console.log('Selected status:', status);
+      const updatedVehicle = {
+        ...vehicleToEdit,
+        brand: data.marca,
+        model: data.modelo,
+        plate: data.placa,
+        status,
+        statusColor: statusColorMap[status] || 'bg-gray-100 text-gray-800',
+        year: Number(data.ano),
+        color: data.cor,
+        fuel: data.combustivel,
+        category: data.categoria,
+        currentMileage: Number(data.quilometragemAtual),
+        dailyRate: Number(data.valorDiario),
+        initialMileage: Number(data.quilometragemCompra) || vehicleToEdit.initialMileage,
+        renavam: data.renavam,
+        chassis: data.chassi,
+        engine: data.motor,
+        doors: Number(data.portas),
+        seats: Number(data.assentos),
+        transmission: data.transmissao,
+        acquisitionDate: data.dataCompra || vehicleToEdit.acquisitionDate,
+        acquisitionValue: Number(data.valorDiario) * 365,
+        insuranceCompany: vehicleToEdit.insuranceCompany,
+        insurancePolicy: data.numeroDocumento || vehicleToEdit.insurancePolicy,
+        insuranceExpiry: vehicleToEdit.insuranceExpiry,
+        licensePlateExpiry: vehicleToEdit.licensePlateExpiry,
+        nextMaintenanceKm: Number(data.proximaManutencao),
+      };
+      console.log('Updating vehicle:', updatedVehicle);
+      setVehicles((prev) => {
+        const newVehicles = prev.map((vehicle) =>
+          vehicle.id === vehicleToEdit.id ? updatedVehicle : vehicle,
+        );
+        console.log('New vehicles state:', newVehicles);
+        return [...newVehicles];
+      });
+      setShowEditModal(false);
+      setVehicleToEdit(null);
+    }
+  };
 
   const handleActions = (id: number) => {
     navigate(`/veiculos/${id}`);
@@ -55,30 +185,55 @@ export const Vehicles = () => {
     setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
   };
 
-  const handleAddVehicleSubmit = (data: VehicleFormData) => {
-    const newVehicle = {
+  const handleAddVehicleSubmit = (data: VeiculoFormulario) => {
+    if (!data.status || !['Disponível', 'Locado', 'Manutenção'].includes(data.status)) {
+      console.error('Error: Invalid or missing status in add vehicle');
+      return;
+    }
+    const newVehicle: VehicleEdit = {
       id: vehicles.length + 1,
       plate: data.placa,
       brand: data.marca,
       model: data.modelo,
-      status: 'Disponível',
-      statusColor: 'bg-green-100 text-green-800',
+      status: data.status,
+      statusColor: statusColorMap[data.status] || 'bg-gray-100 text-gray-800',
+      year: Number(data.ano),
+      color: data.cor,
+      fuel: data.combustivel,
+      category: data.categoria,
+      currentMileage: Number(data.quilometragemAtual),
+      dailyRate: Number(data.valorDiario),
+      initialMileage: Number(data.quilometragemCompra) || 0,
+      renavam: data.renavam,
+      chassis: data.chassi,
+      engine: data.motor,
+      doors: Number(data.portas),
+      seats: Number(data.assentos),
+      transmission: data.transmissao,
+      acquisitionDate: data.dataCompra || new Date().toISOString().split('T')[0],
+      acquisitionValue: Number(data.valorDiario) * 365,
+      insuranceCompany: '',
+      insurancePolicy: data.numeroDocumento || '',
+      insuranceExpiry: '',
+      licensePlateExpiry: '',
+      nextMaintenanceKm: Number(data.proximaManutencao),
     };
-    setVehicles([...vehicles, newVehicle]);
+    setVehicles((prev) => [...prev, newVehicle]);
+    setShowAddModal(false);
   };
 
   const filteredVehicles = vehicles.filter((vehicle) => {
     const term = searchTerm.toLowerCase();
-
     const matchesSearch =
       vehicle.plate.toLowerCase().includes(term) ||
       vehicle.brand.toLowerCase().includes(term) ||
       vehicle.model.toLowerCase().includes(term);
-
     const matchesStatus = statusFilter === '' || vehicle.status === statusFilter;
-
     return matchesSearch && matchesStatus;
   });
+
+  console.log('Rendering with filteredVehicles:', filteredVehicles);
+  console.log('Current statusFilter:', statusFilter);
 
   return (
     <Layout title="Gerenciamento de Veículos" subtitle="Veja a lista de todos os seus veículos">
@@ -103,30 +258,30 @@ export const Vehicles = () => {
             <Button
               onClick={() => setStatusFilter('Locado')}
               className={`
-                 bg-white text-gray-700 border border-gray-300
-                 hover:bg-red-100 hover:text-red-700
-                 ${statusFilter === 'Locado' ? 'bg-red-100 text-red-700 font-bold' : ''}
-               `}
+                bg-white text-gray-700 border border-gray-300
+                hover:bg-red-100 hover:text-red-800
+                ${statusFilter === 'Locado' ? 'bg-red-100 text-red-800 font-bold' : ''}
+              `}
             >
               Locados
             </Button>
             <Button
-              onClick={() => setStatusFilter('Manuntenção')}
+              onClick={() => setStatusFilter('Manutenção')}
               className={`
-                 bg-white text-gray-700 border border-gray-300
-                 hover:bg-orange-100 hover:text-orange-700
-                 ${statusFilter === 'Manuntenção' ? 'bg-orange-100 text-orange-700 font-bold' : ''}
-               `}
+                bg-white text-gray-700 border border-gray-300
+                hover:bg-orange-100 hover:text-orange-800
+                ${statusFilter === 'Manutenção' ? 'bg-orange-100 text-orange-800 font-bold' : ''}
+              `}
             >
               Manutenção
             </Button>
             <Button
               onClick={() => setStatusFilter('Disponível')}
               className={`
-                 bg-white text-gray-700 border border-gray-300
-                 hover:bg-green-100 hover:text-green-700
-                 ${statusFilter === 'Disponível' ? 'bg-green-100 text-green-700 font-bold' : ''}
-               `}
+                bg-white text-gray-700 border border-gray-300
+                hover:bg-green-100 hover:text-green-800
+                ${statusFilter === 'Disponível' ? 'bg-green-100 text-green-800 font-bold' : ''}
+              `}
             >
               Disponíveis
             </Button>
@@ -141,11 +296,12 @@ export const Vehicles = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
+          key={JSON.stringify(vehicles)} // Atualizado para usar JSON.stringify do estado completo
           data={filteredVehicles}
           columns={[
-            { key: 'marca', title: 'Marca do veículo' },
+            { key: 'brand', title: 'Marca do veículo' },
             { key: 'model', title: 'Modelo' },
-            { key: 'placa', title: 'Placa' },
+            { key: 'plate', title: 'Placa' },
             { key: 'status', title: 'Status' },
             { key: 'actions', title: 'Ações' },
           ]}
@@ -162,7 +318,9 @@ export const Vehicles = () => {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.model}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.plate}</td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <Badge className={vehicle.statusColor}>{vehicle.status}</Badge>
+                <Badge className={vehicle.statusColor || 'bg-gray-100 text-gray-800'}>
+                  {vehicle.status || 'Desconhecido'}
+                </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className="flex items-center space-x-2">
@@ -174,18 +332,17 @@ export const Vehicles = () => {
                   >
                     <FileText className="w-4 h-4" />
                   </Button>
-
                   <DeleteModal
                     title="Tem certeza que você deseja excluir este veículo?"
                     description="Todos os dados salvos serão excluídos."
                     actionText="Excluir veículo"
                     onConfirm={() => handleDelete(vehicle.id)}
                   />
-
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-green-600 border-green-300 hover:bg-green-50"
+                    onClick={() => handleEdit(vehicle.id)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -203,9 +360,19 @@ export const Vehicles = () => {
       />
 
       <AddVehicleModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSave={handleAddVehicleSubmit}
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSubmit={handleAddVehicleSubmit}
+      />
+
+      <EditVehicleModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setVehicleToEdit(null);
+        }}
+        onSave={handleEditSave}
+        vehicle={vehicleToEdit}
       />
     </Layout>
   );
