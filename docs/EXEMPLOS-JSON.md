@@ -39,7 +39,7 @@ Base URL: `http://127.0.0.1:5001/slmg-es/us-central1/api`
 **POST** `/clientes`
 ```json
 {
-  "cpf": "08832661489",
+  "cnpj": "42591651000143",
   "dadosPessoais": {
     "nome": "Maria Oliveira Costa"
   },
@@ -65,16 +65,16 @@ Base URL: `http://127.0.0.1:5001/slmg-es/us-central1/api`
 **GET** `/clientes?limite=5&filtros={"status":"ativo"}&incluirSubcolecoes=false`
 
 ### 5. Buscar Cliente por CPF
-**GET** `/clientes/12345678901?incluirSubcolecoes=true`
+**GET** `/clientes/08832661489?incluirSubcolecoes=true`
 
 ### 6. Buscar Clientes por Nome
 **GET** `/clientes/buscar-nome?nome=João&limite=5`
 
 ### 7. Verificar Elegibilidade para Locação
-**GET** `/clientes/12345678901/elegibilidade`
+**GET** `/clientes/08832661489/elegibilidade`
 
 ### 8. Atualizar Cliente
-**PUT** `/clientes/12345678901`
+**PUT** `/clientes/08832661489`
 ```json
 {
   "dadosPessoais": {
@@ -92,7 +92,7 @@ Base URL: `http://127.0.0.1:5001/slmg-es/us-central1/api`
 ```
 
 ### 9. Alterar Status do Cliente
-**PATCH** `/clientes/12345678901/status`
+**PATCH** `/clientes/08832661489/status`
 ```json
 {
   "status": "bloqueado"
@@ -100,10 +100,10 @@ Base URL: `http://127.0.0.1:5001/slmg-es/us-central1/api`
 ```
 
 ### 10. Excluir Cliente (Soft Delete)
-**DELETE** `/clientes/12345678901?exclusaoCompleta=false`
+**DELETE** `/clientes/08832661489?exclusaoCompleta=false`
 
 ### 11. Excluir Cliente (Hard Delete)
-**DELETE** `/clientes/98765432100?exclusaoCompleta=true`
+**DELETE** `/clientes/08832661489?exclusaoCompleta=true`
 
 ---
 
@@ -261,7 +261,7 @@ Base URL: `http://127.0.0.1:5001/slmg-es/us-central1/api`
 ```json
 {
   "cpfLocatario": "12345678901",
-  "placaVeiculo": "DEF5678",
+  "placaVeiculo": "BRA2E19",
   "dataInicio": "01/01/2025",
   "dataFim": "07/01/2025",
   "valor": 420.00,
