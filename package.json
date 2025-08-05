@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "prettier": "./config/.prettierrc",
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
@@ -10,19 +11,19 @@
   },
   "lint-staged": {
     "*.{ts,js,tsx,jsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint --config ./config/eslint.config.js --fix",
+      "prettier --config ./config/.prettierrc --write"
     ],
     "*.json": [
-      "prettier --write"
+      "prettier --config ./config/.prettierrc --write"
     ]
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --debug",
-    "format": "prettier --write \"**/*.{ts,js,json}\"",
+    "lint": "eslint . --config ./config/eslint.config.js --debug",
+    "format": "prettier --config ./config/.prettierrc --write \"**/*.{ts,js,json}\"",
     "prepare": "husky"
   },
   "dependencies": {

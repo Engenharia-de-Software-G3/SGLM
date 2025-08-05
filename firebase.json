@@ -2,8 +2,7 @@
   "firestore": {
     "database": "(default)",
     "location": "southamerica-east1",
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+    "rules": "config/dev/firestore.rules"
   },
   "functions": [
     {
@@ -23,12 +22,6 @@
     "ui": {
       "enabled": true
     },
-    "singleProjectMode": true,
-    "database": {
-      "port": 9000
-    }
-  },
-  "database": {
-    "rules": "database.rules.json"
+    "singleProjectMode": true
   }
 }
