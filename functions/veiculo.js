@@ -4,8 +4,6 @@
  */
 
 import express from 'express';
-const router = express.Router();
-import { db } from '../firebaseConfig.js';
 import {
   criarVeiculo,
   listarVeiculos,
@@ -21,475 +19,329 @@ import {
   gerarRelatorioFrota,
 } from '../src/scripts/firestore/firestoreVeiculos.js';
 
-/**
- * Middleware para validação básica de dados do veículo
- */
-const validarDadosVeiculo = (req, res, next) => {
-  const { chassi, placa, modelo, marca, renavam, quilometragem, dataCompra } = req.body;
+import {
+  errorHandler,
+  validatePagination,
+  validateFilters,
+  validateDocumentId,
+  asyncHandler,
+  validateContentType,
+  sanitizeInput,
+  requestLogger,
+  validateRequiredFields,
+  formatSuccessResponse,
+  processLastDoc,
+} from './middlewareHelper.js';
 
-  const camposFaltantes = [];
-  if (!chassi) camposFaltantes.push('chassi');
-  if (!placa) camposFaltantes.push('placa');
-  if (!modelo) camposFaltantes.push('modelo');
-  if (!marca) camposFaltantes.push('marca');
-  if (!renavam) camposFaltantes.push('renavam');
-  if (quilometragem === undefined) camposFaltantes.push('quilometragem');
-  if (!dataCompra) camposFaltantes.push('dataCompra');
+const router = express.Router();
 
-  if (camposFaltantes.length > 0) {
-    return res.status(400).json({
-      success: false,
-      error: `Campos obrigatórios faltantes: ${camposFaltantes.join(', ')}`,
-      fields: camposFaltantes,
-    });
-  }
-
-  next();
-};
+// Middlewares globais
+router.use(requestLogger);
+router.use(validateContentType);
+router.use(sanitizeInput);
 
 /**
- * Middleware para tratamento de erros padronizado
+ * @route POST /
+ * @summary Criar novo veículo
+ * @param {Object} req.body - Dados do veículo
+ * @returns {Object} Veículo criado
  */
-const tratarErros = (error, req, res, next) => {
-  console.error(`Erro na rota ${req.method} ${req.path}:`, error);
+router.post(
+  '/',
+  validateRequiredFields([
+    'chassi',
+    'placa',
+    'modelo',
+    'marca',
+    'renavam',
+    'quilometragem',
+    'dataCompra',
+  ]),
+  asyncHandler(async (req, res) => {
+    const resultado = await criarVeiculo(req.body);
 
-  // Se o erro já tem um formato específico, usar esse formato
-  if (error.success === false) {
-    const statusCode = getStatusCodeFromError(error);
-    return res.status(statusCode).json(error);
-  }
-
-  // Erro genérico
-  res.status(500).json({
-    success: false,
-    error: 'Erro interno do servidor',
-    ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-  });
-};
-
-/**
- * Mapeia códigos de erro para status HTTP
- */
-const getStatusCodeFromError = (error) => {
-  const errorCodeMap = {
-    VALIDATION_ERROR: 400,
-    CHASSI_JA_EXISTE: 409,
-    PLACA_JA_EXISTE: 409,
-    VEICULO_NAO_ENCONTRADO: 404,
-    VEICULO_ALUGADO: 409,
-    VEICULO_JA_VENDIDO: 409,
-    PERMISSION_DENIED: 403,
-    SERVICE_UNAVAILABLE: 503,
-    INTERNAL_ERROR: 500,
-  };
-
-  return errorCodeMap[error.code] || 400;
-};
-
-/**
- * POST / - Criar novo veículo
- */
-router.post('/', validarDadosVeiculo, async (req, res, next) => {
-  try {
-    const veiculoData = req.body;
-    const resultado = await criarVeiculo(veiculoData);
-
-    res.status(201).json({
-      success: true,
-      message: 'Veículo criado com sucesso!',
-      data: {
+    res.status(201).json(
+      formatSuccessResponse('Veículo criado com sucesso!')({
         id: resultado.id,
-        chassi: veiculoData.chassi,
-        placa: veiculoData.placa,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+        chassi: req.body.chassi,
+        placa: req.body.placa,
+      }),
+    );
+  }),
+);
 
 /**
- * GET / - Listar veículos com paginação e filtros
+ * @route GET /
+ * @summary Listar veículos com paginação e filtros
+ * @param {Object} req.query - Parâmetros de paginação e filtros
+ * @returns {Object} Lista de veículos
  */
-router.get('/', async (req, res, next) => {
-  try {
-    const { limite = '10', ultimoDocId, filtros = '{}', incluirEstatisticas = 'false' } = req.query;
-
-    // Converter e validar parâmetros
-    const limiteNum = Math.min(Math.max(1, parseInt(limite) || 10), 100);
-    const incluirEstatisticasBoolean = incluirEstatisticas === 'true';
-
-    let filtrosParsed;
-    try {
-      filtrosParsed = JSON.parse(filtros);
-    } catch {
-      filtrosParsed = {};
-    }
-
-    // Obter documento de referência para paginação
-    let ultimoDoc = null;
-    if (ultimoDocId) {
-      try {
-        const lastDocSnapshot = await db.collection('veiculos').doc(ultimoDocId).get();
-        if (!lastDocSnapshot.exists) {
-          return res.status(400).json({
-            success: false,
-            error: 'ID do último documento inválido',
-            field: 'ultimoDocId',
-          });
-        }
-        ultimoDoc = lastDocSnapshot;
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          error: 'Erro ao processar ultimoDocId',
-          field: 'ultimoDocId',
-        });
-      }
-    }
-
-    // Chamar função de listagem
+router.get(
+  '/',
+  validatePagination,
+  validateFilters,
+  processLastDoc,
+  asyncHandler(async (req, res) => {
     const resultado = await listarVeiculos({
-      limite: limiteNum,
-      ultimoDoc,
-      filtros: filtrosParsed,
-      incluirEstatisticas: incluirEstatisticasBoolean,
+      limite: req.query.limite,
+      ultimoDoc: req.ultimoDocSnapshot,
+      filtros: req.filtrosParsed,
+      incluirEstatisticas: req.query.incluirEstatisticas === 'true',
     });
 
-    res.status(200).json({
-      success: true,
-      data: {
+    res.status(200).json(
+      formatSuccessResponse('Veículos listados com sucesso')({
         veiculos: resultado.veiculos,
         total: resultado.total,
         paginacao: {
           possuiMais: !!resultado.ultimoDoc,
           ultimoDocId: resultado.ultimoDoc?.id || null,
         },
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+      }),
+    );
+  }),
+);
 
 /**
- * GET /disponiveis - Listar apenas veículos disponíveis
+ * @route GET /disponiveis
+ * @summary Listar apenas veículos disponíveis
+ * @param {Object} req.query - Filtros opcionais
+ * @returns {Object[]} Veículos disponíveis
  */
-router.get('/disponiveis', async (req, res, next) => {
-  try {
-    const { filtros = '{}' } = req.query;
+router.get(
+  '/disponiveis',
+  validateFilters,
+  asyncHandler(async (req, res) => {
+    const resultado = await listarVeiculosDisponiveis(req.filtrosParsed);
 
-    let filtrosParsed;
-    try {
-      filtrosParsed = JSON.parse(filtros);
-    } catch {
-      filtrosParsed = {};
-    }
-
-    const resultado = await listarVeiculosDisponiveis(filtrosParsed);
-
-    res.status(200).json({
-      success: true,
-      data: resultado,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res
+      .status(200)
+      .json(formatSuccessResponse('Veículos disponíveis listados com sucesso')(resultado));
+  }),
+);
 
 /**
- * GET /relatorio - Gerar relatório da frota
+ * @route GET /relatorio
+ * @summary Gerar relatório da frota
+ * @returns {Object} Relatório da frota
  */
-router.get('/relatorio', async (req, res, next) => {
-  try {
+router.get(
+  '/relatorio',
+  asyncHandler(async (req, res) => {
     const relatorio = await gerarRelatorioFrota();
 
-    res.status(200).json({
-      success: true,
-      data: relatorio,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res.status(200).json(formatSuccessResponse('Relatório gerado com sucesso')(relatorio));
+  }),
+);
 
 /**
- * GET /chassi/:chassi - Buscar veículo por chassi (versão corrigida)
+ * @route GET /chassi/:chassi
+ * @summary Buscar veículo por chassi
+ * @param {string} chassi - Chassi do veículo
+ * @returns {Object} Veículo encontrado
  */
-router.get('/chassi/:chassi', async (req, res) => {
-  try {
-    const { chassi } = req.params;
-    console.log(`🔍 Buscando veículo por chassi: ${chassi}`);
+router.get(
+  '/chassi/:chassi',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    const veiculo = await buscarPorChassi(req.params.chassi);
 
-    const veiculo = await buscarPorChassi(chassi);
+    res.status(200).json(formatSuccessResponse('Veículo encontrado com sucesso')(veiculo));
+  }),
+);
 
-    res.status(200).json({
-      success: true,
-      data: veiculo,
-    });
-  } catch (error) {
-    console.error(`Erro ao buscar veículo por chassi ${req.params.chassi}:`, error);
+/**
+ * @route GET /placa/:placa
+ * @summary Buscar veículo por placa
+ * @param {string} placa - Placa do veículo
+ * @returns {Object} Veículo encontrado
+ */
+router.get(
+  '/placa/:placa',
+  validateDocumentId('placa'),
+  asyncHandler(async (req, res) => {
+    const veiculo = await buscarPorPlaca(req.params.placa);
 
-    // Verificar diferentes tipos de erro "não encontrado"
-    if (
-      error.code === 'VEICULO_NAO_ENCONTRADO' ||
-      error.message?.includes('não encontrado') ||
-      error.message?.includes('not found') ||
-      (error.success === false && error.code === 'VEICULO_NAO_ENCONTRADO')
-    ) {
-      return res.status(404).json({
-        success: false,
-        error: 'Veículo não encontrado',
-        code: 'VEICULO_NAO_ENCONTRADO',
-      });
-    }
+    res.status(200).json(formatSuccessResponse('Veículo encontrado com sucesso')(veiculo));
+  }),
+);
 
-    // Erro de validação (chassi inválido, etc.)
-    if (error.message?.includes('inválido') || error.name === 'ValidationError') {
+/**
+ * @route GET /:chassi/quilometragem
+ * @summary Listar quilometragem de um veículo
+ * @param {string} chassi - Chassi do veículo
+ * @returns {Object[]} Dados de quilometragem
+ */
+router.get(
+  '/:chassi/quilometragem',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    const dadosQuilometragem = await listarQuilometragemVeiculo(req.params.chassi);
+
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse('Dados de quilometragem obtidos com sucesso')(dadosQuilometragem),
+      );
+  }),
+);
+
+/**
+ * @route PUT /:chassi
+ * @summary Atualizar veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {Object} req.body - Dados para atualização
+ * @returns {Object} Sucesso
+ */
+router.put(
+  '/:chassi',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({
         success: false,
-        error: error.message,
+        error: 'Nenhum dado fornecido para atualização',
         code: 'VALIDATION_ERROR',
       });
     }
 
-    // Erro genérico
-    res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
-  }
-});
+    await atualizarVeiculo(req.params.chassi, req.body);
+
+    res
+      .status(200)
+      .json(formatSuccessResponse(`Veículo ${req.params.chassi} atualizado com sucesso!`)({}));
+  }),
+);
 
 /**
- * GET /placa/:placa - Buscar veículo por placa
+ * @route PATCH /:chassi/placa
+ * @summary Atualizar apenas a placa do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {string} req.body.placa - Nova placa
+ * @returns {Object} Sucesso
  */
-router.get('/placa/:placa', async (req, res, next) => {
-  try {
-    const { placa } = req.params;
-    const veiculo = await buscarPorPlaca(placa);
+router.patch(
+  '/:chassi/placa',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['placa']),
+  asyncHandler(async (req, res) => {
+    await atualizarPlaca(req.params.chassi, req.body.placa);
 
-    res.status(200).json({
-      success: true,
-      data: veiculo,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(`Placa do veículo ${req.params.chassi} atualizada com sucesso!`)({}),
+      );
+  }),
+);
 
 /**
- * GET /:chassi/quilometragem - Listar quilometragem de um veículo
+ * @route PATCH /:chassi/quilometragem
+ * @summary Atualizar quilometragem do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {number} req.body.quilometragem - Nova quilometragem
+ * @returns {Object} Sucesso
  */
-router.get('/:chassi/quilometragem', async (req, res, next) => {
-  try {
-    const { chassi } = req.params;
-    const dadosQuilometragem = await listarQuilometragemVeiculo(chassi);
+router.patch(
+  '/:chassi/quilometragem',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['quilometragem']),
+  asyncHandler(async (req, res) => {
+    await atualizarQuilometragemVeiculo(req.params.chassi, req.body.quilometragem);
 
-    res.status(200).json({
-      success: true,
-      data: dadosQuilometragem,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(
+          `Quilometragem do veículo ${req.params.chassi} atualizada com sucesso!`,
+        )({}),
+      );
+  }),
+);
 
 /**
- * PUT /:chassi - Atualizar veículo
+ * @route PATCH /:chassi/status
+ * @summary Alterar status do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {string} req.body.status - Novo status
+ * @returns {Object} Sucesso
  */
-router.put('/:chassi', async (req, res, next) => {
-  try {
-    const { chassi } = req.params;
-    const updates = req.body;
+router.patch(
+  '/:chassi/status',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['status']),
+  asyncHandler(async (req, res) => {
+    await alterarStatusVeiculo(req.params.chassi, req.body.status);
 
-    if (!updates || Object.keys(updates).length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Nenhum dado fornecido para atualização',
-      });
-    }
-
-    await atualizarVeiculo(chassi, updates);
-
-    res.status(200).json({
-      success: true,
-      message: `Veículo ${chassi} atualizado com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(
+          `Status do veículo ${req.params.chassi} alterado para ${req.body.status} com sucesso!`,
+        )({}),
+      );
+  }),
+);
 
 /**
- * PATCH /:chassi/placa - Atualizar apenas a placa do veículo
+ * @route POST /:chassi/venda
+ * @summary Registrar venda do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {string} req.body.dataVenda - Data da venda
+ * @param {string} [req.body.observacoes] - Observações opcionais
+ * @returns {Object} Sucesso
  */
-router.patch('/:chassi/placa', async (req, res, next) => {
-  try {
-    const { chassi } = req.params;
-    const { placa } = req.body;
+router.post(
+  '/:chassi/venda',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['dataVenda']),
+  asyncHandler(async (req, res) => {
+    await registrarVenda(req.params.chassi, req.body.dataVenda, req.body.observacoes);
 
-    if (!placa) {
-      return res.status(400).json({
-        success: false,
-        error: 'Nova placa é obrigatória',
-        field: 'placa',
-      });
-    }
-
-    await atualizarPlaca(chassi, placa);
-
-    res.status(200).json({
-      success: true,
-      message: `Placa do veículo ${chassi} atualizada com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(`Venda do veículo ${req.params.chassi} registrada com sucesso!`)({}),
+      );
+  }),
+);
 
 /**
- * PATCH /:chassi/quilometragem - Atualizar quilometragem do veículo
+ * @route DELETE /:chassi
+ * @summary Deletar veículo (soft delete ou físico)
+ * @param {string} chassi - Chassi do veículo
+ * @param {boolean} [req.query.exclusaoFisica] - Se true, exclusão física
+ * @returns {Object} Sucesso
  */
-router.patch('/:chassi/quilometragem', async (req, res, next) => {
-  try {
-    const { chassi } = req.params;
-    const { quilometragem } = req.body;
+router.delete(
+  '/:chassi',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    const exclusaoFisica = req.query.exclusaoFisica === 'true';
 
-    if (quilometragem === undefined || quilometragem === null) {
-      return res.status(400).json({
-        success: false,
-        error: 'Quilometragem é obrigatória',
-        field: 'quilometragem',
-      });
-    }
+    if (exclusaoFisica) {
+      // Implementar exclusão física se necessário
+      // Por ora, usar soft delete
+      await alterarStatusVeiculo(req.params.chassi, 'vendido');
 
-    await atualizarQuilometragemVeiculo(chassi, quilometragem);
-
-    res.status(200).json({
-      success: true,
-      message: `Quilometragem do veículo ${chassi} atualizada com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * PATCH /:chassi/status - Alterar status do veículo
- */
-router.patch('/:chassi/status', async (req, res, next) => {
-  try {
-    const { chassi } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({
-        success: false,
-        error: 'Status é obrigatório',
-        field: 'status',
-      });
-    }
-
-    await alterarStatusVeiculo(chassi, status);
-
-    res.status(200).json({
-      success: true,
-      message: `Status do veículo ${chassi} alterado para ${status} com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * POST /:chassi/venda - Registrar venda do veículo
- */
-router.post('/:chassi/venda', async (req, res, next) => {
-  try {
-    const { chassi } = req.params;
-    const { dataVenda, observacoes } = req.body;
-
-    if (!dataVenda) {
-      return res.status(400).json({
-        success: false,
-        error: 'Data da venda é obrigatória',
-        field: 'dataVenda',
-      });
-    }
-
-    await registrarVenda(chassi, dataVenda, observacoes);
-
-    res.status(200).json({
-      success: true,
-      message: `Venda do veículo ${chassi} registrada com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * DELETE /:chassi - Deletar veículo (soft delete recomendado)
- */
-router.delete('/:chassi', async (req, res, next) => {
-  try {
-    const { chassi } = req.params;
-    const { exclusaoFisica = 'false' } = req.query;
-
-    if (exclusaoFisica === 'true') {
-      // Exclusão física - deletar documento
-      const snapshot = await db
-        .collection('veiculos')
-        .where('chassi', '==', chassi.toUpperCase().trim())
-        .limit(1)
-        .get();
-
-      if (snapshot.empty) {
-        return res.status(404).json({
-          success: false,
-          error: 'Veículo não encontrado',
-          code: 'VEICULO_NAO_ENCONTRADO',
-        });
-      }
-
-      const veiculoDoc = snapshot.docs[0];
-      const veiculoData = veiculoDoc.data();
-
-      // Verificar se veículo está alugado
-      if (veiculoData.status === 'alugado') {
-        return res.status(409).json({
-          success: false,
-          error: 'Não é possível excluir veículo que está alugado',
-          code: 'VEICULO_ALUGADO',
-        });
-      }
-
-      await veiculoDoc.ref.delete();
-
-      res.status(200).json({
-        success: true,
-        message: `Veículo ${chassi} excluído permanentemente com sucesso!`,
-      });
+      res
+        .status(200)
+        .json(formatSuccessResponse(`Veículo ${req.params.chassi} excluído com sucesso!`)({}));
     } else {
-      // Soft delete - alterar status para inativo/excluído
-      await alterarStatusVeiculo(chassi, 'vendido');
+      await alterarStatusVeiculo(req.params.chassi, 'vendido');
 
-      res.status(200).json({
-        success: true,
-        message: `Veículo ${chassi} marcado como vendido com sucesso!`,
-      });
+      res
+        .status(200)
+        .json(
+          formatSuccessResponse(`Veículo ${req.params.chassi} marcado como vendido com sucesso!`)(
+            {},
+          ),
+        );
     }
-  } catch (error) {
-    next(error);
-  }
-});
+  }),
+);
 
-// Aplicar middleware de tratamento de erros
-router.use(tratarErros);
+// Middleware de tratamento de erros
+router.use(errorHandler);
 
-/**
- * Exporta o roteador Express para ser utilizado no arquivo principal
- */
 export default router;

@@ -1,4 +1,3 @@
-// firestoreClientes.js - Versão Refatorada
 import { db } from '../../../firebaseConfig.js';
 import { validators, formatters } from './validators.js';
 import { errorHandler, BusinessError } from './errorHandler.js';
@@ -9,7 +8,15 @@ const VALID_STATUSES = Object.values(STATUS.CLIENTE);
 
 class ClienteService {
   /**
-   * Valida dados básicos do cliente
+   * Valida dados básicos do cliente.
+   *
+   * @param {Object} clienteData - Objeto contendo os dados do cliente.
+   * @param {string} clienteData.cpf - CPF do cliente.
+   * @param {Object} clienteData.dadosPessoais - Dados pessoais do cliente.
+   * @param {Object} clienteData.endereco - Endereço do cliente.
+   * @param {Object} clienteData.contato - Contato do cliente.
+   * @returns {Object} Dados do cliente validados e normalizados.
+   * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
    */
   static validateClienteData(clienteData) {
     const { cpf, dadosPessoais, endereco, contato } = clienteData;
@@ -46,7 +53,17 @@ class ClienteService {
   }
 
   /**
-   * Valida dados de endereço
+   * Valida dados de endereço.
+   *
+   * @param {Object} endereco - Objeto contendo os dados do endereço.
+   * @param {string} endereco.cep - CEP.
+   * @param {string} endereco.rua - Rua.
+   * @param {string} endereco.numero - Número.
+   * @param {string} endereco.bairro - Bairro.
+   * @param {string} endereco.cidade - Cidade.
+   * @param {string} endereco.estado - Estado (UF).
+   * @returns {Object} Endereço validado e normalizado.
+   * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
    */
   static validateEndereco(endereco) {
     const { cep, rua, numero, bairro, cidade, estado } = endereco;
@@ -77,7 +94,14 @@ class ClienteService {
   }
 
   /**
-   * Valida dados da CNH
+   * Valida dados da CNH.
+   *
+   * @param {Object} cnh - Objeto contendo os dados da CNH.
+   * @param {string} cnh.numero - Número da CNH.
+   * @param {string} cnh.categoria - Categoria da CNH.
+   * @param {string|Date} cnh.dataValidade - Data de validade da CNH.
+   * @returns {Object} CNH validada e normalizada.
+   * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
    */
   static validateCNH(cnh) {
     if (!cnh.numero || !cnh.categoria || !cnh.dataValidade) {
@@ -98,7 +122,10 @@ class ClienteService {
   }
 
   /**
-   * Calcula idade baseada na data de nascimento
+   * Calcula idade baseada na data de nascimento.
+   *
+   * @param {Date|string} dataNascimento - Data de nascimento do cliente.
+   * @returns {number} Idade em anos.
    */
   static calcularIdade(dataNascimento) {
     const hoje = new Date();
@@ -114,7 +141,10 @@ class ClienteService {
   }
 
   /**
-   * Verifica se CPF já existe no sistema
+   * Verifica se CPF já existe no sistema.
+   *
+   * @param {string} cpf - CPF do cliente.
+   * @returns {Promise<boolean>} True se o CPF já existe, False caso contrário.
    */
   static async verificarCPFExistente(cpf) {
     const snapshot = await db.collection(COLLECTION_NAME).where('id', '==', cpf).limit(1).get();
@@ -123,7 +153,11 @@ class ClienteService {
   }
 
   /**
-   * Formatar cliente para resposta
+   * Formata cliente para resposta.
+   *
+   * @param {import('firebase').firestore.DocumentSnapshot} doc - Documento do cliente.
+   * @param {boolean} [incluirSubcolecoes=false] - Se deve incluir subcoleções.
+   * @returns {Object} Cliente formatado.
    */
   static formatarCliente(doc, incluirSubcolecoes = false) {
     const data = doc.data();
@@ -142,7 +176,10 @@ class ClienteService {
   }
 
   /**
-   * Busca e formata subcoleções do cliente
+   * Busca e formata subcoleções do cliente.
+   *
+   * @param {import('firebase').firestore.DocumentReference} clienteRef - Referência do documento do cliente.
+   * @returns {Promise<Object>} Subcoleções do cliente.
    */
   static async buscarSubcolecoes(clienteRef) {
     const [enderecosSnap, contatosSnap, documentosSnap] = await Promise.all([
@@ -160,7 +197,12 @@ class ClienteService {
 }
 
 /**
- * Cadastra um novo cliente com validações aprimoradas
+ * Cadastra um novo cliente com validações aprimoradas.
+ *
+ * @param {Object} clienteData - Dados do cliente a ser cadastrado.
+ * @returns {Promise<Object>} Objeto com sucesso e id do cliente.
+ * @throws {BusinessError} Se o CPF já estiver cadastrado.
+ * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
  */
 export const criarCliente = async (clienteData) => {
   return errorHandler
@@ -223,7 +265,14 @@ export const criarCliente = async (clienteData) => {
 };
 
 /**
- * Lista clientes com filtros e paginação aprimorados
+ * Lista clientes com filtros e paginação aprimorados.
+ *
+ * @param {Object} params - Parâmetros de listagem.
+ * @param {number} [params.limite] - Limite de clientes.
+ * @param {Object} [params.ultimoDoc] - Último documento para paginação.
+ * @param {Object} [params.filtros] - Filtros de busca.
+ * @param {boolean} [params.incluirSubcolecoes] - Se deve incluir subcoleções.
+ * @returns {Promise<Object>} Lista de clientes e paginação.
  */
 export const listarClientes = async ({
   limite = PAGINATION.DEFAULT_LIMIT,
@@ -284,7 +333,12 @@ export const listarClientes = async ({
 };
 
 /**
- * Busca cliente por CPF com subcoleções
+ * Busca cliente por CPF com subcoleções.
+ *
+ * @param {string} cpf - CPF do cliente.
+ * @param {boolean} [incluirSubcolecoes=true] - Se deve incluir subcoleções.
+ * @returns {Promise<Object>} Cliente encontrado.
+ * @throws {BusinessError} Se o cliente não for encontrado.
  */
 export const buscarClientePorCPF = async (cpf, incluirSubcolecoes = true) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -308,7 +362,13 @@ export const buscarClientePorCPF = async (cpf, incluirSubcolecoes = true) => {
 };
 
 /**
- * Atualiza cliente com validações
+ * Atualiza cliente com validações.
+ *
+ * @param {string} cpf - CPF do cliente.
+ * @param {Object} updates - Campos a serem atualizados.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError} Se o cliente não for encontrado.
+ * @throws {ValidationError} Se algum campo for inválido.
  */
 export const atualizarCliente = async (cpf, updates) => {
   return errorHandler
@@ -397,7 +457,13 @@ export const atualizarCliente = async (cpf, updates) => {
 };
 
 /**
- * Altera status do cliente (ativar/desativar/bloquear)
+ * Altera status do cliente (ativar/desativar/bloquear).
+ *
+ * @param {string} cpf - CPF do cliente.
+ * @param {string} novoStatus - Novo status do cliente.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError} Se o cliente não for encontrado.
+ * @throws {ValidationError} Se o status for inválido.
  */
 export const alterarStatusCliente = async (cpf, novoStatus) => {
   return errorHandler
@@ -423,7 +489,12 @@ export const alterarStatusCliente = async (cpf, novoStatus) => {
 };
 
 /**
- * Exclui cliente e suas subcoleções (soft delete)
+ * Exclui cliente e suas subcoleções (soft delete ou exclusão completa).
+ *
+ * @param {string} cpf - CPF do cliente.
+ * @param {boolean} [exclusaoCompleta=false] - Se deve excluir fisicamente o cliente e subcoleções.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError} Se o cliente não for encontrado.
  */
 export const excluirCliente = async (cpf, exclusaoCompleta = false) => {
   return errorHandler
@@ -467,7 +538,12 @@ export const excluirCliente = async (cpf, exclusaoCompleta = false) => {
 };
 
 /**
- * Busca clientes por nome (busca flexível)
+ * Busca clientes por nome (busca flexível).
+ *
+ * @param {string} nome - Nome do cliente para busca.
+ * @param {number} [limite=PAGINATION.DEFAULT_LIMIT] - Limite de resultados.
+ * @returns {Promise<Object[]>} Lista de clientes encontrados.
+ * @throws {ValidationError} Se o nome for muito curto.
  */
 export const buscarClientesPorNome = async (nome, limite = PAGINATION.DEFAULT_LIMIT) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -491,7 +567,10 @@ export const buscarClientesPorNome = async (nome, limite = PAGINATION.DEFAULT_LI
 };
 
 /**
- * Verifica se cliente pode alugar (validações de negócio)
+ * Verifica se cliente pode alugar (validações de negócio).
+ *
+ * @param {string} cpf - CPF do cliente.
+ * @returns {Promise<Object>} Objeto com elegibilidade, problemas e dados do cliente.
  */
 export const verificarElegibilidadeLocacao = async (cpf) => {
   return errorHandler.handleFirestoreOperation(async () => {

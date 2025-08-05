@@ -1,4 +1,3 @@
-// firestoreLocacoes.js - Versão Refatorada
 import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 import { validators, formatters } from './validators.js';
@@ -10,7 +9,16 @@ const VALID_STATUSES = ['ativa', 'concluida', 'cancelada'];
 
 class LocacaoService {
   /**
-   * Valida dados da locação
+   * Valida dados da locação.
+   *
+   * @param {Object} data - Dados da locação.
+   * @param {string} data.cpfLocatario - CPF do locatário.
+   * @param {string} data.placaVeiculo - Placa do veículo.
+   * @param {string|Date} data.dataInicio - Data de início da locação.
+   * @param {string|Date} data.dataFim - Data de fim da locação.
+   * @param {number|string} data.valor - Valor da locação.
+   * @returns {Object} Dados validados e normalizados.
+   * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
    */
   static validateLocacaoData(data) {
     const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor } = data;
@@ -37,7 +45,11 @@ class LocacaoService {
   }
 
   /**
-   * Verifica disponibilidade do cliente
+   * Verifica disponibilidade do cliente.
+   *
+   * @param {string} cpf - CPF do cliente.
+   * @returns {Promise<Object>} Dados do cliente.
+   * @throws {BusinessError} Se o cliente não for encontrado ou não estiver ativo.
    */
   static async verificarCliente(cpf) {
     const clienteDoc = await db.collection('clientes').doc(cpf).get();
@@ -55,7 +67,12 @@ class LocacaoService {
   }
 
   /**
-   * Verifica disponibilidade do veículo
+   * Verifica disponibilidade do veículo.
+   *
+   * @param {string} placa - Placa do veículo.
+   * @returns {Promise<{doc: import('firebase').firestore.DocumentSnapshot, data: Object}>}
+   *   Documento e dados do veículo.
+   * @throws {BusinessError} Se o veículo não for encontrado ou não estiver disponível.
    */
   static async verificarVeiculo(placa) {
     const veiculosSnapshot = await db
@@ -79,7 +96,11 @@ class LocacaoService {
   }
 
   /**
-   * Atualiza status do veículo
+   * Atualiza status do veículo.
+   *
+   * @param {import('firebase').firestore.DocumentSnapshot} veiculoDoc - Documento do veículo.
+   * @param {string} novoStatus - Novo status do veículo.
+   * @returns {Promise<void>}
    */
   static async atualizarStatusVeiculo(veiculoDoc, novoStatus) {
     await veiculoDoc.ref.update({
@@ -89,7 +110,10 @@ class LocacaoService {
   }
 
   /**
-   * Formatar locação para resposta
+   * Formata locação para resposta.
+   *
+   * @param {import('firebase').firestore.DocumentSnapshot} doc - Documento da locação.
+   * @returns {Object} Locação formatada.
    */
   static formatarLocacao(doc) {
     const data = doc.data();
@@ -105,7 +129,11 @@ class LocacaoService {
 }
 
 /**
- * Cadastra uma nova locação com validações aprimoradas
+ * Cadastra uma nova locação com validações aprimoradas.
+ *
+ * @param {Object} locacaoData - Dados da locação.
+ * @returns {Promise<Object>} Objeto de sucesso e id da locação.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const criarLocacao = async (locacaoData) => {
   return errorHandler
@@ -153,7 +181,13 @@ export const criarLocacao = async (locacaoData) => {
 };
 
 /**
- * Lista locações com filtros aprimorados
+ * Lista locações com filtros aprimorados.
+ *
+ * @param {Object} params - Parâmetros de listagem.
+ * @param {number} [params.limite=10] - Limite de locações.
+ * @param {Object} [params.ultimoDoc=null] - Último documento para paginação.
+ * @param {Object} [params.filtros={}] - Filtros de busca.
+ * @returns {Promise<Object>} Lista de locações e paginação.
  */
 export const listarLocacoes = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -184,7 +218,11 @@ export const listarLocacoes = async ({ limite = 10, ultimoDoc = null, filtros = 
 };
 
 /**
- * Busca locação por ID
+ * Busca locação por ID.
+ *
+ * @param {string} id - ID da locação.
+ * @returns {Promise<Object>} Locação encontrada.
+ * @throws {BusinessError} Se a locação não for encontrada.
  */
 export const buscarLocacaoPorId = async (id) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -199,7 +237,12 @@ export const buscarLocacaoPorId = async (id) => {
 };
 
 /**
- * Atualiza locação com validações
+ * Atualiza locação com validações.
+ *
+ * @param {string} id - ID da locação.
+ * @param {Object} updates - Campos a serem atualizados.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarLocacao = async (id, updates) => {
   return errorHandler
@@ -268,7 +311,11 @@ export const atualizarLocacao = async (id, updates) => {
 };
 
 /**
- * Exclui locação com verificações
+ * Exclui locação com verificações.
+ *
+ * @param {string} id - ID da locação.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError} Se a locação não for encontrada.
  */
 export const excluirLocacao = async (id) => {
   return errorHandler
@@ -301,7 +348,10 @@ export const excluirLocacao = async (id) => {
 };
 
 /**
- * Histórico de locações por CPF do cliente
+ * Histórico de locações por CPF do cliente.
+ *
+ * @param {string} cpf - CPF do cliente.
+ * @returns {Promise<Object[]>} Lista de locações do cliente.
  */
 export const historicoLocacoesCliente = async (cpf) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -318,7 +368,11 @@ export const historicoLocacoesCliente = async (cpf) => {
 };
 
 /**
- * Histórico de locações por chassi do veículo
+ * Histórico de locações por chassi do veículo.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @returns {Promise<Object[]>} Lista de locações do veículo.
+ * @throws {BusinessError} Se o veículo não for encontrado.
  */
 export const historicoLocacoesVeiculo = async (chassi) => {
   return errorHandler.handleFirestoreOperation(async () => {

@@ -4,8 +4,6 @@
  */
 
 import express from 'express';
-const router = express.Router();
-import { db } from '../firebaseConfig.js';
 import {
   criarCliente,
   listarClientes,
@@ -17,351 +15,219 @@ import {
   verificarElegibilidadeLocacao,
 } from '../src/scripts/firestore/firestoreClientes.js';
 
-/**
- * Middleware para validação básica de dados do cliente
- */
-const validarDadosCliente = (req, res, next) => {
-  const { cpf, dadosPessoais, endereco, contato } = req.body;
+import {
+  errorHandler,
+  validatePagination,
+  validateFilters,
+  validateDocumentId,
+  asyncHandler,
+  validateContentType,
+  sanitizeInput,
+  requestLogger,
+  validateRequiredFields,
+  formatSuccessResponse,
+  processLastDoc,
+} from './middlewareHelper.js';
 
-  if (!cpf) {
-    return res.status(400).json({
-      success: false,
-      error: 'CPF é obrigatório',
-      field: 'cpf',
-    });
-  }
+const router = express.Router();
 
-  if (!dadosPessoais?.nome) {
-    return res.status(400).json({
-      success: false,
-      error: 'Nome é obrigatório',
-      field: 'dadosPessoais.nome',
-    });
-  }
-
-  if (!endereco) {
-    return res.status(400).json({
-      success: false,
-      error: 'Endereço é obrigatório',
-      field: 'endereco',
-    });
-  }
-
-  if (!contato?.email) {
-    return res.status(400).json({
-      success: false,
-      error: 'Email é obrigatório',
-      field: 'contato.email',
-    });
-  }
-
-  next();
-};
+// Middlewares globais
+router.use(requestLogger);
+router.use(validateContentType);
+router.use(sanitizeInput);
 
 /**
- * Middleware para tratamento de erros padronizado
+ * @route POST /
+ * @summary Criar um novo cliente
+ * @param {Object} req.body - Dados do cliente
+ * @returns {Object} Cliente criado
  */
-const tratarErros = (error, req, res, next) => {
-  console.error(`Erro na rota ${req.method} ${req.path}:`, error);
-
-  // Se o erro já tem um formato específico, usar esse formato
-  if (error.success === false) {
-    const statusCode = getStatusCodeFromError(error);
-    return res.status(statusCode).json(error);
-  }
-
-  // Erro genérico
-  res.status(500).json({
-    success: false,
-    error: 'Erro interno do servidor',
-    ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-  });
-};
+router.post(
+  '/',
+  validateRequiredFields(['cpf', 'dadosPessoais.nome', 'endereco', 'contato.email']),
+  asyncHandler(async (req, res) => {
+    await criarCliente(req.body);
+    res.status(201).json(
+      formatSuccessResponse('Cliente criado com sucesso!')({
+        id: req.body.cpf,
+        cpf: req.body.cpf,
+      }),
+    );
+  }),
+);
 
 /**
- * Mapeia códigos de erro para status HTTP
+ * @route GET /
+ * @summary Listar clientes com paginação e filtros
+ * @param {Object} req.query - Parâmetros de paginação e filtros
+ * @returns {Object} Lista de clientes
  */
-const getStatusCodeFromError = (error) => {
-  const errorCodeMap = {
-    VALIDATION_ERROR: 400,
-    CPF_JA_EXISTE: 409,
-    CLIENTE_NAO_ENCONTRADO: 404,
-    CLIENTE_INATIVO: 400,
-    PERMISSION_DENIED: 403,
-    SERVICE_UNAVAILABLE: 503,
-    INTERNAL_ERROR: 500,
-  };
-
-  return errorCodeMap[error.code] || 400;
-};
-
-/**
- * POST / - Criar um novo cliente
- */
-router.post('/', validarDadosCliente, async (req, res, next) => {
-  try {
-    const clienteData = req.body;
-
-    // A função refatorada usa try/catch, não retorna { success, id }
-    await criarCliente(clienteData);
-
-    // Se chegou até aqui, foi sucesso
-    res.status(201).json({
-      success: true,
-      message: 'Cliente criado com sucesso!',
-      data: {
-        id: clienteData.cpf,
-        cpf: clienteData.cpf,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * GET / - Listar clientes com paginação e filtros
- */
-router.get('/', async (req, res, next) => {
-  try {
-    const { limite = '10', ultimoDocId, filtros = '{}', incluirSubcolecoes = 'false' } = req.query;
-
-    // Validar e parsear parâmetros
-    const limiteNum = Math.min(Math.max(1, parseInt(limite) || 10), 100);
-    const incluirSubcolecoesBoolean = incluirSubcolecoes === 'true';
-
-    let filtrosParsed;
-    try {
-      filtrosParsed = JSON.parse(filtros);
-    } catch {
-      filtrosParsed = {};
-    }
-
-    // Recuperar último documento para paginação
-    let ultimoDocSnapshot = null;
-    if (ultimoDocId) {
-      try {
-        ultimoDocSnapshot = await db.collection('clientes').doc(ultimoDocId).get();
-        if (!ultimoDocSnapshot.exists) {
-          return res.status(400).json({
-            success: false,
-            error: 'ultimoDocId inválido',
-            field: 'ultimoDocId',
-          });
-        }
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          error: 'Erro ao processar ultimoDocId',
-          field: 'ultimoDocId',
-        });
-      }
-    }
-
-    // Chamar função de listagem
+router.get(
+  '/',
+  validatePagination,
+  validateFilters,
+  processLastDoc,
+  asyncHandler(async (req, res) => {
     const resultado = await listarClientes({
-      limite: limiteNum,
-      ultimoDoc: ultimoDocSnapshot,
-      filtros: filtrosParsed,
-      incluirSubcolecoes: incluirSubcolecoesBoolean,
+      limite: req.query.limite,
+      ultimoDoc: req.ultimoDocSnapshot,
+      filtros: req.filtrosParsed,
+      incluirSubcolecoes: req.query.incluirSubcolecoes === 'true',
     });
 
-    // Preparar resposta
-    res.status(200).json({
-      success: true,
-      data: {
+    res.status(200).json(
+      formatSuccessResponse('Clientes listados com sucesso')({
         clientes: resultado.clientes,
         total: resultado.total,
         paginacao: {
           possuiMais: !!resultado.ultimoDoc,
           ultimoDocId: resultado.ultimoDoc?.id || null,
         },
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+      }),
+    );
+  }),
+);
 
 /**
- * GET /buscar-nome - Buscar clientes por nome
+ * @route GET /buscar-nome
+ * @summary Buscar clientes por nome
+ * @param {string} req.query.nome - Nome do cliente
+ * @returns {Object[]} Lista de clientes encontrados
  */
-router.get('/buscar-nome', async (req, res, next) => {
-  try {
-    const { nome, limite = '10' } = req.query;
+router.get(
+  '/buscar-nome',
+  validatePagination,
+  asyncHandler(async (req, res) => {
+    const { nome } = req.query;
 
     if (!nome) {
       return res.status(400).json({
         success: false,
         error: 'Parâmetro nome é obrigatório',
         field: 'nome',
-      });
-    }
-
-    const limiteNum = Math.min(parseInt(limite) || 10, 50);
-    const clientes = await buscarClientesPorNome(nome, limiteNum);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        clientes,
-        total: clientes.length,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * GET /:cpf - Buscar cliente por CPF (versão corrigida)
- */
-router.get('/:cpf', async (req, res) => {
-  try {
-    const { cpf } = req.params;
-    const { incluirSubcolecoes = 'true' } = req.query;
-
-    console.log(`🔍 Buscando cliente: ${cpf}`);
-
-    const incluirSubcolecoesBoolean = incluirSubcolecoes === 'true';
-    const cliente = await buscarClientePorCPF(cpf, incluirSubcolecoesBoolean);
-
-    res.status(200).json({
-      success: true,
-      data: cliente,
-    });
-  } catch (error) {
-    console.error(`Erro ao buscar cliente ${req.params.cpf}:`, error);
-
-    // Verificar diferentes tipos de erro "não encontrado"
-    if (
-      error.code === 'CLIENTE_NAO_ENCONTRADO' ||
-      error.message?.includes('não encontrado') ||
-      error.message?.includes('not found') ||
-      (error.success === false && error.code === 'CLIENTE_NAO_ENCONTRADO')
-    ) {
-      return res.status(404).json({
-        success: false,
-        error: 'Cliente não encontrado',
-        code: 'CLIENTE_NAO_ENCONTRADO',
-      });
-    }
-
-    // Erro de validação (CPF inválido, etc.)
-    if (error.message?.includes('inválido') || error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        error: error.message,
         code: 'VALIDATION_ERROR',
       });
     }
 
-    // Erro genérico
-    res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
-  }
-});
+    const clientes = await buscarClientesPorNome(nome, req.query.limite);
+
+    res.status(200).json(
+      formatSuccessResponse('Busca realizada com sucesso')({
+        clientes,
+        total: clientes.length,
+      }),
+    );
+  }),
+);
 
 /**
- * GET /:cpf/elegibilidade - Verificar elegibilidade para locação
+ * @route GET /:cpf
+ * @summary Buscar cliente por CPF
+ * @param {string} cpf - CPF do cliente
+ * @returns {Object} Cliente encontrado
  */
-router.get('/:cpf/elegibilidade', async (req, res, next) => {
-  try {
-    const { cpf } = req.params;
-    const resultado = await verificarElegibilidadeLocacao(cpf);
+router.get(
+  '/:cpf',
+  validateDocumentId('cpf'),
+  asyncHandler(async (req, res) => {
+    const cliente = await buscarClientePorCPF(
+      req.params.cpf,
+      req.query.incluirSubcolecoes === 'true',
+    );
 
-    res.status(200).json({
-      success: true,
-      data: resultado,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res.status(200).json(formatSuccessResponse('Cliente encontrado com sucesso')(cliente));
+  }),
+);
 
 /**
- * PUT /:cpf - Atualizar cliente existente
+ * @route GET /:cpf/elegibilidade
+ * @summary Verificar elegibilidade para locação
+ * @param {string} cpf - CPF do cliente
+ * @returns {Object} Resultado da verificação
  */
-router.put('/:cpf', async (req, res, next) => {
-  try {
-    const { cpf } = req.params;
-    const updates = req.body;
+router.get(
+  '/:cpf/elegibilidade',
+  validateDocumentId('cpf'),
+  asyncHandler(async (req, res) => {
+    const resultado = await verificarElegibilidadeLocacao(req.params.cpf);
 
-    // Validação básica: verifica se há dados para atualizar
-    if (!updates || Object.keys(updates).length === 0) {
+    res.status(200).json(formatSuccessResponse('Verificação realizada com sucesso')(resultado));
+  }),
+);
+
+/**
+ * @route PUT /:cpf
+ * @summary Atualizar cliente existente
+ * @param {string} cpf - CPF do cliente
+ * @param {Object} req.body - Dados para atualização
+ * @returns {Object} Sucesso
+ */
+router.put(
+  '/:cpf',
+  validateDocumentId('cpf'),
+  asyncHandler(async (req, res) => {
+    if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Nenhum dado fornecido para atualização',
+        code: 'VALIDATION_ERROR',
       });
     }
 
-    // A função refatorada usa try/catch, não retorna { success }
-    await atualizarCliente(cpf, updates);
+    await atualizarCliente(req.params.cpf, req.body);
 
-    res.status(200).json({
-      success: true,
-      message: `Cliente ${cpf} atualizado com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res
+      .status(200)
+      .json(formatSuccessResponse(`Cliente ${req.params.cpf} atualizado com sucesso!`)({}));
+  }),
+);
 
 /**
- * PATCH /:cpf/status - Alterar status do cliente
+ * @route PATCH /:cpf/status
+ * @summary Alterar status do cliente
+ * @param {string} cpf - CPF do cliente
+ * @param {string} req.body.status - Novo status
+ * @returns {Object} Sucesso
  */
-router.patch('/:cpf/status', async (req, res, next) => {
-  try {
-    const { cpf } = req.params;
-    const { status } = req.body;
+router.patch(
+  '/:cpf/status',
+  validateDocumentId('cpf'),
+  validateRequiredFields(['status']),
+  asyncHandler(async (req, res) => {
+    await alterarStatusCliente(req.params.cpf, req.body.status);
 
-    if (!status) {
-      return res.status(400).json({
-        success: false,
-        error: 'Status é obrigatório',
-        field: 'status',
-      });
-    }
-
-    await alterarStatusCliente(cpf, status);
-
-    res.status(200).json({
-      success: true,
-      message: `Status do cliente ${cpf} alterado para ${status} com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(
+          `Status do cliente ${req.params.cpf} alterado para ${req.body.status} com sucesso!`,
+        )({}),
+      );
+  }),
+);
 
 /**
- * DELETE /:cpf - Remover cliente existente
+ * @route DELETE /:cpf
+ * @summary Remover cliente existente (soft delete ou completo)
+ * @param {string} cpf - CPF do cliente
+ * @param {boolean} [req.query.exclusaoCompleta] - Se true, exclusão permanente
+ * @returns {Object} Sucesso
  */
-router.delete('/:cpf', async (req, res, next) => {
-  try {
-    const { cpf } = req.params;
-    const { exclusaoCompleta = 'false' } = req.query;
+router.delete(
+  '/:cpf',
+  validateDocumentId('cpf'),
+  asyncHandler(async (req, res) => {
+    const exclusaoCompleta = req.query.exclusaoCompleta === 'true';
+    await excluirCliente(req.params.cpf, exclusaoCompleta);
 
-    const exclusaoCompletaBoolean = exclusaoCompleta === 'true';
-    await excluirCliente(cpf, exclusaoCompletaBoolean);
+    const tipoExclusao = exclusaoCompleta ? 'excluído permanentemente' : 'desativado';
+    res
+      .status(200)
+      .json(formatSuccessResponse(`Cliente ${req.params.cpf} ${tipoExclusao} com sucesso!`)({}));
+  }),
+);
 
-    const tipoExclusao = exclusaoCompletaBoolean ? 'excluído permanentemente' : 'desativado';
-    res.status(200).json({
-      success: true,
-      message: `Cliente ${cpf} ${tipoExclusao} com sucesso!`,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+// Middleware de tratamento de erros
+router.use(errorHandler);
 
-// Aplicar middleware de tratamento de erros
-router.use(tratarErros);
-
-/**
- * Exporta o roteador Express para ser utilizado no arquivo principal
- */
 export default router;

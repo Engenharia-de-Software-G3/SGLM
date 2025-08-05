@@ -30,15 +30,6 @@
     -   Códigos de erro estruturados.
     -   Configurações de paginação e validação.
 
-#### Utilitários de Banco de Dados
--   **Novo módulo `databaseUtils.js`** com ferramentas avançadas.
-    -   Sistema de cache em memória com TTL configurável.
-    -   Monitor de performance de consultas.
-    -   Utilitários para paginação automática.
-    -   Controle de concorrência otimista.
-    -   Ferramentas para migração de dados.
-    -   Operações em lote com controle de erro.
-
 #### APIs Refatoradas - Clientes
 -   Função `verificarElegibilidadeLocacao()` para validar aptidão para locação.
 -   Função `alterarStatusCliente()` para gerenciar status independentemente.

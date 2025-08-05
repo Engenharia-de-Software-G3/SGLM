@@ -1,4 +1,3 @@
-// firestoreVeiculos.js - Versão Refatorada
 import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 import { validators, formatters } from './validators.js';
@@ -10,7 +9,11 @@ const VALID_STATUSES = Object.values(STATUS.VEICULO);
 
 class VeiculoService {
   /**
-   * Valida dados básicos do veículo
+   * Valida dados básicos do veículo.
+   *
+   * @param {Object} veiculoData - Dados do veículo.
+   * @returns {Object} Dados do veículo validados e normalizados.
+   * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
    */
   static validateVeiculoData(veiculoData) {
     const campos = ['chassi', 'placa', 'modelo', 'marca', 'renavam', 'quilometragem'];
@@ -72,7 +75,11 @@ class VeiculoService {
   }
 
   /**
-   * Valida data de compra
+   * Valida data de compra.
+   *
+   * @param {string|Date} dataCompra - Data de compra do veículo.
+   * @returns {Date} Data de compra validada.
+   * @throws {ValidationError} Se a data for inválida ou futura.
    */
   static validateDataCompra(dataCompra) {
     if (!dataCompra) {
@@ -93,7 +100,10 @@ class VeiculoService {
   }
 
   /**
-   * Verifica se chassi já existe
+   * Verifica se chassi já existe.
+   *
+   * @param {string} chassi - Chassi do veículo.
+   * @returns {Promise<boolean>} True se já existe, False caso contrário.
    */
   static async verificarChassiExistente(chassi) {
     const snapshot = await db
@@ -106,7 +116,11 @@ class VeiculoService {
   }
 
   /**
-   * Verifica se placa já existe em outro veículo
+   * Verifica se placa já existe em outro veículo.
+   *
+   * @param {string} placa - Placa do veículo.
+   * @param {string|null} [excluirChassi=null] - Chassi a ser excluído da verificação (para update).
+   * @returns {Promise<boolean>} True se já existe, False caso contrário.
    */
   static async verificarPlacaExistente(placa, excluirChassi = null) {
     let query = db
@@ -125,7 +139,10 @@ class VeiculoService {
   }
 
   /**
-   * Formatar veículo para resposta
+   * Formata veículo para resposta.
+   *
+   * @param {import('firebase').firestore.DocumentSnapshot} doc - Documento do veículo.
+   * @returns {Object} Veículo formatado.
    */
   static formatarVeiculo(doc) {
     const data = doc.data();
@@ -141,7 +158,12 @@ class VeiculoService {
   }
 
   /**
-   * Busca veículo por campo específico
+   * Busca veículo por campo específico.
+   *
+   * @param {string} campo - Nome do campo.
+   * @param {string} valor - Valor do campo.
+   * @returns {Promise<{doc: import('firebase').firestore.DocumentSnapshot, data: Object}|null>}
+   *   Documento e dados do veículo, ou null se não encontrado.
    */
   static async buscarPorCampo(campo, valor) {
     const snapshot = await db.collection(COLLECTION_NAME).where(campo, '==', valor).limit(1).get();
@@ -155,7 +177,12 @@ class VeiculoService {
   }
 
   /**
-   * Calcula depreciação estimada
+   * Calcula depreciação estimada.
+   *
+   * @param {number} anoFabricacao - Ano de fabricação.
+   * @param {number} quilometragem - Quilometragem atual.
+   * @param {number|null} [valorCompra=null] - Valor de compra.
+   * @returns {Object} Estatísticas de depreciação.
    */
   static calcularDepreciacao(anoFabricacao, quilometragem, valorCompra = null) {
     const anoAtual = new Date().getFullYear();
@@ -178,7 +205,11 @@ class VeiculoService {
 }
 
 /**
- * Cadastra um novo veículo com validações aprimoradas
+ * Cadastra um novo veículo com validações aprimoradas.
+ *
+ * @param {Object} veiculoData - Dados do veículo a ser cadastrado.
+ * @returns {Promise<Object>} Objeto com sucesso e id do veículo.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const criarVeiculo = async (veiculoData) => {
   return errorHandler
@@ -245,7 +276,14 @@ export const criarVeiculo = async (veiculoData) => {
 };
 
 /**
- * Lista veículos com filtros e paginação aprimorados
+ * Lista veículos com filtros e paginação aprimorados.
+ *
+ * @param {Object} params - Parâmetros de listagem.
+ * @param {number} [params.limite] - Limite de veículos.
+ * @param {Object} [params.ultimoDoc] - Último documento para paginação.
+ * @param {Object} [params.filtros] - Filtros de busca.
+ * @param {boolean} [params.incluirEstatisticas] - Se deve incluir estatísticas de depreciação.
+ * @returns {Promise<Object>} Lista de veículos e paginação.
  */
 export const listarVeiculos = async ({
   limite = PAGINATION.DEFAULT_LIMIT,
@@ -315,7 +353,11 @@ export const listarVeiculos = async ({
 };
 
 /**
- * Busca veículo por chassi
+ * Busca veículo por chassi.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @returns {Promise<Object>} Veículo encontrado.
+ * @throws {BusinessError|ValidationError} Se não encontrado ou inválido.
  */
 export const buscarPorChassi = async (chassi) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -335,7 +377,11 @@ export const buscarPorChassi = async (chassi) => {
 };
 
 /**
- * Busca veículo por placa
+ * Busca veículo por placa.
+ *
+ * @param {string} placa - Placa do veículo.
+ * @returns {Promise<Object>} Veículo encontrado.
+ * @throws {BusinessError|ValidationError} Se não encontrado ou inválido.
  */
 export const buscarPorPlaca = async (placa) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -351,7 +397,12 @@ export const buscarPorPlaca = async (placa) => {
 };
 
 /**
- * Atualiza placa do veículo
+ * Atualiza placa do veículo.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @param {string} novaPlaca - Nova placa.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarPlaca = async (chassi, novaPlaca) => {
   return errorHandler
@@ -384,7 +435,12 @@ export const atualizarPlaca = async (chassi, novaPlaca) => {
 };
 
 /**
- * Atualiza quilometragem do veículo
+ * Atualiza quilometragem do veículo.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @param {number} novaQuilometragem - Nova quilometragem.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarQuilometragemVeiculo = async (chassi, novaQuilometragem) => {
   return errorHandler
@@ -420,7 +476,10 @@ export const atualizarQuilometragemVeiculo = async (chassi, novaQuilometragem) =
 };
 
 /**
- * Lista quilometragem de um veículo específico
+ * Lista quilometragem de um veículo específico.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @returns {Promise<Object>} Dados de quilometragem do veículo.
  */
 export const listarQuilometragemVeiculo = async (chassi) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -437,7 +496,12 @@ export const listarQuilometragemVeiculo = async (chassi) => {
 };
 
 /**
- * Altera status do veículo
+ * Altera status do veículo.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @param {string} novoStatus - Novo status.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const alterarStatusVeiculo = async (chassi, novoStatus) => {
   return errorHandler
@@ -485,7 +549,13 @@ export const alterarStatusVeiculo = async (chassi, novoStatus) => {
 };
 
 /**
- * Registra venda de veículo
+ * Registra venda de veículo.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @param {string|Date} dataVenda - Data da venda.
+ * @param {string} [observacoes=''] - Observações da venda.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const registrarVenda = async (chassi, dataVenda, observacoes = '') => {
   return errorHandler
@@ -533,7 +603,12 @@ export const registrarVenda = async (chassi, dataVenda, observacoes = '') => {
 };
 
 /**
- * Atualiza informações gerais do veículo
+ * Atualiza informações gerais do veículo.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @param {Object} updates - Campos a serem atualizados.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarVeiculo = async (chassi, updates) => {
   return errorHandler
@@ -601,7 +676,10 @@ export const atualizarVeiculo = async (chassi, updates) => {
 };
 
 /**
- * Busca veículos disponíveis para locação
+ * Busca veículos disponíveis para locação.
+ *
+ * @param {Object} [filtros={}] - Filtros de busca.
+ * @returns {Promise<Object>} Lista de veículos disponíveis e resumo.
  */
 export const listarVeiculosDisponiveis = async (filtros = {}) => {
   return errorHandler.handleFirestoreOperation(async () => {
@@ -648,7 +726,9 @@ export const listarVeiculosDisponiveis = async (filtros = {}) => {
 };
 
 /**
- * Gera relatório de frota
+ * Gera relatório de frota.
+ *
+ * @returns {Promise<Object>} Relatório da frota.
  */
 export const gerarRelatorioFrota = async () => {
   return errorHandler.handleFirestoreOperation(async () => {

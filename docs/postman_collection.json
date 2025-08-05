@@ -1,0 +1,709 @@
+{
+  "info": {
+    "name": "Sistema de Locação - API",
+    "description": "Collection completa para testar a API do Sistema de Locação de Veículos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5001/slmg-es/us-central1/api",
+      "type": "string"
+    },
+    {
+      "key": "cpf_teste",
+      "value": "12345678901",
+      "type": "string"
+    },
+    {
+      "key": "chassi_teste",
+      "value": "1HGBH41JXMN123456",
+      "type": "string"
+    },
+    {
+      "key": "placa_teste",
+      "value": "ABC1234",
+      "type": "string"
+    },
+    {
+      "key": "locacao_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Criar Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpf\": \"{{cpf_teste}}\",\n  \"dadosPessoais\": {\n    \"nome\": \"João Silva Santos\",\n    \"dataNascimento\": \"1985-03-15\"\n  },\n  \"endereco\": {\n    \"cep\": \"01234567\",\n    \"rua\": \"Rua das Flores\",\n    \"numero\": \"123\",\n    \"bairro\": \"Centro\",\n    \"cidade\": \"São Paulo\",\n    \"estado\": \"SP\"\n  },\n  \"contato\": {\n    \"email\": \"joao.silva@email.com\",\n    \"telefone\": \"11987654321\"\n  },\n  \"documentos\": {\n    \"cnh\": {\n      \"numero\": \"12345678901\",\n      \"categoria\": \"AB\",\n      \"dataValidade\": \"2026-12-31\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientes",
+              "host": ["{{base_url}}"],
+              "path": ["clientes"]
+            }
+          }
+        },
+        {
+          "name": "Listar Clientes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes?limite=10&incluirSubcolecoes=true",
+              "host": ["{{base_url}}"],
+              "path": ["clientes"],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                },
+                {
+                  "key": "incluirSubcolecoes",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Cliente por CPF",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes/{{cpf_teste}}?incluirSubcolecoes=true",
+              "host": ["{{base_url}}"],
+              "path": ["clientes", "{{cpf_teste}}"],
+              "query": [
+                {
+                  "key": "incluirSubcolecoes",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Clientes por Nome",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes/buscar-nome?nome=João&limite=5",
+              "host": ["{{base_url}}"],
+              "path": ["clientes", "buscar-nome"],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "João"
+                },
+                {
+                  "key": "limite",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verificar Elegibilidade do Cliente",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes/{{cpf_teste}}/elegibilidade",
+              "host": ["{{base_url}}"],
+              "path": ["clientes", "{{cpf_teste}}", "elegibilidade"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Cliente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dadosPessoais\": {\n    \"nome\": \"João Silva Santos Junior\"\n  },\n  \"contato\": {\n    \"telefone\": \"11999888777\",\n    \"email\": \"joao.silva.jr@email.com\"\n  },\n  \"endereco\": {\n    \"cep\": \"01234567\",\n    \"rua\": \"Rua das Flores\",\n    \"numero\": \"123A\",\n    \"bairro\": \"Centro\",\n    \"cidade\": \"São Paulo\",\n    \"estado\": \"SP\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientes/{{cpf_teste}}",
+              "host": ["{{base_url}}"],
+              "path": ["clientes", "{{cpf_teste}}"]
+            }
+          }
+        },
+        {
+          "name": "Alterar Status do Cliente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ativo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientes/{{cpf_teste}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["clientes", "{{cpf_teste}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Cliente (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/clientes/{{cpf_teste}}?exclusaoCompleta=false",
+              "host": ["{{base_url}}"],
+              "path": ["clientes", "{{cpf_teste}}"],
+              "query": [
+                {
+                  "key": "exclusaoCompleta",
+                  "value": "false"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Veículos",
+      "item": [
+        {
+          "name": "Criar Veículo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chassi\": \"{{chassi_teste}}\",\n  \"placa\": \"{{placa_teste}}\",\n  \"modelo\": \"Civic\",\n  \"marca\": \"Honda\",\n  \"renavam\": \"12345678901\",\n  \"anoFabricacao\": 2020,\n  \"anoModelo\": 2021,\n  \"quilometragem\": 15000,\n  \"quilometragemNaCompra\": 0,\n  \"dataCompra\": \"2020-01-15\",\n  \"numeroDocumento\": \"DOC123456\",\n  \"local\": \"Garagem Principal\",\n  \"nome\": \"Honda Civic Prata\",\n  \"observacoes\": \"Veículo em excelente estado, revisões em dia\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/veiculos",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos"]
+            }
+          }
+        },
+        {
+          "name": "Listar Veículos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/veiculos?limite=10&incluirEstatisticas=true",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos"],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                },
+                {
+                  "key": "incluirEstatisticas",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Veículos com Filtros",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/veiculos?limite=10&filtros={\"status\":\"disponivel\",\"marca\":\"Honda\"}",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos"],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                },
+                {
+                  "key": "filtros",
+                  "value": "{\"status\":\"disponivel\",\"marca\":\"Honda\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Veículos Disponíveis",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/veiculos/disponiveis",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "disponiveis"]
+            }
+          }
+        },
+        {
+          "name": "Gerar Relatório da Frota",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/veiculos/relatorio",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "relatorio"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Veículo por Chassi",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/veiculos/chassi/{{chassi_teste}}",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "chassi", "{{chassi_teste}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Veículo por Placa",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/veiculos/placa/{{placa_teste}}",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "placa", "{{placa_teste}}"]
+            }
+          }
+        },
+        {
+          "name": "Consultar Quilometragem",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/veiculos/{{chassi_teste}}/quilometragem",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "{{chassi_teste}}", "quilometragem"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Veículo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"local\": \"Garagem Secundária\",\n  \"nome\": \"Honda Civic Prata - Atualizado\",\n  \"observacoes\": \"Veículo passou por revisão completa\",\n  \"quilometragem\": 16500\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/veiculos/{{chassi_teste}}",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "{{chassi_teste}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Placa",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"XYZ9876\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/veiculos/{{chassi_teste}}/placa",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "{{chassi_teste}}", "placa"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Quilometragem",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quilometragem\": 17000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/veiculos/{{chassi_teste}}/quilometragem",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "{{chassi_teste}}", "quilometragem"]
+            }
+          }
+        },
+        {
+          "name": "Alterar Status do Veículo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"disponivel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/veiculos/{{chassi_teste}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "{{chassi_teste}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Venda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataVenda\": \"2024-12-20\",\n  \"observacoes\": \"Veículo vendido para cliente particular\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/veiculos/{{chassi_teste}}/venda",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos", "{{chassi_teste}}", "venda"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Locações",
+      "item": [
+        {
+          "name": "Criar Locação",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpfLocatario\": \"{{cpf_teste}}\",\n  \"placaVeiculo\": \"{{placa_teste}}\",\n  \"dataInicio\": \"25/12/2024\",\n  \"dataFim\": \"02/01/2025\",\n  \"valor\": 450.00,\n  \"servicosAdicionaisIds\": [\"GPS\", \"SEGURO_TOTAL\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/locacoes",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes"]
+            },
+            "test": "// Capturar ID da locação criada\nif (pm.response.code === 201) {\n  const response = pm.response.json();\n  if (response.data && response.data.id) {\n    pm.collectionVariables.set(\"locacao_id\", response.data.id);\n  }\n}"
+          }
+        },
+        {
+          "name": "Listar Locações",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/locacoes?limite=10",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes"],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Locações com Filtros",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/locacoes?limite=5&filtros={\"status\":\"ativa\"}",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes"],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "5"
+                },
+                {
+                  "key": "filtros",
+                  "value": "{\"status\":\"ativa\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Locação por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/locacoes/{{locacao_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes", "{{locacao_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Histórico de Locações do Cliente",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/locacoes/cliente/{{cpf_teste}}",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes", "cliente", "{{cpf_teste}}"]
+            }
+          }
+        },
+        {
+          "name": "Histórico de Locações do Veículo",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/locacoes/veiculo/{{chassi_teste}}",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes", "veiculo", "{{chassi_teste}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Locação",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"valor\": 520.00,\n  \"dataFim\": \"03/01/2025\",\n  \"servicosAdicionaisIds\": [\"GPS\", \"SEGURO_TOTAL\", \"CADEIRINHA\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/locacoes/{{locacao_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes", "{{locacao_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Alterar Status da Locação",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"concluida\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/locacoes/{{locacao_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes", "{{locacao_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Locação",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/locacoes/{{locacao_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["locacoes", "{{locacao_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Testes de Validação",
+      "item": [
+        {
+          "name": "Teste Limite de Paginação",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes?limite=150",
+              "host": ["{{base_url}}"],
+              "path": ["clientes"],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "150",
+                  "description": "Teste para verificar se limite acima de 100 é automaticamente ajustado"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Teste CPF Inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpf\": \"123\",\n  \"dadosPessoais\": {\n    \"nome\": \"Teste Inválido\"\n  },\n  \"endereco\": {\n    \"cep\": \"01234567\",\n    \"rua\": \"Rua Teste\",\n    \"numero\": \"123\",\n    \"bairro\": \"Centro\",\n    \"cidade\": \"São Paulo\",\n    \"estado\": \"SP\"\n  },\n  \"contato\": {\n    \"email\": \"teste@email.com\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientes",
+              "host": ["{{base_url}}"],
+              "path": ["clientes"]
+            }
+          }
+        },
+        {
+          "name": "Teste Cliente Inexistente",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes/99999999999",
+              "host": ["{{base_url}}"],
+              "path": ["clientes", "99999999999"]
+            }
+          }
+        },
+        {
+          "name": "Teste Placa Inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chassi\": \"TESTEINVALIDO123\",\n  \"placa\": \"123\",\n  \"modelo\": \"Teste\",\n  \"marca\": \"Teste\",\n  \"renavam\": \"12345678901\",\n  \"anoFabricacao\": 2020,\n  \"anoModelo\": 2020,\n  \"quilometragem\": 0,\n  \"dataCompra\": \"2020-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/veiculos",
+              "host": ["{{base_url}}"],
+              "path": ["veiculos"]
+            }
+          }
+        },
+        {
+          "name": "Teste Filtros JSON Inválido",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes?filtros={invalid-json}",
+              "host": ["{{base_url}}"],
+              "path": ["clientes"],
+              "query": [
+                {
+                  "key": "filtros",
+                  "value": "{invalid-json}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Gerar timestamp único para testes",
+          "const timestamp = Date.now();",
+          "pm.collectionVariables.set('timestamp', timestamp);",
+          "",
+          "// Gerar CPF único para testes (formato básico)",
+          "const cpfTeste = '123' + timestamp.toString().slice(-8);",
+          "pm.collectionVariables.set('cpf_teste', cpfTeste);",
+          "",
+          "// Gerar chassi único",
+          "const chassiTeste = '1HGBH41JXMN' + timestamp.toString().slice(-6);",
+          "pm.collectionVariables.set('chassi_teste', chassiTeste);",
+          "",
+          "// Gerar placa única",
+          "const placaTeste = 'TST' + timestamp.toString().slice(-4);",
+          "pm.collectionVariables.set('placa_teste', placaTeste);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Testes globais para todas as requisições",
+          "pm.test('Response time is less than 5000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response has success field', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('success');",
+          "});",
+          "",
+          "// Log da resposta para debug",
+          "console.log('Response Status:', pm.response.status);",
+          "console.log('Response Body:', pm.response.text());"
+        ]
+      }
+    }
+  ]
+}
