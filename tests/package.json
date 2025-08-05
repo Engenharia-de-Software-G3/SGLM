@@ -1,0 +1,31 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "main": "api.test.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose",
+    "test:clientes": "jest --testNamePattern=\"CLIENTES\"",
+    "test:veiculos": "jest --testNamePattern=\"VEÍCULOS\"",
+    "test:locacoes": "jest --testNamePattern=\"LOCAÇÕES\""
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true,
+    "testTimeout": 30000,
+    "collectCoverageFrom": [
+      "**/*.{js,jsx}",
+      "!**/node_modules/**"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "axios": "^1.11.0",
+    "jest": "^30.0.5"
+  }
+}

@@ -5,80 +5,132 @@
 
 import express from 'express';
 const router = express.Router();
+import { db } from '../firebaseConfig.js';
 import {
   criarCliente,
   listarClientes,
+  buscarClientePorCPF,
   atualizarCliente,
-  deletarCliente,
+  excluirCliente,
+  alterarStatusCliente,
+  buscarClientesPorNome,
+  verificarElegibilidadeLocacao,
 } from '../src/scripts/firestore/firestoreClientes.js';
-//import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
 /**
- * Rota POST para criar um novo cliente.
- * Espera os dados do cliente no corpo da requisição em formato JSON.
- * Valida dados básicos e chama a função de criação no Firestore.
- * @name POST /
- * @function
- * @memberof module:cliente
- * @param {object} req - Objeto de requisição do Express, contendo os dados do cliente em `req.body`.
- * @param {object} req.body - Os dados do novo cliente em formato JSON.
- * @param {string} req.body.cpf - O CPF do cliente (obrigatório).
- * @param {object} req.body.dadosPessoais - Dados pessoais do cliente (obrigatório).
- * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
- * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
- * @throws {Error} Em caso de erro interno no servidor ou no processo de criação no Firestore.
+ * Middleware para validação básica de dados do cliente
  */
-router.post('/', async (req, res) => {
+const validarDadosCliente = (req, res, next) => {
+  const { cpf, dadosPessoais, endereco, contato } = req.body;
+
+  if (!cpf) {
+    return res.status(400).json({
+      success: false,
+      error: 'CPF é obrigatório',
+      field: 'cpf',
+    });
+  }
+
+  if (!dadosPessoais?.nome) {
+    return res.status(400).json({
+      success: false,
+      error: 'Nome é obrigatório',
+      field: 'dadosPessoais.nome',
+    });
+  }
+
+  if (!endereco) {
+    return res.status(400).json({
+      success: false,
+      error: 'Endereço é obrigatório',
+      field: 'endereco',
+    });
+  }
+
+  if (!contato?.email) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email é obrigatório',
+      field: 'contato.email',
+    });
+  }
+
+  next();
+};
+
+/**
+ * Middleware para tratamento de erros padronizado
+ */
+const tratarErros = (error, req, res, next) => {
+  console.error(`Erro na rota ${req.method} ${req.path}:`, error);
+
+  // Se o erro já tem um formato específico, usar esse formato
+  if (error.success === false) {
+    const statusCode = getStatusCodeFromError(error);
+    return res.status(statusCode).json(error);
+  }
+
+  // Erro genérico
+  res.status(500).json({
+    success: false,
+    error: 'Erro interno do servidor',
+    ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+  });
+};
+
+/**
+ * Mapeia códigos de erro para status HTTP
+ */
+const getStatusCodeFromError = (error) => {
+  const errorCodeMap = {
+    VALIDATION_ERROR: 400,
+    CPF_JA_EXISTE: 409,
+    CLIENTE_NAO_ENCONTRADO: 404,
+    CLIENTE_INATIVO: 400,
+    PERMISSION_DENIED: 403,
+    SERVICE_UNAVAILABLE: 503,
+    INTERNAL_ERROR: 500,
+  };
+
+  return errorCodeMap[error.code] || 400;
+};
+
+/**
+ * POST / - Criar um novo cliente
+ */
+router.post('/', validarDadosCliente, async (req, res, next) => {
   try {
     const clienteData = req.body;
 
-    // TODO: Adicionar validação mais robusta (incluindo autenticação por middleware)
-    /**
-     * @todo Implementar validação completa dos dados de entrada (CPF, dados pessoais, contato, endereço, documentos).
-     * Considerar usar um esquema de validação (ex: Joi, Yup).
-     * Integrar middleware de autenticação e autorização.
-     * Adicionar validação de CPF duplicado usando verificarDocumentoExistente antes de criar.
-     */
-    // Validação básica
-    if (!clienteData || !clienteData.cpf || !clienteData.dadosPessoais) {
-      return res
-        .status(400)
-        .send('Dados do cliente incompletos (CPF e dadosPessoais são obrigatórios).');
-    }
+    // A função refatorada usa try/catch, não retorna { success, id }
+    await criarCliente(clienteData);
 
-    // Chame a função do Firestore para criar o cliente
-    const resultado = await criarCliente(clienteData);
-
-    if (resultado.success) {
-      // Use o ID retornado pela função criarCliente (que é o cpf)
-      res.status(201).send({ message: 'Cliente criado com sucesso!', id: clienteData.cpf });
-    } else {
-      // A função criarCliente já trata e loga erros do Firestore e retorna { success: false, error: ... }
-      res.status(500).send({ message: 'Erro ao criar cliente', error: resultado.error });
-    }
+    // Se chegou até aqui, foi sucesso
+    res.status(201).json({
+      success: true,
+      message: 'Cliente criado com sucesso!',
+      data: {
+        id: clienteData.cpf,
+        cpf: clienteData.cpf,
+      },
+    });
   } catch (error) {
-    // Captura erros inesperados durante o processamento da rota
-    console.error('Erro inesperado na rota POST /clientes:', error);
-    res.status(500).send('Erro interno do servidor.');
+    next(error);
   }
 });
 
 /**
- * Rota GET para listar clientes.
- * Suporta paginação e filtros por nome e tipo (PF/PJ).
- * Parâmetros de query:
- * - limite: Número de itens por página (padrão: 10)
- * - ultimoDocId: ID do último documento da página anterior (para paginação)
- * - filtros: JSON stringificado com { nome?: string, tipo?: 'PF' | 'PJ' }
+ * GET / - Listar clientes com paginação e filtros
  */
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
-    const { limite = '10', ultimoDocId, filtros = '{}' } = req.query;
+    const { limite = '10', ultimoDocId, filtros = '{}', incluirSubcolecoes = 'false' } = req.query;
 
     // Validar e parsear parâmetros
-    const limiteNum = parseInt(limite) || 10;
-    let filtrosParsed;
+    const limiteNum = Math.min(Math.max(1, parseInt(limite) || 10), 100);
+    const incluirSubcolecoesBoolean = incluirSubcolecoes === 'true';
 
+    let filtrosParsed;
     try {
       filtrosParsed = JSON.parse(filtros);
     } catch {
@@ -88,113 +140,228 @@ router.get('/', async (req, res) => {
     // Recuperar último documento para paginação
     let ultimoDocSnapshot = null;
     if (ultimoDocId) {
-      ultimoDocSnapshot = await db.collection('clientes').doc(ultimoDocId).get();
-      if (!ultimoDocSnapshot.exists) {
-        return res.status(400).json({ error: 'ultimoDocId inválido' });
+      try {
+        ultimoDocSnapshot = await db.collection('clientes').doc(ultimoDocId).get();
+        if (!ultimoDocSnapshot.exists) {
+          return res.status(400).json({
+            success: false,
+            error: 'ultimoDocId inválido',
+            field: 'ultimoDocId',
+          });
+        }
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Erro ao processar ultimoDocId',
+          field: 'ultimoDocId',
+        });
       }
     }
 
     // Chamar função de listagem
-    const { clientes, ultimoDoc } = await listarClientes({
+    const resultado = await listarClientes({
       limite: limiteNum,
       ultimoDoc: ultimoDocSnapshot,
       filtros: filtrosParsed,
+      incluirSubcolecoes: incluirSubcolecoesBoolean,
     });
 
     // Preparar resposta
-    const resposta = {
-      clientes,
-      paginacao: {
-        possuiMais: !!ultimoDoc,
-        ultimoDocId: ultimoDoc?.id || null,
+    res.status(200).json({
+      success: true,
+      data: {
+        clientes: resultado.clientes,
+        total: resultado.total,
+        paginacao: {
+          possuiMais: !!resultado.ultimoDoc,
+          ultimoDocId: resultado.ultimoDoc?.id || null,
+        },
       },
-    };
-
-    res.status(200).json(resposta);
+    });
   } catch (error) {
-    console.error('Erro na rota GET /clientes:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /buscar-nome - Buscar clientes por nome
+ */
+router.get('/buscar-nome', async (req, res, next) => {
+  try {
+    const { nome, limite = '10' } = req.query;
+
+    if (!nome) {
+      return res.status(400).json({
+        success: false,
+        error: 'Parâmetro nome é obrigatório',
+        field: 'nome',
+      });
+    }
+
+    const limiteNum = Math.min(parseInt(limite) || 10, 50);
+    const clientes = await buscarClientesPorNome(nome, limiteNum);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        clientes,
+        total: clientes.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /:cpf - Buscar cliente por CPF (versão corrigida)
+ */
+router.get('/:cpf', async (req, res) => {
+  try {
+    const { cpf } = req.params;
+    const { incluirSubcolecoes = 'true' } = req.query;
+
+    console.log(`🔍 Buscando cliente: ${cpf}`);
+
+    const incluirSubcolecoesBoolean = incluirSubcolecoes === 'true';
+    const cliente = await buscarClientePorCPF(cpf, incluirSubcolecoesBoolean);
+
+    res.status(200).json({
+      success: true,
+      data: cliente,
+    });
+  } catch (error) {
+    console.error(`Erro ao buscar cliente ${req.params.cpf}:`, error);
+
+    // Verificar diferentes tipos de erro "não encontrado"
+    if (
+      error.code === 'CLIENTE_NAO_ENCONTRADO' ||
+      error.message?.includes('não encontrado') ||
+      error.message?.includes('not found') ||
+      (error.success === false && error.code === 'CLIENTE_NAO_ENCONTRADO')
+    ) {
+      return res.status(404).json({
+        success: false,
+        error: 'Cliente não encontrado',
+        code: 'CLIENTE_NAO_ENCONTRADO',
+      });
+    }
+
+    // Erro de validação (CPF inválido, etc.)
+    if (error.message?.includes('inválido') || error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+
+    // Erro genérico
     res.status(500).json({
-      error: 'Erro interno no servidor',
-      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 });
 
 /**
- * Rota PUT para atualizar um cliente existente.
- * Espera o CPF do cliente como parâmetro na URL e os dados a serem atualizados no corpo da requisição.
- * Realiza a atualização parcial do cliente no Firestore.
- * @name PUT /:cpf
- * @function
- * @memberof module:cliente
- * @param {object} req - Objeto de requisição do Express.
- * @param {string} req.params.cpf - CPF do cliente a ser atualizado.
- * @param {object} req.body - Os dados a serem atualizados do cliente em formato JSON.
- * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
- * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
- * @throws {Error} Em caso de erro interno no servidor ou no processo de atualização no Firestore.
+ * GET /:cpf/elegibilidade - Verificar elegibilidade para locação
  */
-router.put('/:cpf', async (req, res) => {
+router.get('/:cpf/elegibilidade', async (req, res, next) => {
+  try {
+    const { cpf } = req.params;
+    const resultado = await verificarElegibilidadeLocacao(cpf);
+
+    res.status(200).json({
+      success: true,
+      data: resultado,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PUT /:cpf - Atualizar cliente existente
+ */
+router.put('/:cpf', async (req, res, next) => {
   try {
     const { cpf } = req.params;
     const updates = req.body;
 
     // Validação básica: verifica se há dados para atualizar
     if (!updates || Object.keys(updates).length === 0) {
-      return res.status(400).send('Nenhum dado fornecido para atualização.');
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum dado fornecido para atualização',
+      });
     }
 
-    // TODO: Adicionar validação mais robusta dos dados de entrada (formato de CPF, campos específicos, etc.)
-    // Considerar usar um esquema de validação (ex: Joi, Yup).
+    // A função refatorada usa try/catch, não retorna { success }
+    await atualizarCliente(cpf, updates);
 
-    const resultado = await atualizarCliente(cpf, updates);
-
-    if (resultado.success) {
-      res.status(200).send({ message: `Cliente ${cpf} atualizado com sucesso!` });
-    } else {
-      // A função atualizarCliente já trata e loga erros do Firestore
-      const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
-      res.status(statusCode).send({ message: 'Erro ao atualizar cliente', error: resultado.error });
-    }
+    res.status(200).json({
+      success: true,
+      message: `Cliente ${cpf} atualizado com sucesso!`,
+    });
   } catch (error) {
-    console.error('Erro inesperado na rota PUT /clientes/:cpf:', error);
-    res.status(500).send('Erro interno do servidor.');
+    next(error);
   }
 });
 
 /**
- * Rota DELETE para remover um cliente existente.
- * Espera o CPF do cliente como parâmetro na URL.
- * Remove o documento do cliente e todas as suas subcoleções associadas no Firestore.
- * @name DELETE /:cpf
- * @function
- * @memberof module:cliente
- * @param {object} req - Objeto de requisição do Express.
- * @param {string} req.params.cpf - CPF do cliente a ser removido.
- * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
- * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
- * @throws {Error} Em caso de erro interno no servidor ou no processo de exclusão no Firestore.
+ * PATCH /:cpf/status - Alterar status do cliente
  */
-router.delete('/:cpf', async (req, res) => {
+router.patch('/:cpf/status', async (req, res, next) => {
   try {
     const { cpf } = req.params;
+    const { status } = req.body;
 
-    const resultado = await deletarCliente(cpf);
-
-    if (resultado.success) {
-      res.status(200).send({ message: `Cliente ${cpf} deletado com sucesso!` });
-    } else {
-      const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
-      res.status(statusCode).send({ message: 'Erro ao deletar cliente', error: resultado.error });
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Status é obrigatório',
+        field: 'status',
+      });
     }
+
+    await alterarStatusCliente(cpf, status);
+
+    res.status(200).json({
+      success: true,
+      message: `Status do cliente ${cpf} alterado para ${status} com sucesso!`,
+    });
   } catch (error) {
-    console.error('Erro inesperado na rota DELETE /clientes/:cpf:', error);
-    res.status(500).send('Erro interno do servidor.');
+    next(error);
   }
 });
 
 /**
- * Exporta o roteador Express para ser utilizado no arquivo principal (index.js).
- * @type {express.Router}
+ * DELETE /:cpf - Remover cliente existente
+ */
+router.delete('/:cpf', async (req, res, next) => {
+  try {
+    const { cpf } = req.params;
+    const { exclusaoCompleta = 'false' } = req.query;
+
+    const exclusaoCompletaBoolean = exclusaoCompleta === 'true';
+    await excluirCliente(cpf, exclusaoCompletaBoolean);
+
+    const tipoExclusao = exclusaoCompletaBoolean ? 'excluído permanentemente' : 'desativado';
+    res.status(200).json({
+      success: true,
+      message: `Cliente ${cpf} ${tipoExclusao} com sucesso!`,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Aplicar middleware de tratamento de erros
+router.use(tratarErros);
+
+/**
+ * Exporta o roteador Express para ser utilizado no arquivo principal
  */
 export default router;
