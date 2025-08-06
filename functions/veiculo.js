@@ -4,245 +4,344 @@
  */
 
 import express from 'express';
-const router = express.Router();
-
-// Importando funções da Firestore para veículos
 import {
-  atualizarQuilometragemVeiculo,
   criarVeiculo,
   listarVeiculos,
+  buscarPorChassi,
+  buscarPorPlaca,
   atualizarPlaca,
+  atualizarQuilometragemVeiculo,
+  listarQuilometragemVeiculo,
+  alterarStatusVeiculo,
   registrarVenda,
-  buscarPorChassi, // Import this to help with DELETE and general updates
+  atualizarVeiculo,
+  listarVeiculosDisponiveis,
+  gerarRelatorioFrota,
 } from '../src/scripts/firestore/firestoreVeiculos.js';
 
-import { db } from '../firebaseConfig.js'; // Import db for direct Firestore operations if needed
+import {
+  errorHandler,
+  validatePagination,
+  validateFilters,
+  validateDocumentId,
+  asyncHandler,
+  validateContentType,
+  sanitizeInput,
+  requestLogger,
+  validateRequiredFields,
+  formatSuccessResponse,
+  processLastDoc,
+} from './middlewareHelper.js';
+
+const router = express.Router();
+
+// Middlewares globais
+router.use(requestLogger);
+router.use(validateContentType);
+router.use(sanitizeInput);
 
 /**
- * Rota POST para criar um novo veículo.
- * Espera os dados do veículo no corpo da requisição em formato JSON.
- * @name POST /
- * @function
- * @memberof module:veiculo
- * @param {object} req - Objeto de requisição do Express, contendo os dados do veículo em `req.body`.
- * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
- * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ * @route POST /
+ * @summary Criar novo veículo
+ * @param {Object} req.body - Dados do veículo
+ * @returns {Object} Veículo criado
  */
-router.post('/', async (req, res) => {
-  try {
-    const veiculoData = req.body;
+router.post(
+  '/',
+  validateRequiredFields([
+    'chassi',
+    'placa',
+    'modelo',
+    'marca',
+    'renavam',
+    'quilometragem',
+    'dataCompra',
+  ]),
+  asyncHandler(async (req, res) => {
+    const resultado = await criarVeiculo(req.body);
 
-    // TODO: Adicionar validação mais robusta (incluindo autenticação por middleware)
-    /**
-     * @todo Adicionar validação de dados de entrada mais robusta para veiculoData.
-     * Considerar usar um esquema de validação (ex: Joi, Yup).
-     * Implementar autenticação por middleware.
-     */
-    if (!veiculoData || !veiculoData.chassi || !veiculoData.placa || !veiculoData.modelo) {
-      return res
-        .status(400)
-        .send('Dados do veículo incompletos (chassi, placa e modelo são obrigatórios).');
-    }
-
-    // Chame a função do Firestore para criar o veículo
-    const resultado = await criarVeiculo(veiculoData);
-
-    if (resultado.success) {
-      // Use o ID retornado pela função criarVeiculo
-      res.status(201).send({ message: 'Veículo criado com sucesso!', id: resultado.id });
-    } else {
-      res.status(400).send({ message: 'Erro ao criar veículo', error: resultado.error });
-    }
-  } catch (error) {
-    console.error('Erro na rota POST /veiculos:', error);
-    res.status(500).send('Erro interno do servidor.');
-  }
-});
+    res.status(201).json(
+      formatSuccessResponse('Veículo criado com sucesso!')({
+        id: resultado.id,
+        chassi: req.body.chassi,
+        placa: req.body.placa,
+      }),
+    );
+  }),
+);
 
 /**
- * Rota GET para listar veículos com paginação e filtros.
- * @name GET /
- * @function
- * @memberof module:veiculo
- * @param {object} req - Objeto de requisição do Express.
- * @param {string} [req.query.limite=10] - Número de itens por página
- * @param {string} [req.query.ultimoDocId] - ID do último documento para paginação
- * @param {string} [req.query.filtros] - JSON stringificado com filtros (placa, status, marca)
- * @param {object} res - Objeto de resposta do Express.
- * @returns {Promise<void>}
+ * @route GET /
+ * @summary Listar veículos com paginação e filtros
+ * @param {Object} req.query - Parâmetros de paginação e filtros
+ * @returns {Object} Lista de veículos
  */
-router.get('/', async (req, res) => {
-  try {
-    const { limite, ultimoDocId, filtros = '{}' } = req.query;
-
-    // Converter e validar parâmetros
-    const limiteNum = limite ? Math.min(parseInt(limite) || 10, 100) : 10; // Default 10, max 100
-
-    if (isNaN(limiteNum)) {
-      return res.status(400).json({ error: 'Value for "limite" is not a valid integer.' });
-    }
-
-    let filtrosParsed;
-    try {
-      filtrosParsed = JSON.parse(filtros);
-    } catch {
-      filtrosParsed = {};
-    }
-
-    // Obter documento de referência para paginação
-    let ultimoDoc = null;
-    if (ultimoDocId) {
-      // Need to get the DocumentSnapshot for startAfter
-      const lastDocSnapshot = await db.collection('veiculos').doc(ultimoDocId).get();
-      if (!lastDocSnapshot.exists) {
-        return res.status(400).json({ error: 'ID do último documento inválido' });
-      }
-      ultimoDoc = lastDocSnapshot;
-    }
-
-    // Chamar função de listagem
-    const { veiculos, ultimoDoc: ultimoDocSnapshot } = await listarVeiculos({
-      limite: limiteNum,
-      ultimoDoc,
-      filtros: filtrosParsed,
+router.get(
+  '/',
+  validatePagination,
+  validateFilters,
+  processLastDoc,
+  asyncHandler(async (req, res) => {
+    const resultado = await listarVeiculos({
+      limite: req.query.limite,
+      ultimoDoc: req.ultimoDocSnapshot,
+      filtros: req.filtrosParsed,
+      incluirEstatisticas: req.query.incluirEstatisticas === 'true',
     });
 
-    // Formatar resposta
-    res.status(200).json({
-      veiculos,
-      paginacao: {
-        possuiMais: !!ultimoDocSnapshot,
-        proximoDocId: ultimoDocSnapshot?.id || null,
-      },
-    });
-  } catch (error) {
-    console.error('Erro na rota GET /veiculos:', error);
-    res.status(500).json({
-      error: 'Erro interno no servidor',
-      ...(process.env.NODE_ENV === 'development' && { detalhes: error.message }),
-    });
-  }
-});
+    res.status(200).json(
+      formatSuccessResponse('Veículos listados com sucesso')({
+        veiculos: resultado.veiculos,
+        total: resultado.total,
+        paginacao: {
+          possuiMais: !!resultado.ultimoDoc,
+          ultimoDocId: resultado.ultimoDoc?.id || null,
+        },
+      }),
+    );
+  }),
+);
 
 /**
- * Rota PUT para atualizar um veículo.
- * Espera o chassi do veículo no parâmetro da rota.
- * Espera os dados a serem atualizados no corpo da requisição em formato JSON.
- * Pode atualizar placa, quilometragem, status (venda), etc.
- * @name PUT /:chassi
- * @function
- * @memberof module:veiculo
- * @param {object} req - Objeto de requisição do Express.
- * @param {string} req.params.chassi - Chassi do veículo a ser atualizado.
- * @param {object} req.body - Objeto com os campos a serem atualizados.
- * @param {string} [req.body.placa] - Nova placa do veículo.
- * @param {number} [req.body.quilometragem] - Nova quilometragem do veículo.
- * @param {string} [req.body.dataVenda] - Data da venda para registrar (formato YYYY-MM-DD).
- * @param {object} res - Objeto de resposta do Express.
- * @returns {Promise<void>}
+ * @route GET /disponiveis
+ * @summary Listar apenas veículos disponíveis
+ * @param {Object} req.query - Filtros opcionais
+ * @returns {Object[]} Veículos disponíveis
  */
-router.put('/:chassi', async (req, res) => {
-  try {
-    const chassi = req.params.chassi;
-    const updates = req.body;
+router.get(
+  '/disponiveis',
+  validateFilters,
+  asyncHandler(async (req, res) => {
+    const resultado = await listarVeiculosDisponiveis(req.filtrosParsed);
 
-    if (!chassi || !updates || Object.keys(updates).length === 0) {
-      return res.status(400).send('Chassi e/ou dados de atualização ausentes.');
+    res
+      .status(200)
+      .json(formatSuccessResponse('Veículos disponíveis listados com sucesso')(resultado));
+  }),
+);
+
+/**
+ * @route GET /relatorio
+ * @summary Gerar relatório da frota
+ * @returns {Object} Relatório da frota
+ */
+router.get(
+  '/relatorio',
+  asyncHandler(async (req, res) => {
+    const relatorio = await gerarRelatorioFrota();
+
+    res.status(200).json(formatSuccessResponse('Relatório gerado com sucesso')(relatorio));
+  }),
+);
+
+/**
+ * @route GET /chassi/:chassi
+ * @summary Buscar veículo por chassi
+ * @param {string} chassi - Chassi do veículo
+ * @returns {Object} Veículo encontrado
+ */
+router.get(
+  '/chassi/:chassi',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    const veiculo = await buscarPorChassi(req.params.chassi);
+
+    res.status(200).json(formatSuccessResponse('Veículo encontrado com sucesso')(veiculo));
+  }),
+);
+
+/**
+ * @route GET /placa/:placa
+ * @summary Buscar veículo por placa
+ * @param {string} placa - Placa do veículo
+ * @returns {Object} Veículo encontrado
+ */
+router.get(
+  '/placa/:placa',
+  validateDocumentId('placa'),
+  asyncHandler(async (req, res) => {
+    const veiculo = await buscarPorPlaca(req.params.placa);
+
+    res.status(200).json(formatSuccessResponse('Veículo encontrado com sucesso')(veiculo));
+  }),
+);
+
+/**
+ * @route GET /:chassi/quilometragem
+ * @summary Listar quilometragem de um veículo
+ * @param {string} chassi - Chassi do veículo
+ * @returns {Object[]} Dados de quilometragem
+ */
+router.get(
+  '/:chassi/quilometragem',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    const dadosQuilometragem = await listarQuilometragemVeiculo(req.params.chassi);
+
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse('Dados de quilometragem obtidos com sucesso')(dadosQuilometragem),
+      );
+  }),
+);
+
+/**
+ * @route PUT /:chassi
+ * @summary Atualizar veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {Object} req.body - Dados para atualização
+ * @returns {Object} Sucesso
+ */
+router.put(
+  '/:chassi',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum dado fornecido para atualização',
+        code: 'VALIDATION_ERROR',
+      });
     }
 
-    // Check if vehicle exists first
-    const veiculo = await buscarPorChassi(chassi);
-    if (!veiculo) {
-      return res.status(404).send('Veículo não encontrado.');
-    }
+    await atualizarVeiculo(req.params.chassi, req.body);
 
-    let resultado;
+    res
+      .status(200)
+      .json(formatSuccessResponse(`Veículo ${req.params.chassi} atualizado com sucesso!`)({}));
+  }),
+);
 
-    // Handle specific updates using existing functions
-    if (updates.placa !== undefined) {
-      resultado = await atualizarPlaca(chassi, updates.placa);
-      if (!resultado.success) throw new Error(resultado.error);
-    }
+/**
+ * @route PATCH /:chassi/placa
+ * @summary Atualizar apenas a placa do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {string} req.body.placa - Nova placa
+ * @returns {Object} Sucesso
+ */
+router.patch(
+  '/:chassi/placa',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['placa']),
+  asyncHandler(async (req, res) => {
+    await atualizarPlaca(req.params.chassi, req.body.placa);
 
-    if (updates.quilometragem !== undefined) {
-      if (isNaN(parseInt(updates.quilometragem))) {
-        return res.status(400).send('Quilometragem deve ser um número válido.');
-      }
-      resultado = await atualizarQuilometragemVeiculo(chassi, parseInt(updates.quilometragem));
-      if (!resultado.success) throw new Error(resultado.error);
-    }
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(`Placa do veículo ${req.params.chassi} atualizada com sucesso!`)({}),
+      );
+  }),
+);
 
-    if (updates.dataVenda !== undefined) {
-      // You might want more date validation here
-      resultado = await registrarVenda(chassi, updates.dataVenda);
-      if (!resultado.success) throw new Error(resultado.error);
-    }
+/**
+ * @route PATCH /:chassi/quilometragem
+ * @summary Atualizar quilometragem do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {number} req.body.quilometragem - Nova quilometragem
+ * @returns {Object} Sucesso
+ */
+router.patch(
+  '/:chassi/quilometragem',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['quilometragem']),
+  asyncHandler(async (req, res) => {
+    await atualizarQuilometragemVeiculo(req.params.chassi, req.body.quilometragem);
 
-    // Handle other potential direct updates if needed (e.g., local, nome, observacoes)
-    // If there are other fields you want to allow updating directly on the main document,
-    // you would add logic here to call a generic update function or update directly.
-    // Example (assuming a generic update function exists or using batched writes):
-    // const directUpdates = {};
-    // if(updates.local !== undefined) directUpdates.local = updates.local;
-    // if(updates.nome !== undefined) directUpdates.nome = updates.nome;
-    // if(Object.keys(directUpdates).length > 0) {
-    //     await db.collection('veiculos').doc(veiculo.id).update(directUpdates);
-    // }
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(
+          `Quilometragem do veículo ${req.params.chassi} atualizada com sucesso!`,
+        )({}),
+      );
+  }),
+);
 
-    // If no specific update function was called, assume a generic success if vehicle was found
-    if (resultado === undefined) {
-      return res
+/**
+ * @route PATCH /:chassi/status
+ * @summary Alterar status do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {string} req.body.status - Novo status
+ * @returns {Object} Sucesso
+ */
+router.patch(
+  '/:chassi/status',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['status']),
+  asyncHandler(async (req, res) => {
+    await alterarStatusVeiculo(req.params.chassi, req.body.status);
+
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(
+          `Status do veículo ${req.params.chassi} alterado para ${req.body.status} com sucesso!`,
+        )({}),
+      );
+  }),
+);
+
+/**
+ * @route POST /:chassi/venda
+ * @summary Registrar venda do veículo
+ * @param {string} chassi - Chassi do veículo
+ * @param {string} req.body.dataVenda - Data da venda
+ * @param {string} [req.body.observacoes] - Observações opcionais
+ * @returns {Object} Sucesso
+ */
+router.post(
+  '/:chassi/venda',
+  validateDocumentId('chassi'),
+  validateRequiredFields(['dataVenda']),
+  asyncHandler(async (req, res) => {
+    await registrarVenda(req.params.chassi, req.body.dataVenda, req.body.observacoes);
+
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(`Venda do veículo ${req.params.chassi} registrada com sucesso!`)({}),
+      );
+  }),
+);
+
+/**
+ * @route DELETE /:chassi
+ * @summary Deletar veículo (soft delete ou físico)
+ * @param {string} chassi - Chassi do veículo
+ * @param {boolean} [req.query.exclusaoFisica] - Se true, exclusão física
+ * @returns {Object} Sucesso
+ */
+router.delete(
+  '/:chassi',
+  validateDocumentId('chassi'),
+  asyncHandler(async (req, res) => {
+    const exclusaoFisica = req.query.exclusaoFisica === 'true';
+
+    if (exclusaoFisica) {
+      // Implementar exclusão física se necessário
+      // Por ora, usar soft delete
+      await alterarStatusVeiculo(req.params.chassi, 'vendido');
+
+      res
         .status(200)
-        .send({ message: 'Veículo encontrado, mas nenhum campo atualizável fornecido.' });
+        .json(formatSuccessResponse(`Veículo ${req.params.chassi} excluído com sucesso!`)({}));
+    } else {
+      await alterarStatusVeiculo(req.params.chassi, 'vendido');
+
+      res
+        .status(200)
+        .json(
+          formatSuccessResponse(`Veículo ${req.params.chassi} marcado como vendido com sucesso!`)(
+            {},
+          ),
+        );
     }
+  }),
+);
 
-    res.status(200).send({ message: 'Veículo atualizado com sucesso!' });
-  } catch (error) {
-    console.error(`Erro na rota PUT /veiculos/${req.params.chassi}:`, error);
-    res.status(500).send({ message: 'Erro ao atualizar veículo', error: error.message });
-  }
-});
+// Middleware de tratamento de erros
+router.use(errorHandler);
 
-/**
- * Rota DELETE para deletar um veículo.
- * Espera o chassi do veículo no parâmetro da rota.
- * @name DELETE /:chassi
- * @function
- * @memberof module:veiculo
- * @param {object} req - Objeto de requisição do Express.
- * @param {string} req.params.chassi - Chassi do veículo a ser deletado.
- * @param {object} res - Objeto de resposta do Express.
- * @returns {Promise<void>}
- */
-router.delete('/:chassi', async (req, res) => {
-  try {
-    const chassi = req.params.chassi;
-
-    if (!chassi) {
-      return res.status(400).send('Chassi do veículo ausente.');
-    }
-
-    // Find the vehicle document by chassi to get its ID
-    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
-
-    if (snapshot.empty) {
-      return res.status(404).send('Veículo não encontrado.');
-    }
-
-    const veiculoDocRef = snapshot.docs[0].ref;
-
-    // Delete the document
-    await veiculoDocRef.delete();
-
-    res.status(200).send({ message: 'Veículo deletado com sucesso!' });
-  } catch (error) {
-    console.error(`Erro na rota DELETE /veiculos/${req.params.chassi}:`, error);
-    res.status(500).send({ message: 'Erro ao deletar veículo', error: error.message });
-  }
-});
-
-/**
- * Exporta o roteador Express para ser utilizado no arquivo principal (index.js).
- * @type {express.Router}
- */
 export default router;

@@ -14,11 +14,7 @@ import { db } from '../../../firebaseConfig.js';
  */
 export const adicionarManutencao = async (veiculoId, manutencaoData) => {
   try {
-    const docRef = db
-      .collection('veiculos')
-      .doc(veiculoId)
-      .collection('manutencoes')
-      .doc(); // ID automático
+    const docRef = db.collection('veiculos').doc(veiculoId).collection('manutencoes').doc(); // ID automático
 
     await docRef.set({
       ...manutencaoData,
@@ -57,7 +53,7 @@ export const listarManutencoes = async (veiculoId, { limite = 10, ultimoDoc = nu
 
     const snapshot = await query.get();
 
-    const manutencoes = snapshot.docs.map(doc => ({
+    const manutencoes = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));

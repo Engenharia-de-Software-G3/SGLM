@@ -1,109 +1,206 @@
 import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
-import { buscarPorChassi } from './firestoreVeiculos.js'; // Assuming you have this function to find vehicle by chassi
+import { validators, formatters } from './validators.js';
+import { errorHandler, BusinessError } from './errorHandler.js';
+import { buscarPorChassi } from './firestoreVeiculos.js';
 
-/**
- * Cadastra uma nova locação
- * @param {Object} locacaoData - Dados da locação
- * @param {string} locacaoData.cpfLocatario - CPF do cliente (obrigatório, formato: 'XXX.XXX.XXX-XX')
- * @param {string} locacaoData.placaVeiculo - Placa do veículo (obrigatório, formato: 'XXXX-XXXX')
- * @param {string} locacaoData.dataInicio - Data de início (obrigatório, formato: 'DD/MM/YYYY')
- * @param {string} locacaoData.dataFim - Data de término (obrigatório, formato: 'DD/MM/YYYY')
- * @param {number} locacaoData.valor - Valor da locação em reais (obrigatório)
- * @param {Array<string>} [locacaoData.servicosAdicionaisIds] - IDs de serviços adicionais (opcional)
- * @returns {Promise<{success: boolean, id?: string, error?: string}>}
- */
-export const criarLocacao = async (locacaoData) => {
-  try {
-    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor, servicosAdicionaisIds } =
-      locacaoData;
+const COLLECTION_NAME = 'locacoes';
+const VALID_STATUSES = ['ativa', 'concluida', 'cancelada'];
 
-    // 1. Validar cliente
-    const clienteRef = db.collection('clientes').doc(cpfLocatario);
-    const clienteDoc = await clienteRef.get();
+class LocacaoService {
+  /**
+   * Valida dados da locação.
+   *
+   * @param {Object} data - Dados da locação.
+   * @param {string} data.cpfLocatario - CPF do locatário.
+   * @param {string} data.placaVeiculo - Placa do veículo.
+   * @param {string|Date} data.dataInicio - Data de início da locação.
+   * @param {string|Date} data.dataFim - Data de fim da locação.
+   * @param {number|string} data.valor - Valor da locação.
+   * @returns {Object} Dados validados e normalizados.
+   * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
+   */
+  static validateLocacaoData(data) {
+    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor } = data;
 
-    if (!clienteDoc.exists) {
-      throw new Error('Cliente não encontrado');
+    if (!cpfLocatario || !placaVeiculo || !dataInicio || !dataFim || valor === undefined) {
+      throw new ValidationError('Todos os campos obrigatórios devem ser preenchidos');
     }
 
-    // 2. Validar veículo
-    const placaFormatada = placaVeiculo.replace(/-/g, '');
+    const cpfValidado = validators.cpf(cpfLocatario);
+    const placaValidada = validators.placa(placaVeiculo);
+    const { startDate, endDate } = validators.dateRange(dataInicio, dataFim);
+
+    if (Number(valor) <= 0) {
+      throw new ValidationError('Valor deve ser maior que zero', 'valor');
+    }
+
+    return {
+      cpfLocatario: cpfValidado,
+      placaVeiculo: placaValidada,
+      dataInicio: startDate,
+      dataFim: endDate,
+      valor: Number(valor),
+    };
+  }
+
+  /**
+   * Verifica disponibilidade do cliente.
+   *
+   * @param {string} cpf - CPF do cliente.
+   * @returns {Promise<Object>} Dados do cliente.
+   * @throws {BusinessError} Se o cliente não for encontrado ou não estiver ativo.
+   */
+  static async verificarCliente(cpf) {
+    const clienteDoc = await db.collection('clientes').doc(cpf).get();
+
+    if (!clienteDoc.exists) {
+      throw new BusinessError('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
+    }
+
+    const clienteData = clienteDoc.data();
+    if (clienteData.status !== 'ativo') {
+      throw new BusinessError('Cliente não está ativo', 'CLIENTE_INATIVO');
+    }
+
+    return clienteData;
+  }
+
+  /**
+   * Verifica disponibilidade do veículo.
+   *
+   * @param {string} placa - Placa do veículo.
+   * @returns {Promise<{doc: import('firebase').firestore.DocumentSnapshot, data: Object}>}
+   *   Documento e dados do veículo.
+   * @throws {BusinessError} Se o veículo não for encontrado ou não estiver disponível.
+   */
+  static async verificarVeiculo(placa) {
     const veiculosSnapshot = await db
       .collection('veiculos')
-      .where('placa', '==', placaFormatada)
+      .where('placa', '==', placa)
       .limit(1)
       .get();
 
     if (veiculosSnapshot.empty) {
-      throw new Error('Veículo não encontrado');
+      throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
     }
 
     const veiculoDoc = veiculosSnapshot.docs[0];
     const veiculoData = veiculoDoc.data();
 
     if (veiculoData.status !== 'disponivel') {
-      throw new Error('Veículo não está disponível para locação');
+      throw new BusinessError('Veículo não está disponível para locação', 'VEICULO_INDISPONIVEL');
     }
 
-    // 3. Converter datas
-    const parsedDataInicio = parseDate(dataInicio);
-    const parsedDataFim = parseDate(dataFim);
+    return { doc: veiculoDoc, data: veiculoData };
+  }
 
-    if (isNaN(parsedDataInicio.getTime()) || isNaN(parsedDataFim.getTime())) {
-      throw new Error('Formato de data inválido. Use DD/MM/YYYY.');
-    }
-    if (parsedDataInicio > parsedDataFim) {
-      throw new Error('Data de início não pode ser após a data de término.');
-    }
+  /**
+   * Atualiza status do veículo.
+   *
+   * @param {import('firebase').firestore.DocumentSnapshot} veiculoDoc - Documento do veículo.
+   * @param {string} novoStatus - Novo status do veículo.
+   * @returns {Promise<void>}
+   */
+  static async atualizarStatusVeiculo(veiculoDoc, novoStatus) {
+    await veiculoDoc.ref.update({
+      status: novoStatus,
+      dataAtualizacao: formatters.dateToISO(new Date()),
+    });
+  }
 
-    // 4. Criar ID da locação
-    const id = uuidv4();
+  /**
+   * Formata locação para resposta.
+   *
+   * @param {import('firebase').firestore.DocumentSnapshot} doc - Documento da locação.
+   * @returns {Object} Locação formatada.
+   */
+  static formatarLocacao(doc) {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      dataInicio: formatters.dateToDisplay(data.dataInicio),
+      dataFim: formatters.dateToDisplay(data.dataFim),
+      dataCadastro: formatters.dateToDisplay(data.dataCadastro),
+      dataAtualizacao: formatters.dateToDisplay(data.dataAtualizacao),
+    };
+  }
+}
 
-    // 5. Criar documento de locação
-    await db
-      .collection('locacoes')
-      .doc(id)
-      .set({
-        id,
-        clienteId: cpfLocatario,
-        veiculoId: veiculoDoc.id,
-        placaVeiculo: placaFormatada,
-        dataInicio: parsedDataInicio.toISOString(),
-        dataFim: parsedDataFim.toISOString(),
-        valor: Number(valor), // Ensure value is stored as a number
-        servicosAdicionaisIds: servicosAdicionaisIds || [], // Add optional services
-        status: 'ativa',
-        dataCadastro: new Date().toISOString(),
-        dataAtualizacao: new Date().toISOString(),
+/**
+ * Cadastra uma nova locação com validações aprimoradas.
+ *
+ * @param {Object} locacaoData - Dados da locação.
+ * @returns {Promise<Object>} Objeto de sucesso e id da locação.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ */
+export const criarLocacao = async (locacaoData) => {
+  return errorHandler
+    .handleFirestoreOperation(async () => {
+      // 1. Validar dados de entrada
+      const dadosValidados = LocacaoService.validateLocacaoData(locacaoData);
+
+      // 2. Verificar cliente e veículo em paralelo
+      const [cliente, veiculo] = await Promise.all([
+        LocacaoService.verificarCliente(dadosValidados.cpfLocatario),
+        LocacaoService.verificarVeiculo(dadosValidados.placaVeiculo),
+      ]);
+
+      // 3. Criar locação usando transação
+      const id = uuidv4();
+      const agora = new Date();
+
+      await db.runTransaction(async (transaction) => {
+        // Criar documento da locação
+        const locacaoRef = db.collection(COLLECTION_NAME).doc(id);
+        transaction.set(locacaoRef, {
+          id,
+          clienteId: dadosValidados.cpfLocatario,
+          veiculoId: veiculo.doc.id,
+          placaVeiculo: dadosValidados.placaVeiculo,
+          dataInicio: formatters.dateToISO(dadosValidados.dataInicio),
+          dataFim: formatters.dateToISO(dadosValidados.dataFim),
+          valor: dadosValidados.valor,
+          servicosAdicionaisIds: locacaoData.servicosAdicionaisIds || [],
+          status: 'ativa',
+          dataCadastro: formatters.dateToISO(agora),
+          dataAtualizacao: formatters.dateToISO(agora),
+        });
+
+        // Atualizar status do veículo
+        transaction.update(veiculo.doc.ref, {
+          status: 'alugado',
+          dataAtualizacao: formatters.dateToISO(agora),
+        });
       });
 
-    // 6. Atualizar status do veículo
-    await veiculoDoc.ref.update({
-      status: 'alugado',
-      dataAtualizacao: new Date().toISOString(),
-    });
-
-    return { success: true, id };
-  } catch (error) {
-    console.error('Erro ao criar locação:', error);
-    return { success: false, error: error.message };
-  }
+      return { success: true, id };
+    }, 'criar locação')
+    .catch((error) => errorHandler.formatErrorResponse(error));
 };
 
 /**
- * Lista locações com paginação
- * @param {Object} params
- * @param {number} [params.limite=10] - Limite de resultados
- * @param {firebase.firestore.DocumentSnapshot} [params.ultimoDoc] - Último documento para paginação (para startAfter)
- * @param {Object} [params.filtros] - Filtros opcionais (ex: { status: 'ativa' })
- * @returns {Promise<{locacoes: Array<Object>, ultimoDoc: firebase.firestore.DocumentSnapshot|null}>}
+ * Lista locações com filtros aprimorados.
+ *
+ * @param {Object} params - Parâmetros de listagem.
+ * @param {number} [params.limite=10] - Limite de locações.
+ * @param {Object} [params.ultimoDoc=null] - Último documento para paginação.
+ * @param {Object} [params.filtros={}] - Filtros de busca.
+ * @returns {Promise<Object>} Lista de locações e paginação.
  */
 export const listarLocacoes = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
-  try {
-    let query = db.collection('locacoes').orderBy('dataCadastro', 'desc').limit(limite);
+  return errorHandler.handleFirestoreOperation(async () => {
+    let query = db.collection(COLLECTION_NAME).orderBy('dataCadastro', 'desc').limit(limite);
 
+    // Aplicar filtros
     if (filtros.status) {
+      validators.status(filtros.status, VALID_STATUSES);
       query = query.where('status', '==', filtros.status);
+    }
+
+    if (filtros.clienteId) {
+      query = query.where('clienteId', '==', validators.cpf(filtros.clienteId));
     }
 
     if (ultimoDoc) {
@@ -111,286 +208,186 @@ export const listarLocacoes = async ({ limite = 10, ultimoDoc = null, filtros = 
     }
 
     const snapshot = await query.get();
-    const locacoes = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      dataInicio: formatDate(doc.data().dataInicio),
-      dataFim: formatDate(doc.data().dataFim),
-      dataCadastro: formatDate(doc.data().dataCadastro),
-      dataAtualizacao: formatDate(doc.data().dataAtualizacao),
-    }));
+    const locacoes = snapshot.docs.map(LocacaoService.formatarLocacao);
 
     return {
       locacoes,
       ultimoDoc: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
     };
-  } catch (error) {
-    console.error('Erro ao listar locações:', error);
-    throw error;
-  }
+  }, 'listar locações');
 };
 
 /**
- * Busca uma locação por ID.
- * @param {string} id - ID da locação
- * @returns {Promise<Object|null>} - Retorna o objeto da locação ou null se não encontrada
+ * Busca locação por ID.
+ *
+ * @param {string} id - ID da locação.
+ * @returns {Promise<Object>} Locação encontrada.
+ * @throws {BusinessError} Se a locação não for encontrada.
  */
 export const buscarLocacaoPorId = async (id) => {
-  try {
-    const doc = await db.collection('locacoes').doc(id).get();
+  return errorHandler.handleFirestoreOperation(async () => {
+    const doc = await db.collection(COLLECTION_NAME).doc(id).get();
+
     if (!doc.exists) {
-      return null;
+      throw new BusinessError('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
     }
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      dataInicio: formatDate(data.dataInicio),
-      dataFim: formatDate(data.dataFim),
-      dataCadastro: formatDate(data.dataCadastro),
-      dataAtualizacao: formatDate(data.dataAtualizacao),
-    };
-  } catch (error) {
-    console.error(`Erro ao buscar locação ${id}:`, error);
-    throw error;
-  }
+
+    return LocacaoService.formatarLocacao(doc);
+  }, `buscar locação ${id}`);
 };
 
 /**
- * Atualiza uma locação existente.
- * Permite atualizar dataFim, valor, status, e servicosAdicionaisIds.
- * Se o status for alterado para 'concluida', atualiza o status do veículo para 'disponivel'.
- * @param {string} id - ID da locação a ser atualizada
- * @param {Object} updates - Objeto com os campos a serem atualizados
- * @param {string} [updates.dataFim] - Nova data de término (formato: 'DD/MM/YYYY')
- * @param {number} [updates.valor] - Novo valor da locação
- * @param {'ativa'|'concluida'|'cancelada'} [updates.status] - Novo status da locação
- * @param {Array<string>} [updates.servicosAdicionaisIds] - IDs atualizados de serviços adicionais
- * @returns {Promise<{success: boolean, error?: string}>}
+ * Atualiza locação com validações.
+ *
+ * @param {string} id - ID da locação.
+ * @param {Object} updates - Campos a serem atualizados.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarLocacao = async (id, updates) => {
-  try {
-    const locacaoRef = db.collection('locacoes').doc(id);
-    const locacaoDoc = await locacaoRef.get();
+  return errorHandler
+    .handleFirestoreOperation(async () => {
+      const locacaoRef = db.collection(COLLECTION_NAME).doc(id);
 
-    if (!locacaoDoc.exists) {
-      return { success: false, error: 'Locação não encontrada' };
-    }
+      return db.runTransaction(async (transaction) => {
+        const locacaoDoc = await transaction.get(locacaoRef);
 
-    const locacaoData = locacaoDoc.data();
-    const updateData = {};
+        if (!locacaoDoc.exists) {
+          throw new BusinessError('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
+        }
 
-    if (updates.dataFim !== undefined) {
-      const parsedDataFim = parseDate(updates.dataFim);
-      if (isNaN(parsedDataFim.getTime())) {
-        return { success: false, error: 'Formato de data de término inválido. Use DD/MM/YYYY.' };
-      }
-      updateData.dataFim = parsedDataFim.toISOString();
-    }
+        const locacaoData = locacaoDoc.data();
+        const updateData = { dataAtualizacao: formatters.dateToISO(new Date()) };
 
-    if (updates.valor !== undefined) {
-      if (isNaN(Number(updates.valor))) {
-        return { success: false, error: 'Valor inválido.' };
-      }
-      updateData.valor = Number(updates.valor);
-    }
+        // Validar e aplicar atualizações
+        if (updates.dataFim !== undefined) {
+          const dataFim = validators.date(updates.dataFim, 'dataFim');
+          updateData.dataFim = formatters.dateToISO(dataFim);
+        }
 
-    if (updates.status !== undefined) {
-      const validStatuses = ['ativa', 'concluida', 'cancelada'];
-      if (!validStatuses.includes(updates.status)) {
-        return {
-          success: false,
-          error: `Status inválido. Use um dos seguintes: ${validStatuses.join(', ')}.`,
-        };
-      }
-      updateData.status = updates.status;
+        if (updates.valor !== undefined) {
+          if (Number(updates.valor) <= 0) {
+            throw new ValidationError('Valor deve ser maior que zero', 'valor');
+          }
+          updateData.valor = Number(updates.valor);
+        }
 
-      if (
-        locacaoData.status === 'ativa' &&
-        updates.status === 'concluida' &&
-        locacaoData.veiculoId
-      ) {
-        const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
-        await veiculoRef.update({
-          status: 'disponivel',
-          dataAtualizacao: new Date().toISOString(),
-        });
-      }
+        if (updates.status !== undefined) {
+          const novoStatus = validators.status(updates.status, VALID_STATUSES);
+          updateData.status = novoStatus;
 
-      if (
-        locacaoData.status === 'ativa' &&
-        updates.status === 'cancelada' &&
-        locacaoData.veiculoId
-      ) {
-        const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
-        await veiculoRef.update({
-          status: 'disponivel',
-          dataAtualizacao: new Date().toISOString(),
-        });
-      }
-    }
+          // Atualizar status do veículo se necessário
+          if (locacaoData.status === 'ativa' && ['concluida', 'cancelada'].includes(novoStatus)) {
+            const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
+            transaction.update(veiculoRef, {
+              status: 'disponivel',
+              dataAtualizacao: formatters.dateToISO(new Date()),
+            });
+          }
+        }
 
-    if (updates.servicosAdicionaisIds !== undefined) {
-      if (!Array.isArray(updates.servicosAdicionaisIds)) {
-        return { success: false, error: 'Serviços adicionais devem ser um array de IDs.' };
-      }
-      updateData.servicosAdicionaisIds = updates.servicosAdicionaisIds;
-    }
+        if (updates.servicosAdicionaisIds !== undefined) {
+          if (!Array.isArray(updates.servicosAdicionaisIds)) {
+            throw new ValidationError(
+              'Serviços adicionais devem ser um array de IDs',
+              'servicosAdicionaisIds',
+            );
+          }
+          updateData.servicosAdicionaisIds = updates.servicosAdicionaisIds;
+        }
 
-    updateData.dataAtualizacao = new Date().toISOString();
+        // Verificar se há campos para atualizar
+        const hasUpdates = Object.keys(updateData).length > 1;
+        if (!hasUpdates) {
+          throw new ValidationError('Nenhum campo válido fornecido para atualização');
+        }
 
-    if (
-      Object.keys(updateData).length > 1 ||
-      (Object.keys(updateData).length === 1 && !updateData.hasOwnProperty('dataAtualizacao'))
-    ) {
-      await locacaoRef.update(updateData);
-    } else {
-      return { success: false, error: 'Nenhum campo válido fornecido para atualização.' };
-    }
+        transaction.update(locacaoRef, updateData);
+      });
 
-    return { success: true };
-  } catch (error) {
-    console.error(`Erro ao atualizar locação ${id}:`, error);
-    return { success: false, error: error.message };
-  }
+      return { success: true };
+    }, `atualizar locação ${id}`)
+    .catch((error) => errorHandler.formatErrorResponse(error));
 };
 
 /**
- * Exclui uma locação
- * Se a locação for ativa, atualiza o status do veículo de volta para 'disponivel'.
- * @param {string} id - ID da locação
- * @returns {Promise<{success: boolean, error?: string}>}
+ * Exclui locação com verificações.
+ *
+ * @param {string} id - ID da locação.
+ * @returns {Promise<Object>} Objeto de sucesso.
+ * @throws {BusinessError} Se a locação não for encontrada.
  */
 export const excluirLocacao = async (id) => {
-  try {
-    const locacaoRef = db.collection('locacoes').doc(id);
-    const locacaoDoc = await locacaoRef.get();
+  return errorHandler
+    .handleFirestoreOperation(async () => {
+      return db.runTransaction(async (transaction) => {
+        const locacaoRef = db.collection(COLLECTION_NAME).doc(id);
+        const locacaoDoc = await transaction.get(locacaoRef);
 
-    if (!locacaoDoc.exists) {
-      return { success: false, error: 'Locação não encontrada' };
-    }
+        if (!locacaoDoc.exists) {
+          throw new BusinessError('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
+        }
 
-    const locacaoData = locacaoDoc.data();
+        const locacaoData = locacaoDoc.data();
 
-    // Update the vehicle status back to 'disponivel' if the rental was active or cancelled
-    if (['ativa', 'cancelada'].includes(locacaoData.status) && locacaoData.veiculoId) {
-      const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
-      await veiculoRef.update({
-        status: 'disponivel',
-        dataAtualizacao: new Date().toISOString(),
+        // Atualizar status do veículo se necessário
+        if (['ativa', 'cancelada'].includes(locacaoData.status) && locacaoData.veiculoId) {
+          const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
+          transaction.update(veiculoRef, {
+            status: 'disponivel',
+            dataAtualizacao: formatters.dateToISO(new Date()),
+          });
+        }
+
+        transaction.delete(locacaoRef);
       });
-    }
 
-    await locacaoRef.delete();
-
-    return { success: true };
-  } catch (error) {
-    console.error('Erro ao excluir locação:', error);
-    return { success: false, error: error.message };
-  }
+      return { success: true };
+    }, `excluir locação ${id}`)
+    .catch((error) => errorHandler.formatErrorResponse(error));
 };
 
 /**
- * Obtém o histórico de locações de um veículo pelo seu chassi.
- * @param {string} chassi - O chassi do veículo
- * @returns {Promise<Array<Object>>} Uma Promessa que resolve com um array de locações.
+ * Histórico de locações por CPF do cliente.
+ *
+ * @param {string} cpf - CPF do cliente.
+ * @returns {Promise<Object[]>} Lista de locações do cliente.
+ */
+export const historicoLocacoesCliente = async (cpf) => {
+  return errorHandler.handleFirestoreOperation(async () => {
+    const cpfValidado = validators.cpf(cpf);
+
+    const snapshot = await db
+      .collection(COLLECTION_NAME)
+      .where('clienteId', '==', cpfValidado)
+      .orderBy('dataInicio', 'desc')
+      .get();
+
+    return snapshot.docs.map(LocacaoService.formatarLocacao);
+  }, `buscar histórico do cliente ${cpf}`);
+};
+
+/**
+ * Histórico de locações por chassi do veículo.
+ *
+ * @param {string} chassi - Chassi do veículo.
+ * @returns {Promise<Object[]>} Lista de locações do veículo.
+ * @throws {BusinessError} Se o veículo não for encontrado.
  */
 export const historicoLocacoesVeiculo = async (chassi) => {
-  try {
+  return errorHandler.handleFirestoreOperation(async () => {
     const veiculo = await buscarPorChassi(chassi);
 
     if (!veiculo) {
-      console.warn(`Veículo com chassi ${chassi} não encontrado.`);
-      return [];
+      throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
     }
 
-    const veiculoId = veiculo.id;
-
     const snapshot = await db
-      .collection('locacoes')
-      .where('veiculoId', '==', veiculoId)
+      .collection(COLLECTION_NAME)
+      .where('veiculoId', '==', veiculo.id)
       .orderBy('dataInicio', 'desc')
       .get();
 
-    const locacoes = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        dataInicio: formatDate(data.dataInicio),
-        dataFim: formatDate(data.dataFim),
-        dataCadastro: formatDate(data.dataCadastro),
-        dataAtualizacao: formatDate(data.dataAtualizacao),
-      };
-    });
-
-    return locacoes;
-  } catch (error) {
-    console.error(`Erro ao obter histórico de locações para o veículo ${chassi}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Obtém o histórico de locações de um cliente pelo seu CPF.
- * @param {string} cpf - O CPF do cliente
- * @returns {Promise<Array<Object>>} Uma Promessa que resolve com um array de locações.
- */
-export const historicoLocacoesCliente = async (cpf) => {
-  try {
-    const snapshot = await db
-      .collection('locacoes')
-      .where('clienteId', '==', cpf)
-      .orderBy('dataInicio', 'desc')
-      .get();
-
-    const locacoes = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        // Format dates for the response
-        dataInicio: formatDate(data.dataInicio),
-        dataFim: formatDate(data.dataFim),
-        dataCadastro: formatDate(data.dataCadastro),
-        dataAtualizacao: formatDate(data.dataAtualizacao),
-      };
-    });
-
-    return locacoes;
-  } catch (error) {
-    console.error(`Erro ao obter histórico de locações para o cliente ${cpf}:`, error);
-    throw error;
-  }
-};
-
-const formatDate = (isoString) => {
-  if (!isoString) return null;
-
-  try {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) {
-      console.warn(`Invalid date string provided to formatDate: ${isoString}`);
-      return isoString;
-    }
-    return [
-      date.getDate().toString().padStart(2, '0'),
-      (date.getMonth() + 1).toString().padStart(2, '0'),
-      date.getFullYear(),
-    ].join('/');
-  } catch (e) {
-    console.error(`Error formatting date ${isoString}:`, e);
-    return isoString;
-  }
-};
-
-const parseDate = (dateStr) => {
-  if (!dateStr) return new Date('Invalid Date');
-  const parts = dateStr.split('/');
-  if (parts.length !== 3) {
-    return new Date('Invalid Date');
-  }
-  const [day, month, year] = parts;
-  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  return date;
+    return snapshot.docs.map(LocacaoService.formatarLocacao);
+  }, `buscar histórico do veículo ${chassi}`);
 };
