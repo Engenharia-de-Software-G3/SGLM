@@ -8,7 +8,7 @@ export class ValidationError extends Error {
 }
 
 // Validadores específicos para diferentes tipos de documento
-export const documentValidators = {
+export const validadoresDocumentos = {
   // Validação completa de CPF com dígitos verificadores
   cpfCompleto: (cpf) => {
     const cleaned = cpf.replace(/[^\d]/g, '');
@@ -109,15 +109,15 @@ export const documentValidators = {
   },
 };
 
-export const validators = {
+export const validadores = {
   // Validação de CPF (usando a validação completa)
   cpf: (cpf) => {
-    return documentValidators.cpfCompleto(cpf);
+    return validadoresDocumentos.cpfCompleto(cpf);
   },
 
   // Validação de CNPJ
   cnpj: (cnpj) => {
-    return documentValidators.cnpj(cnpj);
+    return validadoresDocumentos.cnpj(cnpj);
   },
 
   // Validação de placa
@@ -181,8 +181,8 @@ export const validators = {
 
   // Validação de período
   dateRange: (startDateStr, endDateStr) => {
-    const startDate = validators.date(startDateStr, 'dataInicio');
-    const endDate = validators.date(endDateStr, 'dataFim');
+    const startDate = validadores.date(startDateStr, 'dataInicio');
+    const endDate = validadores.date(endDateStr, 'dataFim');
 
     if (startDate >= endDate) {
       throw new ValidationError('Data de início deve ser anterior à data de término');
@@ -202,12 +202,12 @@ export const validators = {
 
   // Validação de telefone
   telefone: (telefone) => {
-    return documentValidators.telefone(telefone);
+    return validadoresDocumentos.telefone(telefone);
   },
 
   // Validação de CEP
   cep: (cep) => {
-    return documentValidators.cep(cep);
+    return validadoresDocumentos.cep(cep);
   },
 
   // Validação de status
@@ -244,9 +244,9 @@ export const validators = {
   },
 };
 
-export const formatters = {
+export const formatadores = {
   // Formatação de data para exibição
-  dateToDisplay: (isoString) => {
+  dataExibicao: (isoString) => {
     if (!isoString) return null;
 
     try {
@@ -261,7 +261,7 @@ export const formatters = {
   },
 
   // Formatação de data e hora para exibição
-  dateTimeToDisplay: (isoString) => {
+  dataHoraExibicao: (isoString) => {
     if (!isoString) return null;
 
     try {
@@ -276,33 +276,33 @@ export const formatters = {
   },
 
   // Formatação de data para ISO
-  dateToISO: (date) => {
+  dataIso: (date) => {
     return date instanceof Date ? date.toISOString() : new Date(date).toISOString();
   },
 
   // Formatação de CPF para exibição
-  cpfToDisplay: (cpf) => {
+  cpfExibicao: (cpf) => {
     const cleaned = cpf.replace(/[^\d]/g, '');
     if (cleaned.length !== 11) return cpf;
     return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   },
 
   // Formatação de CNPJ para exibição
-  cnpjToDisplay: (cnpj) => {
+  cnpjExibicao: (cnpj) => {
     const cleaned = cnpj.replace(/[^\d]/g, '');
     if (cleaned.length !== 14) return cnpj;
     return cleaned.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   },
 
   // Formatação de CEP para exibição
-  cepToDisplay: (cep) => {
+  cepExibicao: (cep) => {
     const cleaned = cep.replace(/[^\d]/g, '');
     if (cleaned.length !== 8) return cep;
     return cleaned.replace(/(\d{5})(\d{3})/, '$1-$2');
   },
 
   // Formatação de telefone para exibição
-  telefoneToDisplay: (telefone) => {
+  telefoneExibicao: (telefone) => {
     const cleaned = telefone.replace(/[^\d]/g, '');
 
     if (cleaned.length === 10) {
@@ -315,7 +315,7 @@ export const formatters = {
   },
 
   // Formatação de placa para exibição
-  placaToDisplay: (placa) => {
+  placaExibicao: (placa) => {
     if (!placa) return placa;
 
     const cleaned = placa.replace(/[^\w]/g, '').toUpperCase();
@@ -333,7 +333,7 @@ export const formatters = {
   },
 
   // Formatação de moeda brasileira
-  currencyToDisplay: (value) => {
+  moedaExibicao: (value) => {
     if (value === null || value === undefined) return 'R$ 0,00';
 
     const number = Number(value);
@@ -346,7 +346,7 @@ export const formatters = {
   },
 
   // Formatação de número com separadores de milhares
-  numberToDisplay: (value) => {
+  numeroExibicao: (value) => {
     if (value === null || value === undefined) return '0';
 
     const number = Number(value);
@@ -356,17 +356,17 @@ export const formatters = {
   },
 
   // Formatação de quilometragem
-  kmToDisplay: (km) => {
+  kmExibicao: (km) => {
     if (km === null || km === undefined) return '0 km';
 
     const number = Number(km);
     if (isNaN(number)) return km;
 
-    return `${formatters.numberToDisplay(number)} km`;
+    return `${formatadores.numeroExibicao(number)} km`;
   },
 
   // Formatação de porcentagem
-  percentToDisplay: (value) => {
+  porcentagemExibicao: (value) => {
     if (value === null || value === undefined) return '0%';
 
     const number = Number(value);
@@ -376,7 +376,7 @@ export const formatters = {
   },
 
   // Limpeza de string para busca (remover acentos, converter para minúscula)
-  stringForSearch: (str) => {
+  stringParaBusca: (str) => {
     if (!str) return '';
 
     return str
@@ -387,7 +387,7 @@ export const formatters = {
   },
 
   // Formatação de nome próprio (primeira letra maiúscula)
-  nameToDisplay: (name) => {
+  nomeExibicao: (name) => {
     if (!name) return name;
 
     return name

@@ -55,7 +55,7 @@ export const getStatusCodeFromError = (error) => {
  * @param {Function} next - Próximo middleware.
  * @returns {void}
  */
-export const errorHandler = (error, req, res, next) => {
+export const handlerErros = (error, req, res, next) => {
   console.error(`Erro na rota ${req.method} ${req.path}:`, error);
 
   // Se o erro já vem formatado do sistema refatorado
@@ -140,7 +140,7 @@ export const errorHandler = (error, req, res, next) => {
  * @param {Function} next
  * @returns {void}
  */
-export const validatePagination = (req, res, next) => {
+export const validarPaginacao = (req, res, next) => {
   const { limite } = req.query;
 
   if (limite) {
@@ -169,7 +169,7 @@ export const validatePagination = (req, res, next) => {
  * @param {Function} next
  * @returns {void}
  */
-export const validateFilters = (req, res, next) => {
+export const validarFiltros = (req, res, next) => {
   const { filtros } = req.query;
 
   if (filtros) {
@@ -197,7 +197,7 @@ export const validateFilters = (req, res, next) => {
  * @param {Function} next
  * @returns {void}
  */
-export const requestLogger = (req, res, next) => {
+export const logRequisicoes = (req, res, next) => {
   const start = Date.now();
 
   console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
@@ -216,7 +216,7 @@ export const requestLogger = (req, res, next) => {
  * @param {string} [paramName='id'] - Nome do parâmetro na rota.
  * @returns {Function} Middleware Express.
  */
-export const validateDocumentId = (paramName = 'id') => {
+export const validarIdDocumento = (paramName = 'id') => {
   return (req, res, next) => {
     const id = req.params[paramName];
 
@@ -285,18 +285,18 @@ export const validateContentType = (req, res, next) => {
  * @param {Function} next
  * @returns {void}
  */
-export const sanitizeInput = (req, res, next) => {
+export const sanitizarInput = (req, res, next) => {
   /**
    * @param {Object|Array|string|number|boolean|null} obj
    * @returns {Object|Array|string|number|boolean|null}
    */
-  const sanitizeObject = (obj) => {
+  const sanitizarObjeto = (obj) => {
     if (typeof obj !== 'object' || obj === null) {
       return obj;
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(sanitizeObject);
+      return obj.map(sanitizarObjeto);
     }
 
     const sanitized = {};
@@ -305,7 +305,7 @@ export const sanitizeInput = (req, res, next) => {
         // Remover caracteres perigosos básicos e trim
         sanitized[key] = value.trim().replace(/[<>]/g, '');
       } else {
-        sanitized[key] = sanitizeObject(value);
+        sanitized[key] = sanitizarObjeto(value);
       }
     }
 
@@ -313,7 +313,7 @@ export const sanitizeInput = (req, res, next) => {
   };
 
   if (req.body) {
-    req.body = sanitizeObject(req.body);
+    req.body = sanitizarObjeto(req.body);
   }
 
   next();
@@ -342,12 +342,12 @@ export const setCacheHeaders = (maxAge = 300) => {
  * @param {string[]} fields - Lista de campos obrigatórios.
  * @returns {Function} Middleware Express.
  */
-export const validateRequiredFields = (fields) => {
+export const validarCamposObrigatorios = (fields) => {
   return (req, res, next) => {
     const missingFields = [];
 
     fields.forEach((field) => {
-      const fieldValue = getNestedValue(req.body, field);
+      const fieldValue = getValoresAninhados(req.body, field);
       if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
         missingFields.push(field);
       }
@@ -372,7 +372,7 @@ export const validateRequiredFields = (fields) => {
  * @param {string} path - Caminho do campo (ex: 'dadosPessoais.nome').
  * @returns {*}
  */
-const getNestedValue = (obj, path) => {
+const getValoresAninhados = (obj, path) => {
   return path.split('.').reduce((current, key) => {
     return current && current[key] !== undefined ? current[key] : undefined;
   }, obj);
@@ -385,7 +385,7 @@ const getNestedValue = (obj, path) => {
  * @example
  * res.json(formatSuccessResponse('Feito!')({ id: 1 }))
  */
-export const formatSuccessResponse = (message = 'Operação realizada com sucesso') => {
+export const formatarRespostaSucesso = (message = 'Operação realizada com sucesso') => {
   return (data) => ({
     success: true,
     message,
@@ -401,7 +401,7 @@ export const formatSuccessResponse = (message = 'Operação realizada com sucess
  * @param {Function} next
  * @returns {Promise<void>}
  */
-export const processLastDoc = async (req, res, next) => {
+export const processarUltimoDoc = async (req, res, next) => {
   const { ultimoDocId } = req.query;
 
   if (ultimoDocId) {

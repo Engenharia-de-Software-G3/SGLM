@@ -20,25 +20,25 @@ import {
 } from '../src/scripts/firestore/firestoreVeiculos.js';
 
 import {
-  errorHandler,
-  validatePagination,
-  validateFilters,
-  validateDocumentId,
+  handlerErros,
+  validarPaginacao,
+  validarFiltros,
+  validarIdDocumento,
   asyncHandler,
   validateContentType,
-  sanitizeInput,
-  requestLogger,
-  validateRequiredFields,
-  formatSuccessResponse,
-  processLastDoc,
+  sanitizarInput,
+  logRequisicoes,
+  validarCamposObrigatorios,
+  formatarRespostaSucesso,
+  processarUltimoDoc,
 } from './middlewareHelper.js';
 
 const router = express.Router();
 
 // Middlewares globais
-router.use(requestLogger);
+router.use(logRequisicoes);
 router.use(validateContentType);
-router.use(sanitizeInput);
+router.use(sanitizarInput);
 
 /**
  * @route POST /
@@ -48,7 +48,7 @@ router.use(sanitizeInput);
  */
 router.post(
   '/',
-  validateRequiredFields([
+  validarCamposObrigatorios([
     'chassi',
     'placa',
     'modelo',
@@ -61,7 +61,7 @@ router.post(
     const resultado = await criarVeiculo(req.body);
 
     res.status(201).json(
-      formatSuccessResponse('Veículo criado com sucesso!')({
+      formatarRespostaSucesso('Veículo criado com sucesso!')({
         id: resultado.id,
         chassi: req.body.chassi,
         placa: req.body.placa,
@@ -78,9 +78,9 @@ router.post(
  */
 router.get(
   '/',
-  validatePagination,
-  validateFilters,
-  processLastDoc,
+  validarPaginacao,
+  validarFiltros,
+  processarUltimoDoc,
   asyncHandler(async (req, res) => {
     const resultado = await listarVeiculos({
       limite: req.query.limite,
@@ -90,7 +90,7 @@ router.get(
     });
 
     res.status(200).json(
-      formatSuccessResponse('Veículos listados com sucesso')({
+      formatarRespostaSucesso('Veículos listados com sucesso')({
         veiculos: resultado.veiculos,
         total: resultado.total,
         paginacao: {
@@ -110,13 +110,13 @@ router.get(
  */
 router.get(
   '/disponiveis',
-  validateFilters,
+  validarFiltros,
   asyncHandler(async (req, res) => {
     const resultado = await listarVeiculosDisponiveis(req.filtrosParsed);
 
     res
       .status(200)
-      .json(formatSuccessResponse('Veículos disponíveis listados com sucesso')(resultado));
+      .json(formatarRespostaSucesso('Veículos disponíveis listados com sucesso')(resultado));
   }),
 );
 
@@ -130,7 +130,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const relatorio = await gerarRelatorioFrota();
 
-    res.status(200).json(formatSuccessResponse('Relatório gerado com sucesso')(relatorio));
+    res.status(200).json(formatarRespostaSucesso('Relatório gerado com sucesso')(relatorio));
   }),
 );
 
@@ -142,11 +142,11 @@ router.get(
  */
 router.get(
   '/chassi/:chassi',
-  validateDocumentId('chassi'),
+  validarIdDocumento('chassi'),
   asyncHandler(async (req, res) => {
     const veiculo = await buscarPorChassi(req.params.chassi);
 
-    res.status(200).json(formatSuccessResponse('Veículo encontrado com sucesso')(veiculo));
+    res.status(200).json(formatarRespostaSucesso('Veículo encontrado com sucesso')(veiculo));
   }),
 );
 
@@ -158,11 +158,11 @@ router.get(
  */
 router.get(
   '/placa/:placa',
-  validateDocumentId('placa'),
+  validarIdDocumento('placa'),
   asyncHandler(async (req, res) => {
     const veiculo = await buscarPorPlaca(req.params.placa);
 
-    res.status(200).json(formatSuccessResponse('Veículo encontrado com sucesso')(veiculo));
+    res.status(200).json(formatarRespostaSucesso('Veículo encontrado com sucesso')(veiculo));
   }),
 );
 
@@ -174,14 +174,14 @@ router.get(
  */
 router.get(
   '/:chassi/quilometragem',
-  validateDocumentId('chassi'),
+  validarIdDocumento('chassi'),
   asyncHandler(async (req, res) => {
     const dadosQuilometragem = await listarQuilometragemVeiculo(req.params.chassi);
 
     res
       .status(200)
       .json(
-        formatSuccessResponse('Dados de quilometragem obtidos com sucesso')(dadosQuilometragem),
+        formatarRespostaSucesso('Dados de quilometragem obtidos com sucesso')(dadosQuilometragem),
       );
   }),
 );
@@ -195,7 +195,7 @@ router.get(
  */
 router.put(
   '/:chassi',
-  validateDocumentId('chassi'),
+  validarIdDocumento('chassi'),
   asyncHandler(async (req, res) => {
     if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({
@@ -209,7 +209,7 @@ router.put(
 
     res
       .status(200)
-      .json(formatSuccessResponse(`Veículo ${req.params.chassi} atualizado com sucesso!`)({}));
+      .json(formatarRespostaSucesso(`Veículo ${req.params.chassi} atualizado com sucesso!`)({}));
   }),
 );
 
@@ -222,15 +222,17 @@ router.put(
  */
 router.patch(
   '/:chassi/placa',
-  validateDocumentId('chassi'),
-  validateRequiredFields(['placa']),
+  validarIdDocumento('chassi'),
+  validarCamposObrigatorios(['placa']),
   asyncHandler(async (req, res) => {
     await atualizarPlaca(req.params.chassi, req.body.placa);
 
     res
       .status(200)
       .json(
-        formatSuccessResponse(`Placa do veículo ${req.params.chassi} atualizada com sucesso!`)({}),
+        formatarRespostaSucesso(`Placa do veículo ${req.params.chassi} atualizada com sucesso!`)(
+          {},
+        ),
       );
   }),
 );
@@ -244,15 +246,15 @@ router.patch(
  */
 router.patch(
   '/:chassi/quilometragem',
-  validateDocumentId('chassi'),
-  validateRequiredFields(['quilometragem']),
+  validarIdDocumento('chassi'),
+  validarCamposObrigatorios(['quilometragem']),
   asyncHandler(async (req, res) => {
     await atualizarQuilometragemVeiculo(req.params.chassi, req.body.quilometragem);
 
     res
       .status(200)
       .json(
-        formatSuccessResponse(
+        formatarRespostaSucesso(
           `Quilometragem do veículo ${req.params.chassi} atualizada com sucesso!`,
         )({}),
       );
@@ -268,15 +270,15 @@ router.patch(
  */
 router.patch(
   '/:chassi/status',
-  validateDocumentId('chassi'),
-  validateRequiredFields(['status']),
+  validarIdDocumento('chassi'),
+  validarCamposObrigatorios(['status']),
   asyncHandler(async (req, res) => {
     await alterarStatusVeiculo(req.params.chassi, req.body.status);
 
     res
       .status(200)
       .json(
-        formatSuccessResponse(
+        formatarRespostaSucesso(
           `Status do veículo ${req.params.chassi} alterado para ${req.body.status} com sucesso!`,
         )({}),
       );
@@ -293,15 +295,17 @@ router.patch(
  */
 router.post(
   '/:chassi/venda',
-  validateDocumentId('chassi'),
-  validateRequiredFields(['dataVenda']),
+  validarIdDocumento('chassi'),
+  validarCamposObrigatorios(['dataVenda']),
   asyncHandler(async (req, res) => {
     await registrarVenda(req.params.chassi, req.body.dataVenda, req.body.observacoes);
 
     res
       .status(200)
       .json(
-        formatSuccessResponse(`Venda do veículo ${req.params.chassi} registrada com sucesso!`)({}),
+        formatarRespostaSucesso(`Venda do veículo ${req.params.chassi} registrada com sucesso!`)(
+          {},
+        ),
       );
   }),
 );
@@ -315,7 +319,7 @@ router.post(
  */
 router.delete(
   '/:chassi',
-  validateDocumentId('chassi'),
+  validarIdDocumento('chassi'),
   asyncHandler(async (req, res) => {
     const exclusaoFisica = req.query.exclusaoFisica === 'true';
 
@@ -326,14 +330,14 @@ router.delete(
 
       res
         .status(200)
-        .json(formatSuccessResponse(`Veículo ${req.params.chassi} excluído com sucesso!`)({}));
+        .json(formatarRespostaSucesso(`Veículo ${req.params.chassi} excluído com sucesso!`)({}));
     } else {
       await alterarStatusVeiculo(req.params.chassi, 'vendido');
 
       res
         .status(200)
         .json(
-          formatSuccessResponse(`Veículo ${req.params.chassi} marcado como vendido com sucesso!`)(
+          formatarRespostaSucesso(`Veículo ${req.params.chassi} marcado como vendido com sucesso!`)(
             {},
           ),
         );
@@ -342,6 +346,6 @@ router.delete(
 );
 
 // Middleware de tratamento de erros
-router.use(errorHandler);
+router.use(handlerErros);
 
 export default router;
