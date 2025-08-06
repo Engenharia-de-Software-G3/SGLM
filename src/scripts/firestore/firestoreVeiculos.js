@@ -1,7 +1,7 @@
 import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
-import { validators, formatters } from './validators.js';
-import { errorHandler, BusinessError } from './errorHandler.js';
+import { validadores, formatadores } from './validators.js';
+import { tratadorDeErros, ErroDeNegocio } from './errorHandler.js';
 import { COLLECTIONS, STATUS, PAGINATION } from './constants.js';
 
 const COLLECTION_NAME = COLLECTIONS.VEICULOS;
@@ -30,7 +30,7 @@ class VeiculoService {
     }
 
     // Validar placa
-    const placaValidada = validators.placa(veiculoData.placa);
+    const placaValidada = validadores.placa(veiculoData.placa);
 
     // Validar RENAVAM (11 dígitos)
     const renavam = veiculoData.renavam.replace(/[^\d]/g, '');
@@ -149,11 +149,11 @@ class VeiculoService {
     return {
       id: doc.id,
       ...data,
-      placa: formatters.placaToDisplay(data.placa),
-      dataCompra: data.dataCompra ? formatters.dateToDisplay(data.dataCompra) : null,
-      dataVenda: data.dataVenda ? formatters.dateToDisplay(data.dataVenda) : null,
-      dataCadastro: formatters.dateToDisplay(data.dataCadastro),
-      dataAtualizacao: formatters.dateToDisplay(data.dataAtualizacao),
+      placa: formatadores.placaExibicao(data.placa),
+      dataCompra: data.dataCompra ? formatadores.dataExibicao(data.dataCompra) : null,
+      dataVenda: data.dataVenda ? formatadores.dataExibicao(data.dataVenda) : null,
+      dataCadastro: formatadores.dataExibicao(data.dataCadastro),
+      dataAtualizacao: formatadores.dataExibicao(data.dataAtualizacao),
     };
   }
 
@@ -209,11 +209,11 @@ class VeiculoService {
  *
  * @param {Object} veiculoData - Dados do veículo a ser cadastrado.
  * @returns {Promise<Object>} Objeto com sucesso e id do veículo.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const criarVeiculo = async (veiculoData) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       // 1. Validar dados de entrada
       const dadosValidados = VeiculoService.validateVeiculoData(veiculoData);
       const dataCompraValidada = VeiculoService.validateDataCompra(veiculoData.dataCompra);
@@ -221,13 +221,13 @@ export const criarVeiculo = async (veiculoData) => {
       // 2. Verificar unicidade do chassi
       const chassiExiste = await VeiculoService.verificarChassiExistente(dadosValidados.chassi);
       if (chassiExiste) {
-        throw new BusinessError('Chassi já cadastrado no sistema', 'CHASSI_JA_EXISTE');
+        throw new ErroDeNegocio('Chassi já cadastrado no sistema', 'CHASSI_JA_EXISTE');
       }
 
       // 3. Verificar se placa já está em uso
       const placaExiste = await VeiculoService.verificarPlacaExistente(dadosValidados.placa);
       if (placaExiste) {
-        throw new BusinessError('Placa já está em uso por outro veículo', 'PLACA_JA_EXISTE');
+        throw new ErroDeNegocio('Placa já está em uso por outro veículo', 'PLACA_JA_EXISTE');
       }
 
       // 4. Criar veículo
@@ -256,7 +256,7 @@ export const criarVeiculo = async (veiculoData) => {
           // Histórico
           quilometragem: dadosValidados.quilometragem,
           quilometragemNaCompra: dadosValidados.quilometragemNaCompra,
-          dataCompra: formatters.dateToISO(dataCompraValidada),
+          dataCompra: formatadores.dataIso(dataCompraValidada),
           dataVenda: null,
 
           // Localização e observações
@@ -266,13 +266,13 @@ export const criarVeiculo = async (veiculoData) => {
 
           // Controle
           status: STATUS.VEICULO.DISPONIVEL,
-          dataCadastro: formatters.dateToISO(agora),
-          dataAtualizacao: formatters.dateToISO(agora),
+          dataCadastro: formatadores.dataIso(agora),
+          dataAtualizacao: formatadores.dataIso(agora),
         });
 
       return { success: true, id };
     }, 'criar veículo')
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -291,7 +291,7 @@ export const listarVeiculos = async ({
   filtros = {},
   incluirEstatisticas = false,
 }) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     // Validar limite
     const limiteValidado = Math.min(Math.max(1, Number(limite)), PAGINATION.MAX_LIMIT);
 
@@ -303,12 +303,12 @@ export const listarVeiculos = async ({
 
     // Aplicar filtros
     if (filtros.placa) {
-      const placaValidada = validators.placa(filtros.placa);
+      const placaValidada = validadores.placa(filtros.placa);
       query = query.where('placa', '==', placaValidada);
     }
 
     if (filtros.status) {
-      validators.status(filtros.status, VALID_STATUSES);
+      validadores.status(filtros.status, VALID_STATUSES);
       query = query.where('status', '==', filtros.status);
     }
 
@@ -357,10 +357,10 @@ export const listarVeiculos = async ({
  *
  * @param {string} chassi - Chassi do veículo.
  * @returns {Promise<Object>} Veículo encontrado.
- * @throws {BusinessError|ValidationError} Se não encontrado ou inválido.
+ * @throws {ErroDeNegocio|ValidationError} Se não encontrado ou inválido.
  */
 export const buscarPorChassi = async (chassi) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     if (!chassi) {
       throw new ValidationError('Chassi é obrigatório', 'chassi');
     }
@@ -369,7 +369,7 @@ export const buscarPorChassi = async (chassi) => {
     const resultado = await VeiculoService.buscarPorCampo('chassi', chassiValidado);
 
     if (!resultado) {
-      throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+      throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
     }
 
     return VeiculoService.formatarVeiculo(resultado.doc);
@@ -381,15 +381,15 @@ export const buscarPorChassi = async (chassi) => {
  *
  * @param {string} placa - Placa do veículo.
  * @returns {Promise<Object>} Veículo encontrado.
- * @throws {BusinessError|ValidationError} Se não encontrado ou inválido.
+ * @throws {ErroDeNegocio|ValidationError} Se não encontrado ou inválido.
  */
 export const buscarPorPlaca = async (placa) => {
-  return errorHandler.handleFirestoreOperation(async () => {
-    const placaValidada = validators.placa(placa);
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
+    const placaValidada = validadores.placa(placa);
     const resultado = await VeiculoService.buscarPorCampo('placa', placaValidada);
 
     if (!resultado) {
-      throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+      throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
     }
 
     return VeiculoService.formatarVeiculo(resultado.doc);
@@ -402,13 +402,13 @@ export const buscarPorPlaca = async (placa) => {
  * @param {string} chassi - Chassi do veículo.
  * @param {string} novaPlaca - Nova placa.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarPlaca = async (chassi, novaPlaca) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       const chassiValidado = chassi.toUpperCase().trim();
-      const placaValidada = validators.placa(novaPlaca);
+      const placaValidada = validadores.placa(novaPlaca);
 
       // Verificar se a nova placa já está em uso
       const placaEmUso = await VeiculoService.verificarPlacaExistente(
@@ -416,22 +416,22 @@ export const atualizarPlaca = async (chassi, novaPlaca) => {
         chassiValidado,
       );
       if (placaEmUso) {
-        throw new BusinessError('Nova placa já está em uso por outro veículo', 'PLACA_JA_EXISTE');
+        throw new ErroDeNegocio('Nova placa já está em uso por outro veículo', 'PLACA_JA_EXISTE');
       }
 
       const resultado = await VeiculoService.buscarPorCampo('chassi', chassiValidado);
       if (!resultado) {
-        throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+        throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
       }
 
       await resultado.doc.ref.update({
         placa: placaValidada,
-        dataAtualizacao: formatters.dateToISO(new Date()),
+        dataAtualizacao: formatadores.dataIso(new Date()),
       });
 
       return { success: true };
     }, `atualizar placa do veículo ${chassi}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -440,11 +440,11 @@ export const atualizarPlaca = async (chassi, novaPlaca) => {
  * @param {string} chassi - Chassi do veículo.
  * @param {number} novaQuilometragem - Nova quilometragem.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarQuilometragemVeiculo = async (chassi, novaQuilometragem) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       const chassiValidado = chassi.toUpperCase().trim();
       const quilometragem = Number(novaQuilometragem);
 
@@ -454,7 +454,7 @@ export const atualizarQuilometragemVeiculo = async (chassi, novaQuilometragem) =
 
       const resultado = await VeiculoService.buscarPorCampo('chassi', chassiValidado);
       if (!resultado) {
-        throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+        throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
       }
 
       const quilometragemAtual = resultado.data.quilometragem || 0;
@@ -467,12 +467,12 @@ export const atualizarQuilometragemVeiculo = async (chassi, novaQuilometragem) =
 
       await resultado.doc.ref.update({
         quilometragem,
-        dataAtualizacao: formatters.dateToISO(new Date()),
+        dataAtualizacao: formatadores.dataIso(new Date()),
       });
 
       return { success: true };
     }, `atualizar quilometragem do veículo ${chassi}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -482,7 +482,7 @@ export const atualizarQuilometragemVeiculo = async (chassi, novaQuilometragem) =
  * @returns {Promise<Object>} Dados de quilometragem do veículo.
  */
 export const listarQuilometragemVeiculo = async (chassi) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     const veiculo = await buscarPorChassi(chassi);
     return {
       chassi: veiculo.chassi,
@@ -501,31 +501,31 @@ export const listarQuilometragemVeiculo = async (chassi) => {
  * @param {string} chassi - Chassi do veículo.
  * @param {string} novoStatus - Novo status.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const alterarStatusVeiculo = async (chassi, novoStatus) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       const chassiValidado = chassi.toUpperCase().trim();
-      const statusValidado = validators.status(novoStatus, VALID_STATUSES);
+      const statusValidado = validadores.status(novoStatus, VALID_STATUSES);
 
       const resultado = await VeiculoService.buscarPorCampo('chassi', chassiValidado);
       if (!resultado) {
-        throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+        throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
       }
 
       const statusAtual = resultado.data.status;
 
       // Validações de negócio para mudança de status
       if (statusAtual === STATUS.VEICULO.ALUGADO && statusValidado === STATUS.VEICULO.VENDIDO) {
-        throw new BusinessError(
+        throw new ErroDeNegocio(
           'Não é possível vender veículo que está alugado',
           'VEICULO_ALUGADO',
         );
       }
 
       if (statusAtual === STATUS.VEICULO.VENDIDO) {
-        throw new BusinessError(
+        throw new ErroDeNegocio(
           'Não é possível alterar status de veículo vendido',
           'VEICULO_JA_VENDIDO',
         );
@@ -533,19 +533,19 @@ export const alterarStatusVeiculo = async (chassi, novoStatus) => {
 
       const updateData = {
         status: statusValidado,
-        dataAtualizacao: formatters.dateToISO(new Date()),
+        dataAtualizacao: formatadores.dataIso(new Date()),
       };
 
       // Se mudando para vendido, registrar data da venda
       if (statusValidado === STATUS.VEICULO.VENDIDO) {
-        updateData.dataVenda = formatters.dateToISO(new Date());
+        updateData.dataVenda = formatadores.dataIso(new Date());
       }
 
       await resultado.doc.ref.update(updateData);
 
       return { success: true };
     }, `alterar status do veículo ${chassi}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -555,11 +555,11 @@ export const alterarStatusVeiculo = async (chassi, novoStatus) => {
  * @param {string|Date} dataVenda - Data da venda.
  * @param {string} [observacoes=''] - Observações da venda.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const registrarVenda = async (chassi, dataVenda, observacoes = '') => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       const chassiValidado = chassi.toUpperCase().trim();
 
       let dataVendaValidada;
@@ -571,24 +571,24 @@ export const registrarVenda = async (chassi, dataVenda, observacoes = '') => {
 
       const resultado = await VeiculoService.buscarPorCampo('chassi', chassiValidado);
       if (!resultado) {
-        throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+        throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
       }
 
       if (resultado.data.status === STATUS.VEICULO.ALUGADO) {
-        throw new BusinessError(
+        throw new ErroDeNegocio(
           'Não é possível vender veículo que está alugado',
           'VEICULO_ALUGADO',
         );
       }
 
       if (resultado.data.status === STATUS.VEICULO.VENDIDO) {
-        throw new BusinessError('Veículo já foi vendido', 'VEICULO_JA_VENDIDO');
+        throw new ErroDeNegocio('Veículo já foi vendido', 'VEICULO_JA_VENDIDO');
       }
 
       const updateData = {
         status: STATUS.VEICULO.VENDIDO,
-        dataVenda: formatters.dateToISO(dataVendaValidada),
-        dataAtualizacao: formatters.dateToISO(new Date()),
+        dataVenda: formatadores.dataIso(dataVendaValidada),
+        dataAtualizacao: formatadores.dataIso(new Date()),
       };
 
       if (observacoes.trim()) {
@@ -599,7 +599,7 @@ export const registrarVenda = async (chassi, dataVenda, observacoes = '') => {
 
       return { success: true };
     }, `registrar venda do veículo ${chassi}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -608,19 +608,19 @@ export const registrarVenda = async (chassi, dataVenda, observacoes = '') => {
  * @param {string} chassi - Chassi do veículo.
  * @param {Object} updates - Campos a serem atualizados.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarVeiculo = async (chassi, updates) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       const chassiValidado = chassi.toUpperCase().trim();
 
       const resultado = await VeiculoService.buscarPorCampo('chassi', chassiValidado);
       if (!resultado) {
-        throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+        throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
       }
 
-      const updateData = { dataAtualizacao: formatters.dateToISO(new Date()) };
+      const updateData = { dataAtualizacao: formatadores.dataIso(new Date()) };
 
       // Validar e aplicar atualizações permitidas
       const camposPermitidos = ['local', 'nome', 'observacoes', 'numeroDocumento'];
@@ -633,13 +633,13 @@ export const atualizarVeiculo = async (chassi, updates) => {
 
       // Atualização especial para placa
       if (updates.placa) {
-        const placaValidada = validators.placa(updates.placa);
+        const placaValidada = validadores.placa(updates.placa);
         const placaEmUso = await VeiculoService.verificarPlacaExistente(
           placaValidada,
           chassiValidado,
         );
         if (placaEmUso) {
-          throw new BusinessError('Nova placa já está em uso por outro veículo', 'PLACA_JA_EXISTE');
+          throw new ErroDeNegocio('Nova placa já está em uso por outro veículo', 'PLACA_JA_EXISTE');
         }
         updateData.placa = placaValidada;
       }
@@ -672,7 +672,7 @@ export const atualizarVeiculo = async (chassi, updates) => {
 
       return { success: true };
     }, `atualizar veículo ${chassi}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -682,7 +682,7 @@ export const atualizarVeiculo = async (chassi, updates) => {
  * @returns {Promise<Object>} Lista de veículos disponíveis e resumo.
  */
 export const listarVeiculosDisponiveis = async (filtros = {}) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     let query = db
       .collection(COLLECTION_NAME)
       .where('status', '==', STATUS.VEICULO.DISPONIVEL)
@@ -731,7 +731,7 @@ export const listarVeiculosDisponiveis = async (filtros = {}) => {
  * @returns {Promise<Object>} Relatório da frota.
  */
 export const gerarRelatorioFrota = async () => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     const snapshot = await db.collection(COLLECTION_NAME).get();
 
     const veiculos = snapshot.docs.map((doc) => doc.data());
@@ -809,7 +809,7 @@ export const gerarRelatorioFrota = async () => {
     relatorio.quilometragemMedia =
       veiculos.length > 0 ? Math.round(relatorio.quilometragemTotal / veiculos.length) : 0;
 
-    relatorio.dataGeracao = formatters.dateToDisplay(new Date().toISOString());
+    relatorio.dataGeracao = formatadores.dataExibicao(new Date().toISOString());
 
     return relatorio;
   }, 'gerar relatório de frota');

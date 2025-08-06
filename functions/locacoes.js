@@ -16,17 +16,17 @@ import {
 } from '../src/scripts/firestore/firestoreLocacoes.js';
 
 import {
-  errorHandler,
-  validatePagination,
-  validateFilters,
-  validateDocumentId,
+  handlerErros,
+  validarPaginacao,
+  validarFiltros,
+  validarIdDocumento,
   asyncHandler,
   validateContentType,
-  sanitizeInput,
-  requestLogger,
-  validateRequiredFields,
-  formatSuccessResponse,
-  processLastDoc,
+  sanitizarInput,
+  logRequisicoes,
+  validarCamposObrigatorios,
+  formatarRespostaSucesso,
+  processarUltimoDoc,
 } from './middlewareHelper.js';
 
 const app = express();
@@ -35,9 +35,9 @@ const app = express();
 app.use(cors({ origin: true }));
 
 // Middlewares globais
-app.use(requestLogger);
+app.use(logRequisicoes);
 app.use(validateContentType);
-app.use(sanitizeInput);
+app.use(sanitizarInput);
 app.use(express.json());
 
 /**
@@ -48,12 +48,12 @@ app.use(express.json());
  */
 app.post(
   '/',
-  validateRequiredFields(['cpfLocatario', 'placaVeiculo', 'dataInicio', 'dataFim', 'valor']),
+  validarCamposObrigatorios(['cpfLocatario', 'placaVeiculo', 'dataInicio', 'dataFim', 'valor']),
   asyncHandler(async (req, res) => {
     const resultado = await criarLocacao(req.body);
 
     res.status(201).json(
-      formatSuccessResponse('Locação criada com sucesso!')({
+      formatarRespostaSucesso('Locação criada com sucesso!')({
         id: resultado.id,
         locacao: req.body,
       }),
@@ -69,9 +69,9 @@ app.post(
  */
 app.get(
   '/',
-  validatePagination,
-  validateFilters,
-  processLastDoc,
+  validarPaginacao,
+  validarFiltros,
+  processarUltimoDoc,
   asyncHandler(async (req, res) => {
     const resultado = await listarLocacoes({
       limite: req.query.limite,
@@ -80,7 +80,7 @@ app.get(
     });
 
     res.status(200).json(
-      formatSuccessResponse('Locações listadas com sucesso')({
+      formatarRespostaSucesso('Locações listadas com sucesso')({
         locacoes: resultado.locacoes,
         total: resultado.locacoes.length,
         paginacao: {
@@ -100,12 +100,12 @@ app.get(
  */
 app.get(
   '/cliente/:cpf',
-  validateDocumentId('cpf'),
+  validarIdDocumento('cpf'),
   asyncHandler(async (req, res) => {
     const locacoes = await historicoLocacoesCliente(req.params.cpf);
 
     res.status(200).json(
-      formatSuccessResponse('Histórico do cliente obtido com sucesso')({
+      formatarRespostaSucesso('Histórico do cliente obtido com sucesso')({
         cpf: req.params.cpf,
         locacoes,
         total: locacoes.length,
@@ -122,12 +122,12 @@ app.get(
  */
 app.get(
   '/veiculo/:chassi',
-  validateDocumentId('chassi'),
+  validarIdDocumento('chassi'),
   asyncHandler(async (req, res) => {
     const locacoes = await historicoLocacoesVeiculo(req.params.chassi);
 
     res.status(200).json(
-      formatSuccessResponse('Histórico do veículo obtido com sucesso')({
+      formatarRespostaSucesso('Histórico do veículo obtido com sucesso')({
         chassi: req.params.chassi,
         locacoes,
         total: locacoes.length,
@@ -144,11 +144,11 @@ app.get(
  */
 app.get(
   '/:id',
-  validateDocumentId('id'),
+  validarIdDocumento('id'),
   asyncHandler(async (req, res) => {
     const locacao = await buscarLocacaoPorId(req.params.id);
 
-    res.status(200).json(formatSuccessResponse('Locação encontrada com sucesso')(locacao));
+    res.status(200).json(formatarRespostaSucesso('Locação encontrada com sucesso')(locacao));
   }),
 );
 
@@ -161,7 +161,7 @@ app.get(
  */
 app.put(
   '/:id',
-  validateDocumentId('id'),
+  validarIdDocumento('id'),
   asyncHandler(async (req, res) => {
     if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({
@@ -175,7 +175,7 @@ app.put(
 
     res
       .status(200)
-      .json(formatSuccessResponse(`Locação ${req.params.id} atualizada com sucesso!`)({}));
+      .json(formatarRespostaSucesso(`Locação ${req.params.id} atualizada com sucesso!`)({}));
   }),
 );
 
@@ -188,15 +188,15 @@ app.put(
  */
 app.patch(
   '/:id/status',
-  validateDocumentId('id'),
-  validateRequiredFields(['status']),
+  validarIdDocumento('id'),
+  validarCamposObrigatorios(['status']),
   asyncHandler(async (req, res) => {
     await atualizarLocacao(req.params.id, { status: req.body.status });
 
     res
       .status(200)
       .json(
-        formatSuccessResponse(
+        formatarRespostaSucesso(
           `Status da locação ${req.params.id} alterado para ${req.body.status} com sucesso!`,
         )({}),
       );
@@ -211,17 +211,17 @@ app.patch(
  */
 app.delete(
   '/:id',
-  validateDocumentId('id'),
+  validarIdDocumento('id'),
   asyncHandler(async (req, res) => {
     await excluirLocacao(req.params.id);
 
     res
       .status(200)
-      .json(formatSuccessResponse(`Locação ${req.params.id} excluída com sucesso!`)({}));
+      .json(formatarRespostaSucesso(`Locação ${req.params.id} excluída com sucesso!`)({}));
   }),
 );
 
 // Middleware de tratamento de erros
-app.use(errorHandler);
+app.use(handlerErros);
 
 export default app;

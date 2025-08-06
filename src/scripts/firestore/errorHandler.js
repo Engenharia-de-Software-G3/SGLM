@@ -1,5 +1,5 @@
 // errorHandler.js
-export class BusinessError extends Error {
+export class ErroDeNegocio extends Error {
   constructor(message, code = null, details = null) {
     super(message);
     this.name = 'BusinessError';
@@ -8,9 +8,9 @@ export class BusinessError extends Error {
   }
 }
 
-export const errorHandler = {
+export const tratadorDeErros = {
   // Wrapper para operações do Firestore
-  handleFirestoreOperation: async (operation, context = '') => {
+  executarOperacaoFirestore: async (operation, context = '') => {
     try {
       return await operation();
     } catch (error) {
@@ -18,26 +18,26 @@ export const errorHandler = {
 
       // Tratar erros específicos do Firestore
       if (error.code === 'permission-denied') {
-        throw new BusinessError('Acesso negado', 'PERMISSION_DENIED');
+        throw new ErroDeNegocio('Acesso negado', 'PERMISSION_DENIED');
       }
 
       if (error.code === 'unavailable') {
-        throw new BusinessError('Serviço temporariamente indisponível', 'SERVICE_UNAVAILABLE');
+        throw new ErroDeNegocio('Serviço temporariamente indisponível', 'SERVICE_UNAVAILABLE');
       }
 
       // Propagar erros de negócio
-      if (error instanceof BusinessError || error.name === 'ValidationError') {
+      if (error instanceof ErroDeNegocio || error.name === 'ValidationError') {
         throw error;
       }
 
       // Erro genérico
-      throw new BusinessError('Erro interno do sistema', 'INTERNAL_ERROR', error.message);
+      throw new ErroDeNegocio('Erro interno do sistema', 'INTERNAL_ERROR', error.message);
     }
   },
 
   // Formatar resposta de erro
-  formatErrorResponse: (error) => {
-    if (error instanceof BusinessError || error.name === 'ValidationError') {
+  formatarRespostaDeErro: (error) => {
+    if (error instanceof ErroDeNegocio || error.name === 'ValidationError') {
       return {
         success: false,
         error: error.message,

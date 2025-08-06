@@ -1,6 +1,6 @@
 import { db } from '../../../firebaseConfig.js';
-import { validators, formatters } from './validators.js';
-import { errorHandler, BusinessError } from './errorHandler.js';
+import { validadores, formatadores } from './validators.js';
+import { tratadorDeErros, ErroDeNegocio } from './errorHandler.js';
 import { COLLECTIONS, STATUS, PAGINATION } from './constants.js';
 
 const COLLECTION_NAME = COLLECTIONS.CLIENTES;
@@ -25,12 +25,12 @@ class ClienteService {
       throw new ValidationError('Campos obrigatórios não preenchidos');
     }
 
-    const cpfValidado = validators.cpf(cpf);
-    const emailValidado = validators.email(contato.email);
+    const cpfValidado = validadores.cpf(cpf);
+    const emailValidado = validadores.email(contato.email);
 
     // Validar data de nascimento se fornecida
     if (dadosPessoais.dataNascimento) {
-      const dataNasc = validators.date(dadosPessoais.dataNascimento, 'dataNascimento');
+      const dataNasc = validadores.date(dadosPessoais.dataNascimento, 'dataNascimento');
       const idade = this.calcularIdade(dataNasc);
 
       if (idade < 18) {
@@ -108,7 +108,7 @@ class ClienteService {
       throw new ValidationError('Todos os campos da CNH são obrigatórios');
     }
 
-    const dataValidade = validators.date(cnh.dataValidade, 'dataValidade');
+    const dataValidade = validadores.date(cnh.dataValidade, 'dataValidade');
 
     if (dataValidade <= new Date()) {
       throw new ValidationError('CNH está vencida', 'dataValidade');
@@ -117,7 +117,7 @@ class ClienteService {
     return {
       numero: cnh.numero.trim(),
       categoria: cnh.categoria.toUpperCase().trim(),
-      dataValidade: formatters.dateToISO(dataValidade),
+      dataValidade: formatadores.dataIso(dataValidade),
     };
   }
 
@@ -164,7 +164,7 @@ class ClienteService {
     const cliente = {
       id: doc.id,
       ...data,
-      cpf: formatters.cpfToDisplay(data.id || doc.id),
+      cpf: formatadores.cpfExibicao(data.id || doc.id),
     };
 
     if (incluirSubcolecoes) {
@@ -201,19 +201,19 @@ class ClienteService {
  *
  * @param {Object} clienteData - Dados do cliente a ser cadastrado.
  * @returns {Promise<Object>} Objeto com sucesso e id do cliente.
- * @throws {BusinessError} Se o CPF já estiver cadastrado.
+ * @throws {ErroDeNegocio} Se o CPF já estiver cadastrado.
  * @throws {ValidationError} Se algum campo obrigatório estiver ausente ou inválido.
  */
 export const criarCliente = async (clienteData) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       // 1. Validar dados de entrada
       const dadosValidados = ClienteService.validateClienteData(clienteData);
 
       // 2. Verificar se CPF já existe
       const cpfExiste = await ClienteService.verificarCPFExistente(dadosValidados.cpf);
       if (cpfExiste) {
-        throw new BusinessError('CPF já cadastrado no sistema', 'CPF_JA_EXISTE');
+        throw new ErroDeNegocio('CPF já cadastrado no sistema', 'CPF_JA_EXISTE');
       }
 
       // 3. Validar CNH se fornecida
@@ -233,35 +233,35 @@ export const criarCliente = async (clienteData) => {
           nomeCompleto: dadosValidados.dadosPessoais.nome,
           dataNascimento: dadosValidados.dadosPessoais.dataNascimento || null,
           status: STATUS.CLIENTE.ATIVO,
-          dataCadastro: formatters.dateToISO(new Date()),
-          dataAtualizacao: formatters.dateToISO(new Date()),
+          dataCadastro: formatadores.dataIso(new Date()),
+          dataAtualizacao: formatadores.dataIso(new Date()),
         });
 
         // Subcoleções
         transaction.set(clienteRef.collection('enderecos').doc('principal'), {
           ...dadosValidados.endereco,
           isPrincipal: true,
-          dataCadastro: formatters.dateToISO(new Date()),
+          dataCadastro: formatadores.dataIso(new Date()),
         });
 
         transaction.set(clienteRef.collection('contatos').doc('principal'), {
           ...dadosValidados.contato,
           isPrincipal: true,
-          dataCadastro: formatters.dateToISO(new Date()),
+          dataCadastro: formatadores.dataIso(new Date()),
         });
 
         if (cnhValidada) {
           transaction.set(clienteRef.collection('documentos').doc('cnh'), {
             tipo: 'CNH',
             ...cnhValidada,
-            dataCadastro: formatters.dateToISO(new Date()),
+            dataCadastro: formatadores.dataIso(new Date()),
           });
         }
       });
 
       return { success: true, id: dadosValidados.cpf };
     }, 'criar cliente')
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -280,7 +280,7 @@ export const listarClientes = async ({
   filtros = {},
   incluirSubcolecoes = false,
 }) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     // Validar limite
     const limiteValidado = Math.min(Math.max(1, Number(limite)), PAGINATION.MAX_LIMIT);
 
@@ -299,7 +299,7 @@ export const listarClientes = async ({
     }
 
     if (filtros.status) {
-      validators.status(filtros.status, VALID_STATUSES);
+      validadores.status(filtros.status, VALID_STATUSES);
       query = query.where('status', '==', filtros.status);
     }
 
@@ -338,16 +338,16 @@ export const listarClientes = async ({
  * @param {string} cpf - CPF do cliente.
  * @param {boolean} [incluirSubcolecoes=true] - Se deve incluir subcoleções.
  * @returns {Promise<Object>} Cliente encontrado.
- * @throws {BusinessError} Se o cliente não for encontrado.
+ * @throws {ErroDeNegocio} Se o cliente não for encontrado.
  */
 export const buscarClientePorCPF = async (cpf, incluirSubcolecoes = true) => {
-  return errorHandler.handleFirestoreOperation(async () => {
-    const cpfValidado = validators.cpf(cpf);
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
+    const cpfValidado = validadores.cpf(cpf);
     const clienteRef = db.collection(COLLECTION_NAME).doc(cpfValidado);
     const doc = await clienteRef.get();
 
     if (!doc.exists) {
-      throw new BusinessError('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
+      throw new ErroDeNegocio('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
     }
 
     let cliente = ClienteService.formatarCliente(doc);
@@ -367,24 +367,24 @@ export const buscarClientePorCPF = async (cpf, incluirSubcolecoes = true) => {
  * @param {string} cpf - CPF do cliente.
  * @param {Object} updates - Campos a serem atualizados.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError} Se o cliente não for encontrado.
+ * @throws {ErroDeNegocio} Se o cliente não for encontrado.
  * @throws {ValidationError} Se algum campo for inválido.
  */
 export const atualizarCliente = async (cpf, updates) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
-      const cpfValidado = validators.cpf(cpf);
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
+      const cpfValidado = validadores.cpf(cpf);
       const clienteRef = db.collection(COLLECTION_NAME).doc(cpfValidado);
 
       return db.runTransaction(async (transaction) => {
         const doc = await transaction.get(clienteRef);
 
         if (!doc.exists) {
-          throw new BusinessError('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
+          throw new ErroDeNegocio('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
         }
 
         const updateData = {
-          dataAtualizacao: formatters.dateToISO(new Date()),
+          dataAtualizacao: formatadores.dataIso(new Date()),
         };
 
         // Validar e aplicar atualizações no documento principal
@@ -393,12 +393,12 @@ export const atualizarCliente = async (cpf, updates) => {
         }
 
         if (updates.dadosPessoais?.dataNascimento) {
-          const dataNasc = validators.date(updates.dadosPessoais.dataNascimento, 'dataNascimento');
-          updateData.dataNascimento = formatters.dateToISO(dataNasc);
+          const dataNasc = validadores.date(updates.dadosPessoais.dataNascimento, 'dataNascimento');
+          updateData.dataNascimento = formatadores.dataIso(dataNasc);
         }
 
         if (updates.status) {
-          updateData.status = validators.status(updates.status, VALID_STATUSES);
+          updateData.status = validadores.status(updates.status, VALID_STATUSES);
         }
 
         // Atualizar documento principal se há mudanças
@@ -414,7 +414,7 @@ export const atualizarCliente = async (cpf, updates) => {
             {
               ...enderecoValidado,
               isPrincipal: true,
-              dataAtualizacao: formatters.dateToISO(new Date()),
+              dataAtualizacao: formatadores.dataIso(new Date()),
             },
             { merge: true },
           );
@@ -423,7 +423,7 @@ export const atualizarCliente = async (cpf, updates) => {
         if (updates.contato) {
           const contatoData = { ...updates.contato };
           if (contatoData.email) {
-            contatoData.email = validators.email(contatoData.email);
+            contatoData.email = validadores.email(contatoData.email);
           }
 
           transaction.set(
@@ -431,7 +431,7 @@ export const atualizarCliente = async (cpf, updates) => {
             {
               ...contatoData,
               isPrincipal: true,
-              dataAtualizacao: formatters.dateToISO(new Date()),
+              dataAtualizacao: formatadores.dataIso(new Date()),
             },
             { merge: true },
           );
@@ -444,7 +444,7 @@ export const atualizarCliente = async (cpf, updates) => {
             {
               tipo: 'CNH',
               ...cnhValidada,
-              dataAtualizacao: formatters.dateToISO(new Date()),
+              dataAtualizacao: formatadores.dataIso(new Date()),
             },
             { merge: true },
           );
@@ -453,7 +453,7 @@ export const atualizarCliente = async (cpf, updates) => {
 
       return { success: true };
     }, `atualizar cliente ${cpf}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -462,30 +462,30 @@ export const atualizarCliente = async (cpf, updates) => {
  * @param {string} cpf - CPF do cliente.
  * @param {string} novoStatus - Novo status do cliente.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError} Se o cliente não for encontrado.
+ * @throws {ErroDeNegocio} Se o cliente não for encontrado.
  * @throws {ValidationError} Se o status for inválido.
  */
 export const alterarStatusCliente = async (cpf, novoStatus) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
-      const cpfValidado = validators.cpf(cpf);
-      const statusValidado = validators.status(novoStatus, VALID_STATUSES);
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
+      const cpfValidado = validadores.cpf(cpf);
+      const statusValidado = validadores.status(novoStatus, VALID_STATUSES);
 
       const clienteRef = db.collection(COLLECTION_NAME).doc(cpfValidado);
       const doc = await clienteRef.get();
 
       if (!doc.exists) {
-        throw new BusinessError('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
+        throw new ErroDeNegocio('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
       }
 
       await clienteRef.update({
         status: statusValidado,
-        dataAtualizacao: formatters.dateToISO(new Date()),
+        dataAtualizacao: formatadores.dataIso(new Date()),
       });
 
       return { success: true };
     }, `alterar status do cliente ${cpf}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -494,19 +494,19 @@ export const alterarStatusCliente = async (cpf, novoStatus) => {
  * @param {string} cpf - CPF do cliente.
  * @param {boolean} [exclusaoCompleta=false] - Se deve excluir fisicamente o cliente e subcoleções.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError} Se o cliente não for encontrado.
+ * @throws {ErroDeNegocio} Se o cliente não for encontrado.
  */
 export const excluirCliente = async (cpf, exclusaoCompleta = false) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
-      const cpfValidado = validators.cpf(cpf);
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
+      const cpfValidado = validadores.cpf(cpf);
       const clienteRef = db.collection(COLLECTION_NAME).doc(cpfValidado);
 
       return db.runTransaction(async (transaction) => {
         const doc = await transaction.get(clienteRef);
 
         if (!doc.exists) {
-          throw new BusinessError('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
+          throw new ErroDeNegocio('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
         }
 
         if (exclusaoCompleta) {
@@ -526,15 +526,15 @@ export const excluirCliente = async (cpf, exclusaoCompleta = false) => {
           // Soft delete - apenas alterar status
           transaction.update(clienteRef, {
             status: STATUS.CLIENTE.INATIVO,
-            dataExclusao: formatters.dateToISO(new Date()),
-            dataAtualizacao: formatters.dateToISO(new Date()),
+            dataExclusao: formatadores.dataIso(new Date()),
+            dataAtualizacao: formatadores.dataIso(new Date()),
           });
         }
       });
 
       return { success: true };
     }, `excluir cliente ${cpf}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -546,7 +546,7 @@ export const excluirCliente = async (cpf, exclusaoCompleta = false) => {
  * @throws {ValidationError} Se o nome for muito curto.
  */
 export const buscarClientesPorNome = async (nome, limite = PAGINATION.DEFAULT_LIMIT) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     if (!nome || nome.trim().length < 2) {
       throw new ValidationError('Nome deve ter pelo menos 2 caracteres', 'nome');
     }
@@ -573,7 +573,7 @@ export const buscarClientesPorNome = async (nome, limite = PAGINATION.DEFAULT_LI
  * @returns {Promise<Object>} Objeto com elegibilidade, problemas e dados do cliente.
  */
 export const verificarElegibilidadeLocacao = async (cpf) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     const cliente = await buscarClientePorCPF(cpf, true);
 
     const problemas = [];

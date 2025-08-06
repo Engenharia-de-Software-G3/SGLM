@@ -1,7 +1,7 @@
 import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
-import { validators, formatters } from './validators.js';
-import { errorHandler, BusinessError } from './errorHandler.js';
+import { validadores, formatadores } from './validators.js';
+import { tratadorDeErros, ErroDeNegocio } from './errorHandler.js';
 import { buscarPorChassi } from './firestoreVeiculos.js';
 
 const COLLECTION_NAME = 'locacoes';
@@ -27,9 +27,9 @@ class LocacaoService {
       throw new ValidationError('Todos os campos obrigatórios devem ser preenchidos');
     }
 
-    const cpfValidado = validators.cpf(cpfLocatario);
-    const placaValidada = validators.placa(placaVeiculo);
-    const { startDate, endDate } = validators.dateRange(dataInicio, dataFim);
+    const cpfValidado = validadores.cpf(cpfLocatario);
+    const placaValidada = validadores.placa(placaVeiculo);
+    const { startDate, endDate } = validadores.dateRange(dataInicio, dataFim);
 
     if (Number(valor) <= 0) {
       throw new ValidationError('Valor deve ser maior que zero', 'valor');
@@ -49,18 +49,18 @@ class LocacaoService {
    *
    * @param {string} cpf - CPF do cliente.
    * @returns {Promise<Object>} Dados do cliente.
-   * @throws {BusinessError} Se o cliente não for encontrado ou não estiver ativo.
+   * @throws {ErroDeNegocio} Se o cliente não for encontrado ou não estiver ativo.
    */
   static async verificarCliente(cpf) {
     const clienteDoc = await db.collection('clientes').doc(cpf).get();
 
     if (!clienteDoc.exists) {
-      throw new BusinessError('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
+      throw new ErroDeNegocio('Cliente não encontrado', 'CLIENTE_NAO_ENCONTRADO');
     }
 
     const clienteData = clienteDoc.data();
     if (clienteData.status !== 'ativo') {
-      throw new BusinessError('Cliente não está ativo', 'CLIENTE_INATIVO');
+      throw new ErroDeNegocio('Cliente não está ativo', 'CLIENTE_INATIVO');
     }
 
     return clienteData;
@@ -72,7 +72,7 @@ class LocacaoService {
    * @param {string} placa - Placa do veículo.
    * @returns {Promise<{doc: import('firebase').firestore.DocumentSnapshot, data: Object}>}
    *   Documento e dados do veículo.
-   * @throws {BusinessError} Se o veículo não for encontrado ou não estiver disponível.
+   * @throws {ErroDeNegocio} Se o veículo não for encontrado ou não estiver disponível.
    */
   static async verificarVeiculo(placa) {
     const veiculosSnapshot = await db
@@ -82,14 +82,14 @@ class LocacaoService {
       .get();
 
     if (veiculosSnapshot.empty) {
-      throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+      throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
     }
 
     const veiculoDoc = veiculosSnapshot.docs[0];
     const veiculoData = veiculoDoc.data();
 
     if (veiculoData.status !== 'disponivel') {
-      throw new BusinessError('Veículo não está disponível para locação', 'VEICULO_INDISPONIVEL');
+      throw new ErroDeNegocio('Veículo não está disponível para locação', 'VEICULO_INDISPONIVEL');
     }
 
     return { doc: veiculoDoc, data: veiculoData };
@@ -105,7 +105,7 @@ class LocacaoService {
   static async atualizarStatusVeiculo(veiculoDoc, novoStatus) {
     await veiculoDoc.ref.update({
       status: novoStatus,
-      dataAtualizacao: formatters.dateToISO(new Date()),
+      dataAtualizacao: formatadores.dataIso(new Date()),
     });
   }
 
@@ -120,10 +120,10 @@ class LocacaoService {
     return {
       id: doc.id,
       ...data,
-      dataInicio: formatters.dateToDisplay(data.dataInicio),
-      dataFim: formatters.dateToDisplay(data.dataFim),
-      dataCadastro: formatters.dateToDisplay(data.dataCadastro),
-      dataAtualizacao: formatters.dateToDisplay(data.dataAtualizacao),
+      dataInicio: formatadores.dataExibicao(data.dataInicio),
+      dataFim: formatadores.dataExibicao(data.dataFim),
+      dataCadastro: formatadores.dataExibicao(data.dataCadastro),
+      dataAtualizacao: formatadores.dataExibicao(data.dataAtualizacao),
     };
   }
 }
@@ -133,11 +133,11 @@ class LocacaoService {
  *
  * @param {Object} locacaoData - Dados da locação.
  * @returns {Promise<Object>} Objeto de sucesso e id da locação.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const criarLocacao = async (locacaoData) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       // 1. Validar dados de entrada
       const dadosValidados = LocacaoService.validateLocacaoData(locacaoData);
 
@@ -159,25 +159,25 @@ export const criarLocacao = async (locacaoData) => {
           clienteId: dadosValidados.cpfLocatario,
           veiculoId: veiculo.doc.id,
           placaVeiculo: dadosValidados.placaVeiculo,
-          dataInicio: formatters.dateToISO(dadosValidados.dataInicio),
-          dataFim: formatters.dateToISO(dadosValidados.dataFim),
+          dataInicio: formatadores.dataIso(dadosValidados.dataInicio),
+          dataFim: formatadores.dataIso(dadosValidados.dataFim),
           valor: dadosValidados.valor,
           servicosAdicionaisIds: locacaoData.servicosAdicionaisIds || [],
           status: 'ativa',
-          dataCadastro: formatters.dateToISO(agora),
-          dataAtualizacao: formatters.dateToISO(agora),
+          dataCadastro: formatadores.dataIso(agora),
+          dataAtualizacao: formatadores.dataIso(agora),
         });
 
         // Atualizar status do veículo
         transaction.update(veiculo.doc.ref, {
           status: 'alugado',
-          dataAtualizacao: formatters.dateToISO(agora),
+          dataAtualizacao: formatadores.dataIso(agora),
         });
       });
 
       return { success: true, id };
     }, 'criar locação')
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -190,17 +190,17 @@ export const criarLocacao = async (locacaoData) => {
  * @returns {Promise<Object>} Lista de locações e paginação.
  */
 export const listarLocacoes = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     let query = db.collection(COLLECTION_NAME).orderBy('dataCadastro', 'desc').limit(limite);
 
     // Aplicar filtros
     if (filtros.status) {
-      validators.status(filtros.status, VALID_STATUSES);
+      validadores.status(filtros.status, VALID_STATUSES);
       query = query.where('status', '==', filtros.status);
     }
 
     if (filtros.clienteId) {
-      query = query.where('clienteId', '==', validators.cpf(filtros.clienteId));
+      query = query.where('clienteId', '==', validadores.cpf(filtros.clienteId));
     }
 
     if (ultimoDoc) {
@@ -222,14 +222,14 @@ export const listarLocacoes = async ({ limite = 10, ultimoDoc = null, filtros = 
  *
  * @param {string} id - ID da locação.
  * @returns {Promise<Object>} Locação encontrada.
- * @throws {BusinessError} Se a locação não for encontrada.
+ * @throws {ErroDeNegocio} Se a locação não for encontrada.
  */
 export const buscarLocacaoPorId = async (id) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     const doc = await db.collection(COLLECTION_NAME).doc(id).get();
 
     if (!doc.exists) {
-      throw new BusinessError('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
+      throw new ErroDeNegocio('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
     }
 
     return LocacaoService.formatarLocacao(doc);
@@ -242,27 +242,27 @@ export const buscarLocacaoPorId = async (id) => {
  * @param {string} id - ID da locação.
  * @param {Object} updates - Campos a serem atualizados.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError|ValidationError} Se houver erro de negócio ou validação.
+ * @throws {ErroDeNegocio|ValidationError} Se houver erro de negócio ou validação.
  */
 export const atualizarLocacao = async (id, updates) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       const locacaoRef = db.collection(COLLECTION_NAME).doc(id);
 
       return db.runTransaction(async (transaction) => {
         const locacaoDoc = await transaction.get(locacaoRef);
 
         if (!locacaoDoc.exists) {
-          throw new BusinessError('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
+          throw new ErroDeNegocio('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
         }
 
         const locacaoData = locacaoDoc.data();
-        const updateData = { dataAtualizacao: formatters.dateToISO(new Date()) };
+        const updateData = { dataAtualizacao: formatadores.dataIso(new Date()) };
 
         // Validar e aplicar atualizações
         if (updates.dataFim !== undefined) {
-          const dataFim = validators.date(updates.dataFim, 'dataFim');
-          updateData.dataFim = formatters.dateToISO(dataFim);
+          const dataFim = validadores.date(updates.dataFim, 'dataFim');
+          updateData.dataFim = formatadores.dataIso(dataFim);
         }
 
         if (updates.valor !== undefined) {
@@ -273,7 +273,7 @@ export const atualizarLocacao = async (id, updates) => {
         }
 
         if (updates.status !== undefined) {
-          const novoStatus = validators.status(updates.status, VALID_STATUSES);
+          const novoStatus = validadores.status(updates.status, VALID_STATUSES);
           updateData.status = novoStatus;
 
           // Atualizar status do veículo se necessário
@@ -281,7 +281,7 @@ export const atualizarLocacao = async (id, updates) => {
             const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
             transaction.update(veiculoRef, {
               status: 'disponivel',
-              dataAtualizacao: formatters.dateToISO(new Date()),
+              dataAtualizacao: formatadores.dataIso(new Date()),
             });
           }
         }
@@ -307,7 +307,7 @@ export const atualizarLocacao = async (id, updates) => {
 
       return { success: true };
     }, `atualizar locação ${id}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -315,17 +315,17 @@ export const atualizarLocacao = async (id, updates) => {
  *
  * @param {string} id - ID da locação.
  * @returns {Promise<Object>} Objeto de sucesso.
- * @throws {BusinessError} Se a locação não for encontrada.
+ * @throws {ErroDeNegocio} Se a locação não for encontrada.
  */
 export const excluirLocacao = async (id) => {
-  return errorHandler
-    .handleFirestoreOperation(async () => {
+  return tratadorDeErros
+    .executarOperacaoFirestore(async () => {
       return db.runTransaction(async (transaction) => {
         const locacaoRef = db.collection(COLLECTION_NAME).doc(id);
         const locacaoDoc = await transaction.get(locacaoRef);
 
         if (!locacaoDoc.exists) {
-          throw new BusinessError('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
+          throw new ErroDeNegocio('Locação não encontrada', 'LOCACAO_NAO_ENCONTRADA');
         }
 
         const locacaoData = locacaoDoc.data();
@@ -335,7 +335,7 @@ export const excluirLocacao = async (id) => {
           const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
           transaction.update(veiculoRef, {
             status: 'disponivel',
-            dataAtualizacao: formatters.dateToISO(new Date()),
+            dataAtualizacao: formatadores.dataIso(new Date()),
           });
         }
 
@@ -344,7 +344,7 @@ export const excluirLocacao = async (id) => {
 
       return { success: true };
     }, `excluir locação ${id}`)
-    .catch((error) => errorHandler.formatErrorResponse(error));
+    .catch((error) => tratadorDeErros.formatarRespostaDeErro(error));
 };
 
 /**
@@ -354,8 +354,8 @@ export const excluirLocacao = async (id) => {
  * @returns {Promise<Object[]>} Lista de locações do cliente.
  */
 export const historicoLocacoesCliente = async (cpf) => {
-  return errorHandler.handleFirestoreOperation(async () => {
-    const cpfValidado = validators.cpf(cpf);
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
+    const cpfValidado = validadores.cpf(cpf);
 
     const snapshot = await db
       .collection(COLLECTION_NAME)
@@ -372,14 +372,14 @@ export const historicoLocacoesCliente = async (cpf) => {
  *
  * @param {string} chassi - Chassi do veículo.
  * @returns {Promise<Object[]>} Lista de locações do veículo.
- * @throws {BusinessError} Se o veículo não for encontrado.
+ * @throws {ErroDeNegocio} Se o veículo não for encontrado.
  */
 export const historicoLocacoesVeiculo = async (chassi) => {
-  return errorHandler.handleFirestoreOperation(async () => {
+  return tratadorDeErros.executarOperacaoFirestore(async () => {
     const veiculo = await buscarPorChassi(chassi);
 
     if (!veiculo) {
-      throw new BusinessError('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
+      throw new ErroDeNegocio('Veículo não encontrado', 'VEICULO_NAO_ENCONTRADO');
     }
 
     const snapshot = await db

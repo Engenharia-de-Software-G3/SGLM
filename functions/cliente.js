@@ -16,25 +16,25 @@ import {
 } from '../src/scripts/firestore/firestoreClientes.js';
 
 import {
-  errorHandler,
-  validatePagination,
-  validateFilters,
-  validateDocumentId,
+  handlerErros,
+  validarPaginacao,
+  validarFiltros,
+  validarIdDocumento,
   asyncHandler,
   validateContentType,
-  sanitizeInput,
-  requestLogger,
-  validateRequiredFields,
-  formatSuccessResponse,
-  processLastDoc,
+  sanitizarInput,
+  logRequisicoes,
+  validarCamposObrigatorios,
+  formatarRespostaSucesso,
+  processarUltimoDoc,
 } from './middlewareHelper.js';
 
 const router = express.Router();
 
 // Middlewares globais
-router.use(requestLogger);
+router.use(logRequisicoes);
 router.use(validateContentType);
-router.use(sanitizeInput);
+router.use(sanitizarInput);
 
 /**
  * @route POST /
@@ -44,11 +44,11 @@ router.use(sanitizeInput);
  */
 router.post(
   '/',
-  validateRequiredFields(['cpf', 'dadosPessoais.nome', 'endereco', 'contato.email']),
+  validarCamposObrigatorios(['cpf', 'dadosPessoais.nome', 'endereco', 'contato.email']),
   asyncHandler(async (req, res) => {
     await criarCliente(req.body);
     res.status(201).json(
-      formatSuccessResponse('Cliente criado com sucesso!')({
+      formatarRespostaSucesso('Cliente criado com sucesso!')({
         id: req.body.cpf,
         cpf: req.body.cpf,
       }),
@@ -64,9 +64,9 @@ router.post(
  */
 router.get(
   '/',
-  validatePagination,
-  validateFilters,
-  processLastDoc,
+  validarPaginacao,
+  validarFiltros,
+  processarUltimoDoc,
   asyncHandler(async (req, res) => {
     const resultado = await listarClientes({
       limite: req.query.limite,
@@ -76,7 +76,7 @@ router.get(
     });
 
     res.status(200).json(
-      formatSuccessResponse('Clientes listados com sucesso')({
+      formatarRespostaSucesso('Clientes listados com sucesso')({
         clientes: resultado.clientes,
         total: resultado.total,
         paginacao: {
@@ -96,7 +96,7 @@ router.get(
  */
 router.get(
   '/buscar-nome',
-  validatePagination,
+  validarPaginacao,
   asyncHandler(async (req, res) => {
     const { nome } = req.query;
 
@@ -112,7 +112,7 @@ router.get(
     const clientes = await buscarClientesPorNome(nome, req.query.limite);
 
     res.status(200).json(
-      formatSuccessResponse('Busca realizada com sucesso')({
+      formatarRespostaSucesso('Busca realizada com sucesso')({
         clientes,
         total: clientes.length,
       }),
@@ -128,14 +128,14 @@ router.get(
  */
 router.get(
   '/:cpf',
-  validateDocumentId('cpf'),
+  validarIdDocumento('cpf'),
   asyncHandler(async (req, res) => {
     const cliente = await buscarClientePorCPF(
       req.params.cpf,
       req.query.incluirSubcolecoes === 'true',
     );
 
-    res.status(200).json(formatSuccessResponse('Cliente encontrado com sucesso')(cliente));
+    res.status(200).json(formatarRespostaSucesso('Cliente encontrado com sucesso')(cliente));
   }),
 );
 
@@ -147,11 +147,11 @@ router.get(
  */
 router.get(
   '/:cpf/elegibilidade',
-  validateDocumentId('cpf'),
+  validarIdDocumento('cpf'),
   asyncHandler(async (req, res) => {
     const resultado = await verificarElegibilidadeLocacao(req.params.cpf);
 
-    res.status(200).json(formatSuccessResponse('Verificação realizada com sucesso')(resultado));
+    res.status(200).json(formatarRespostaSucesso('Verificação realizada com sucesso')(resultado));
   }),
 );
 
@@ -164,7 +164,7 @@ router.get(
  */
 router.put(
   '/:cpf',
-  validateDocumentId('cpf'),
+  validarIdDocumento('cpf'),
   asyncHandler(async (req, res) => {
     if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({
@@ -178,7 +178,7 @@ router.put(
 
     res
       .status(200)
-      .json(formatSuccessResponse(`Cliente ${req.params.cpf} atualizado com sucesso!`)({}));
+      .json(formatarRespostaSucesso(`Cliente ${req.params.cpf} atualizado com sucesso!`)({}));
   }),
 );
 
@@ -191,15 +191,15 @@ router.put(
  */
 router.patch(
   '/:cpf/status',
-  validateDocumentId('cpf'),
-  validateRequiredFields(['status']),
+  validarIdDocumento('cpf'),
+  validarCamposObrigatorios(['status']),
   asyncHandler(async (req, res) => {
     await alterarStatusCliente(req.params.cpf, req.body.status);
 
     res
       .status(200)
       .json(
-        formatSuccessResponse(
+        formatarRespostaSucesso(
           `Status do cliente ${req.params.cpf} alterado para ${req.body.status} com sucesso!`,
         )({}),
       );
@@ -215,7 +215,7 @@ router.patch(
  */
 router.delete(
   '/:cpf',
-  validateDocumentId('cpf'),
+  validarIdDocumento('cpf'),
   asyncHandler(async (req, res) => {
     const exclusaoCompleta = req.query.exclusaoCompleta === 'true';
     await excluirCliente(req.params.cpf, exclusaoCompleta);
@@ -223,11 +223,11 @@ router.delete(
     const tipoExclusao = exclusaoCompleta ? 'excluído permanentemente' : 'desativado';
     res
       .status(200)
-      .json(formatSuccessResponse(`Cliente ${req.params.cpf} ${tipoExclusao} com sucesso!`)({}));
+      .json(formatarRespostaSucesso(`Cliente ${req.params.cpf} ${tipoExclusao} com sucesso!`)({}));
   }),
 );
 
 // Middleware de tratamento de erros
-router.use(errorHandler);
+router.use(handlerErros);
 
 export default router;
