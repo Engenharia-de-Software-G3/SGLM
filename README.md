@@ -17,7 +17,7 @@ O **SGLM** é uma aplicação desenvolvida com o objetivo de automatizar o proce
 - **Front-end**: Vite + React + TypeScript
 - **Gerenciador de Pacotes**: npm
 - **Back-end**: Firebase (Autenticação, Firestore)
-- **Componentes UI**: Chackra UI (em alguns casos)
+- **Componentes UI**: Shadcn UI (em alguns casos)
 
 ## 🔧 Configuração do Ambiente
 
@@ -33,7 +33,7 @@ O **SGLM** é uma aplicação desenvolvida com o objetivo de automatizar o proce
 
 ```bash
 git clone https://github.com/Engenharia-de-Software-G3/SGLM.git
-cd SGLM/frontend
+cd SGLM
 ```
 
 2. Instale as dependências
@@ -133,8 +133,8 @@ Exemplo (usando POST para a rota de clientes):
 ```
 SGLM/
 ├── src/
-│   ├── components/       # Recursos do Design System Chackra UI (Não mexer)
-│   ├── lib/              # Recursos do Design System Chackra UI (Não mexer)
+│   ├── components/       # Recursos do Design System Shadcn UI (Não mexer)
+│   ├── lib/              # Recursos do Design System Shadcn UI (Não mexer)
 │   ├── assets/           # Recursos estáticos da aplicação (imagens, ícones, fontes etc.)
 │   ├── features/         # Funcionalidades ou módulos principais da aplicação, agrupando componentes, lógica e estilos específicos a cada feature
 │   ├── routes/           # Definição das rotas e páginas da aplicação
@@ -157,7 +157,7 @@ SGLM/
 ## 📚 Documentação
 
 - [Requisitos, Estimativas, Protótipos](https://docs.google.com/document/d/1Xex4aP1tCsKe45UkSGv53z8S6qXWfaMmSoEfx87UPuY/edit?tab=t.0)
-- [Chackra UI](https://chakra-ui.com/docs/components/concepts/overview)
+- [Shadcn UI](https://ui.shadcn.com/docs/components)
 
 ## 🤝 Como Contribuir
 
