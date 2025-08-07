@@ -1,4 +1,4 @@
-import { LoginContent } from './components/login-content';
+import { LoginContent } from './components/login-content/';
 
 export const LoginPage = () => {
   return <LoginContent />;
