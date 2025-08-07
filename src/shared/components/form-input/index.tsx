@@ -32,25 +32,15 @@ interface FormInputProps<T extends FieldValues> {
 
 const formatCurrency = (value: string): string => {
   const onlyNumbers = value.replace(/\D/g, '');
-  
+
   const numberValue = parseInt(onlyNumbers, 10) / 100;
-  
+
   return numberValue.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   });
-};
-
-const parseCurrency = (formattedValue: string): number => {
-  const numberString = formattedValue
-    .replace('R$', '')
-    .replace('.', '')
-    .replace(',', '.')
-    .trim();
-  
-  return parseFloat(numberString) || 0;
 };
 
 export function FormInput<T extends FieldValues>({
@@ -83,7 +73,7 @@ export function FormInput<T extends FieldValues>({
             if (type === 'number') {
               const formattedValue = formatCurrency(e.target.value);
               e.target.value = formattedValue;
-              onChange(parseCurrency(formattedValue));
+              onChange(formattedValue); // Envia string formatada (ex: "R$ 1.234,56")
             } else {
               onChange(e.target.value);
             }
@@ -92,19 +82,20 @@ export function FormInput<T extends FieldValues>({
           const handleBlur = () => {
             if (type === 'number' && value) {
               const formattedValue = formatCurrency(String(value));
-              onChange(parseCurrency(formattedValue));
+              onChange(formattedValue); // string
             }
             onBlur();
           };
 
-          const displayValue = type === 'number' 
-            ? value ? formatCurrency(String(value)) : ''
-            : value;
+          const displayValue =
+            type === 'number'
+              ? formatCurrency(String(value ?? '')) // sempre string formatada
+              : String(value ?? '');
 
           const fieldProps: FieldProps = {
             id,
             name: fieldName,
-            type: type === 'number' ? 'text' : type, 
+            type: type === 'number' ? 'text' : type,
             placeholder,
             disabled,
             className: `h-10 ${error ? 'border-red-500 focus:border-red-500' : ''} ${className}`,
