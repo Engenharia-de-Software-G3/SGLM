@@ -16,12 +16,10 @@
     ]
   },
   "dependencies": {
-<<<<<<< HEAD
     "@chakra-ui/react": "^3.21.0",
     "@emotion/react": "^11.14.0",
     "firebase": "^11.10.0",
     "firebase-admin": "^13.4.0",
-=======
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -35,7 +33,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.525.0",
->>>>>>> feat/ui-sglm-partial
     "next-themes": "^0.4.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
