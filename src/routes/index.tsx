@@ -13,6 +13,7 @@ import { RentalProfile } from '@/features/rental/components/rental-profile';
 import { AdditionalServices } from '@/features/additional-services';
 import { Suppliers } from '@/features/suppliers';
 import { Vehicles } from '@/features/vehicles';
+import { VehicleProfile } from '@/features/vehicles/vehicle-profile';
 
 const routes = [
   {
@@ -43,6 +44,11 @@ const routes = [
   {
     path: '/veiculos',
     element: <Vehicles />,
+    protected: true,
+  },
+  {
+    path: '/veiculos/:veiculoId',
+    element: <VehicleProfile />,
     protected: true,
   },
   {
