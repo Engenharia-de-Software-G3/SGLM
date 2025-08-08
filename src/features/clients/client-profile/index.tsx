@@ -1,10 +1,11 @@
 import { Layout } from '../../../shared/components/layout';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ReturnHeader } from '@/shared/components/return-header';
 import { ClientInfoCard } from './components/client-info-card';
 import { useState } from 'react';
 import type { ClientInfoCardData } from './components/client-info-card/@types';
 import { Toaster } from 'sonner';
+import { useGetClientQuery } from '@/services/client';
 
 export const ClientProfile = () => {
   const navigate = useNavigate();
@@ -34,6 +35,14 @@ export const ClientProfile = () => {
     cnhExpirationDate: '27/12/2030',
   };
   const [data, setData] = useState<ClientInfoCardData>(client);
+
+  const { id } = useParams()
+
+  console.log({id})
+
+  const { data: clientData, isLoading, error } = useGetClientQuery(Number(id))
+
+  console.log({clientData, isLoading, error})
 
   return (
     <Layout showHeader={false}>

@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Check, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight, XCircle } from 'lucide-react';
 import { StepOne } from './steps/step-one';
 import { StepTwo } from './steps/step-two';
 import { StepThree } from './steps/step-three';
@@ -18,6 +18,7 @@ import {
   initialStepThreeData,
 } from './@types';
 import { useState } from 'react';
+
 
 const steps = [
   { title: 'Dados Pessoais', subtitle: 'dados pessoais do cliente' },
@@ -39,7 +40,9 @@ export const RegisterStepIndicator = ({
     if (currentStep === 1) {
       const parsed = stepOneSchema.safeParse(stepOneData);
       if (!parsed.success) {
-        toast('Preencha todos os campos obrigatórios no passo 1.');
+        toast('Preencha todos os campos obrigatórios no passo 1.', { 
+          icon: <XCircle className='text-red-500' size={20} />,
+        });
         return;
       }
     }
@@ -47,7 +50,9 @@ export const RegisterStepIndicator = ({
     if (currentStep === 2) {
       const parsed = stepTwoSchema.safeParse(stepTwoData);
       if (!parsed.success) {
-        toast('Preencha todos os campos obrigatórios no passo 2.');
+        toast('Preencha todos os campos obrigatórios no passo 2.', { 
+          icon: <XCircle className='text-red-500' size={20} />,
+        });
         return;
       }
     }
@@ -55,7 +60,9 @@ export const RegisterStepIndicator = ({
     if (currentStep === 3) {
       const parsed = stepThreeSchema.safeParse(stepThreeData);
       if (!parsed.success) {
-        toast('Preencha todos os campos obrigatórios no passo 3.');
+        toast('Preencha todos os campos obrigatórios no passo 3.', { 
+          icon: <XCircle className='text-red-500' size={20} />,
+        });
         return;
       }
     }

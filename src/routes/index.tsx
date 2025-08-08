@@ -32,7 +32,7 @@ const routes = [
     protected: true,
   },
   {
-    path: '/clientes/:Id',
+    path: '/clientes/:id',
     element: <ClientProfile />,
     protected: true,
   },

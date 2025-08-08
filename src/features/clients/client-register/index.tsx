@@ -6,10 +6,14 @@ import { SuccessRegisterCard } from './components/success-register-card';
 import { RegisterStepIndicator } from './components/register-step-indicator';
 import { Toaster } from 'sonner';
 import type { NewClient } from './components/register-step-indicator/@types';
+import { CreateClientInterface } from '@/services/client/types';
+import { useCreateClientMutation } from '@/services/client';
 
 export const ClientRegister = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const { mutateAsync: createClient } = useCreateClientMutation();
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -20,8 +24,43 @@ export const ClientRegister = () => {
     }
   };
 
-  const handleFinish = (newClient: NewClient) => {
-    navigate('/clientes', { state: { newClient } });
+  async function handleFinish (newClient: NewClient)  {
+    const payload: CreateClientInterface = {
+      cpf: newClient.cpfcnpj,
+      dadosPessoais: {
+        nome: newClient.nome,
+        dataNascimento: newClient.dataNascimento,
+      },
+      endereco: {
+        cep: newClient.cep,
+        rua: newClient.rua,
+        numero: newClient.numero,
+        bairro: newClient.bairro,
+        cidade: newClient.cidade,
+        estado: newClient.estado,
+      },
+      contato: {
+        email: newClient.email,
+        telefone: newClient.telefone,
+      }, 
+      documentos: {
+        cnh: {
+          numero: newClient.cnhNumero,
+          categoria: newClient.categoria,
+          dataValidade: newClient.validade,
+        },
+      },
+    }
+
+
+    try {
+      await createClient(payload)
+      setTimeout(() => {
+        navigate('/clientes')
+      }, 1000)
+    } catch (error) {
+      console.log({error})
+    }
   };
 
   if (showSuccess) {
