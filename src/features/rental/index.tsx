@@ -11,40 +11,16 @@ import { RentalTypeModal } from './components/rental-type-modal';
 import { AddRentalModal } from './components/add-rental-modal';
 import type { AddRentalFormData } from './schemas/addRental';
 import { useNavigate } from 'react-router-dom';
+import { useClientsQuery } from '@/services/client';
+import { useCreateLocacaoMutation, useDeleteLocacaoMutation, useLocacoesQuery } from '@/services/rental';
+import { toast } from 'sonner';
 
-interface RentalData {
-  id: number;
+interface DisplayRentalData {
+  id: string;
   locatario: string;
   placa: string;
   cpf: string;
 }
-
-const rentalsMock: RentalData[] = [
-  {
-    id: 1,
-    locatario: 'Lorem Ipsum',
-    placa: 'ABC-1234',
-    cpf: '082.044.589-22',
-  },
-  {
-    id: 2,
-    locatario: 'Lorem Ipsum',
-    placa: 'XYZ-9876',
-    cpf: '082.044.589-22',
-  },
-  {
-    id: 3,
-    locatario: 'Lorem Ipsum',
-    placa: 'DEF-5678',
-    cpf: '082.044.589-22',
-  },
-  {
-    id: 4,
-    locatario: 'Lorem Ipsum',
-    placa: 'GHI-2468',
-    cpf: '082.044.589-22',
-  },
-];
 
 export const Rental = () => {
   const [searchByName, setsearchByName] = useState('');
@@ -52,9 +28,37 @@ export const Rental = () => {
   const [isTypeModalOpen, setTypeModalOpen] = useState(false);
   const [isFormModalOpen, setFormModalOpen] = useState(false);
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
-
-  const [rentals, setRentals] = useState<RentalData[]>(rentalsMock);
   const navigate = useNavigate();
+
+  const { data: locacoesData, isLoading: isLoadingLocacoes, isError: isErrorLocacoes, error: locacoesError } = useLocacoesQuery();
+  const { data: clientsData } = useClientsQuery();
+  const { mutateAsync: createLocacao, isPending: isCreating } = useCreateLocacaoMutation();
+  const { mutateAsync: deleteLocacao, isPending: isDeleting } = useDeleteLocacaoMutation();
+
+  const cpfToClientNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (clientsData?.clientes) {
+      for (const client of clientsData.clientes) {
+        const cleanCpf = client.cpf.replace(/\D/g, '');
+        map.set(cleanCpf, client.nomeCompleto);
+      }
+    }
+    return map;
+  }, [clientsData]);
+
+  const rentals: DisplayRentalData[] = useMemo(() => {
+    const source = Array.isArray(locacoesData?.locacoes) ? locacoesData!.locacoes : [];
+    return source.map((locacao) => {
+      const cleanId = String(locacao.clienteId ?? '').replace(/\D/g, '');
+      const locatarioNome = cpfToClientNameMap.get(cleanId) ?? locacao.clienteId;
+      return {
+        id: locacao.id,
+        locatario: locatarioNome,
+        placa: locacao.placaVeiculo,
+        cpf: cleanId,
+      };
+    });
+  }, [locacoesData, cpfToClientNameMap]);
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
@@ -66,19 +70,32 @@ export const Rental = () => {
     );
   }, [rentals, searchByName, searchByPlate]);
 
-  async function submitRental(rental: AddRentalFormData) {
-    const newRental: RentalData = {
-      id: rentals.length + 1,
-      locatario: rental.locatario,
-      placa: rental.placaVeiculo,
-      cpf: rental.cnpjcpf,
+  async function submitRental(rentalForm: AddRentalFormData) {
+    const cleanPlaca = rentalForm.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const cleanCpf = rentalForm.cnpjcpf.replace(/\D/g, '');
+    const payload = {
+      cpfLocatario: cleanCpf,
+      placaVeiculo: cleanPlaca,
+      dataInicio: rentalForm.inicio,
+      dataFim: rentalForm.fim,
+      valor: Number(rentalForm.valorLocacao),
     };
 
-    setRentals((prev) => [...prev, newRental]);
+    const result = await createLocacao(payload);
+    if (!result) {
+      toast('Erro ao criar locação');
+      throw new Error('Erro ao criar locação');
+    }
+    toast('Locação criada com sucesso');
   }
 
-  const handleDeleteRental = (id: number) => {
-    setRentals((prev) => prev.filter((rental) => rental.id !== id));
+  const handleDeleteRental = async (id: string) => {
+    try {
+      await deleteLocacao(id);
+      toast('Locação excluída com sucesso');
+    } catch (e) {
+      toast('Erro ao excluir locação');
+    }
   };
 
   const handleOpenForm = () => {
@@ -91,7 +108,7 @@ export const Rental = () => {
     setFormModalOpen(true);
   };
 
-  function handleViewRental(id: number) {
+  function handleViewRental(id: string | number) {
     navigate(`/locacoes/${id}`);
   }
 
@@ -121,7 +138,18 @@ export const Rental = () => {
           />
         </DisplayTableHeader>
 
-        <PaginatedTable
+        {isLoadingLocacoes && (
+          <div className="px-6 py-10 text-gray-500">Carregando locações...</div>
+        )}
+
+        {isErrorLocacoes && (
+          <div className="px-6 py-10 text-red-600">
+            Erro ao carregar locações{locacoesError instanceof Error ? `: ${locacoesError.message}` : ''}
+          </div>
+        )}
+
+        {!isLoadingLocacoes && !isErrorLocacoes && (
+          <PaginatedTable
           data={filteredRentals}
           columns={[
             { key: 'client', title: 'Locatário' },
@@ -164,7 +192,7 @@ export const Rental = () => {
                     title="Tem certeza que deseja excluir essa locação?"
                     description="Todos os dados salvos serão excluídos."
                     actionText="Excluir locação"
-                    onConfirm={() => handleDeleteRental(rental.id)}
+                    onConfirm={() => handleDeleteRental(rental.id as string)}
                   />
 
                   <Button
@@ -179,6 +207,7 @@ export const Rental = () => {
             </tr>
           )}
         />
+        )}
       </div>
 
       <RentalTypeModal

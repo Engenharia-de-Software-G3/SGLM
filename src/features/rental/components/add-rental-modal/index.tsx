@@ -7,6 +7,7 @@ import { addRentalSchema, type AddRentalFormData } from '../../schemas/addRental
 import { MaskedFormInput } from '@/shared/components/masked-form-input';
 import { FormInput } from '@/shared/components/form-input';
 import { FormSelect } from '@/shared/components/form-select';
+import { toast } from 'sonner';
 
 export const AddRentalModal = ({
   open,
@@ -37,8 +38,10 @@ export const AddRentalModal = ({
       await onSubmit(data);
       reset();
       onOpenChange(false);
+      toast('Locação salva com sucesso');
     } catch (error) {
       console.error('Erro ao salvar locação:', error);
+      toast('Erro ao salvar locação');
     }
   };
 
@@ -112,7 +115,7 @@ export const AddRentalModal = ({
               name="valorLocacao"
               error={errors.valorLocacao?.message}
               required
-              placeholder="R$00,00"
+              placeholder="R$ 0,00"
               type="number"
             />
           </div>

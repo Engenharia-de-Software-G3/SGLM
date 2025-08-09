@@ -19,7 +19,7 @@ export const addRentalSchema = z.object({
     'Placa deve estar no formato Mercosul (ABC1D23) ou antigo (ABC1234)',
   ),
 
-  valorLocacao: requiredString,
+  valorLocacao: z.union([requiredString, z.number()]),
 
   periodicidadePagamento: z.string().refine((val) => val !== '', {
     message: 'Campo obrigatório',

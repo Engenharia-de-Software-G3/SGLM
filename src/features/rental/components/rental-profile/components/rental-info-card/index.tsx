@@ -135,8 +135,7 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Valor da Locação</label>
           <Input
-            type="number"
-            prefix="R$"
+            type="text"
             placeholder="R$ 0,00"
             value={data.valorLocacao || ''}
             readOnly={true}
