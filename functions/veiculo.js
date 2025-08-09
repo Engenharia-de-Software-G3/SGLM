@@ -14,9 +14,9 @@ import {
   atualizarPlaca,
   registrarVenda,
   buscarPorChassi, // Import this to help with DELETE and general updates
-} from '../src/scripts/firestore/firestoreVeiculos.js';
+} from './scripts/firestore/firestoreVeiculos.js';
 
-import { db } from '../firebaseConfig.js'; // Import db for direct Firestore operations if needed
+import { db } from './firebaseConfig.js'; // Import db for direct Firestore operations if needed
 
 /**
  * Rota POST para criar um novo veículo.

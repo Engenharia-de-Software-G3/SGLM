@@ -4,10 +4,10 @@
  */
 
 import express from 'express';
-import { db } from '../firebaseConfig.js';
+import { db } from './firebaseConfig.js';
 const router = express.Router();
 
-import { listarManutencoes } from '../src/scripts/firestore/firestoreManutencao.js';
+import { listarManutencoes } from './scripts/firestore/firestoreManutencao.js';
 
 /**
  * Rota GET para listar o histórico de manutenções de um veículo específico.

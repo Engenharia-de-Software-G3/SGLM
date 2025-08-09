@@ -6,7 +6,7 @@ import express from 'express';
 const router = express.Router();
 
 // Importando funções da Firestore para vistoria
-import { criarVistoria } from '../src/scripts/firestore/firestoreVistoria.js';
+import { criarVistoria } from './scripts/firestore/firestoreVistoria.js';
 
 /**
  * Rota POST para criar uma nova vistoria.

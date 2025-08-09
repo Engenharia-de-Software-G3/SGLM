@@ -10,7 +10,7 @@ import {
   listarClientes,
   atualizarCliente,
   deletarCliente,
-} from '../src/scripts/firestore/firestoreClientes.js';
+} from './scripts/firestore/firestoreClientes.js';
 //import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
 /**

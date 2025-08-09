@@ -6,7 +6,7 @@ const router = express.Router();
 // Certifique-se de que o arquivo firestoreFornecedores.js usa export const
 // para a sua função de criação.
 // Exemplo:
-import { criarFornecedor } from '../src/scripts/firestore/firestoreFornecedores.js'; // Ajuste o caminho se necessário
+import { criarFornecedor } from './scripts/firestore/firestoreFornecedores.js';
 
 /**
  * Rota POST para criar um novo fornecedor.

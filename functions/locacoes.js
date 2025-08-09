@@ -6,7 +6,7 @@ import {
   listarLocacoes,
   atualizarLocacao,
   excluirLocacao,
-} from '../src/scripts/firestore/firestoreLocacoes.js';
+} from './scripts/firestore/firestoreLocacoes.js';
 
 const app = express();
 
