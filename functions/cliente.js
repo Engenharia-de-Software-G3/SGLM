@@ -10,6 +10,7 @@ import {
   listarClientes,
   atualizarCliente,
   deletarCliente,
+  buscarClientePorCPF,
 } from './scripts/firestore/firestoreClientes.js';
 //import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
@@ -115,6 +116,54 @@ router.get('/', async (req, res) => {
     console.error('Erro na rota GET /clientes:', error);
     res.status(500).json({
       error: 'Erro interno no servidor',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
+/**
+ * Rota GET para buscar um cliente específico por CPF.
+ * Retorna todos os dados do cliente, incluindo subcoleções (endereços, contatos, documentos, dados bancários).
+ * @name GET /:cpf
+ * @function
+ * @memberof module:cliente
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} req.params.cpf - CPF do cliente a ser buscado (pode estar formatado ou não).
+ * @param {object} res - Objeto de resposta do Express.
+ * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ * @throws {Error} Em caso de erro interno no servidor ou no processo de busca no Firestore.
+ */
+router.get('/:cpf', async (req, res) => {
+  try {
+    const { cpf } = req.params;
+
+    // Validação básica do CPF
+    if (!cpf || cpf.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'CPF é obrigatório',
+        message: 'Informe um CPF válido para busca.' 
+      });
+    }
+
+    const resultado = await buscarClientePorCPF(cpf);
+
+    if (resultado.success) {
+      res.status(200).json({
+        success: true,
+        cliente: resultado.cliente
+      });
+    } else {
+      const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
+      res.status(statusCode).json({ 
+        success: false,
+        error: resultado.error 
+      });
+    }
+  } catch (error) {
+    console.error('Erro inesperado na rota GET /clientes/:cpf:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor.',
       detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }

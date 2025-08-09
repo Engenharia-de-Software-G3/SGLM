@@ -22,12 +22,18 @@ import { db } from '../../firebaseConfig.js';
  * @param {string} clienteData.documentos.cnh.numero - Número da CNH
  * @param {string} clienteData.documentos.cnh.categoria - Categoria (ex: 'AB')
  * @param {string} clienteData.documentos.cnh.dataValidade - Data (formato: 'YYYY-MM-DD')
+ * @param {Object} [clienteData.dadosBancarios] - Dados bancários opcionais
+ * @param {string} clienteData.dadosBancarios.banco - Nome do banco
+ * @param {string} clienteData.dadosBancarios.agencia - Número da agência
+ * @param {string} clienteData.dadosBancarios.agenciaDigito - Dígito da agência
+ * @param {string} clienteData.dadosBancarios.conta - Número da conta
+ * @param {string} clienteData.dadosBancarios.contaDigito - Dígito da conta
  * @returns {Promise<{success: boolean, error?: string}>}
  * @throws {Error} Em caso de erro no Firestore
  */
 export const criarCliente = async (clienteData) => {
   try {
-    const { cpf, dadosPessoais, endereco, contato, documentos } = clienteData;
+    const { cpf, dadosPessoais, endereco, contato, documentos, dadosBancarios } = clienteData;
 
     const cpfFormatado = cpf.replace(/[-.]/g, '');
 
@@ -82,6 +88,19 @@ export const criarCliente = async (clienteData) => {
       });
     }
 
+    // Dados bancários
+    if (dadosBancarios) {
+      batch.set(clienteRef.collection('dados-bancarios').doc('principal'), {
+        banco: dadosBancarios.banco,
+        agencia: dadosBancarios.agencia,
+        agenciaDigito: dadosBancarios.agenciaDigito,
+        conta: dadosBancarios.conta,
+        contaDigito: dadosBancarios.contaDigito,
+        isPrincipal: true,
+        dataCriacao: new Date().toISOString(),
+      });
+    }
+
     await batch.commit();
     return { success: true };
   } catch (error) {
@@ -122,7 +141,48 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
     }
 
     const snapshot = await query.get();
-    const clientes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    
+    // Para cada cliente, buscar dados adicionais das subcoleções
+    const clientes = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const clienteData = { id: doc.id, ...doc.data() };
+        const clienteRef = doc.ref;
+        
+        // Adicionar CPF formatado
+        const cpf = doc.id;
+        clienteData.cpf = `${cpf.substring(0, 3)}.${cpf.substring(3, 6)}.${cpf.substring(6, 9)}-${cpf.substring(9, 11)}`;
+        
+        // Buscar dados bancários (se existir)
+        try {
+          const dadosBancariosSnapshot = await clienteRef.collection('dados-bancarios').doc('principal').get();
+          if (dadosBancariosSnapshot.exists) {
+            const dadosBancarios = dadosBancariosSnapshot.data();
+            clienteData.dadosBancarios = {
+              banco: dadosBancarios.banco,
+              agencia: `${dadosBancarios.agencia}-${dadosBancarios.agenciaDigito}`,
+              conta: `${dadosBancarios.conta}-${dadosBancarios.contaDigito}`
+            };
+          }
+        } catch (error) {
+          // Se houver erro ao buscar dados bancários, não interrompe a listagem
+          console.warn(`Erro ao buscar dados bancários para cliente ${doc.id}:`, error);
+        }
+        
+        // Buscar contato principal (email)
+        try {
+          const contatoSnapshot = await clienteRef.collection('contatos').doc('principal').get();
+          if (contatoSnapshot.exists) {
+            const contato = contatoSnapshot.data();
+            clienteData.email = contato.email;
+            clienteData.telefone = contato.telefone;
+          }
+        } catch (error) {
+          console.warn(`Erro ao buscar contato para cliente ${doc.id}:`, error);
+        }
+        
+        return clienteData;
+      })
+    );
 
     return {
       clientes,
@@ -157,6 +217,12 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
  * @param {string} [updates.documentos.cnh.numero] - Novo número da CNH.
  * @param {string} [updates.documentos.cnh.categoria] - Nova categoria da CNH.
  * @param {string} [updates.documentos.cnh.dataValidade] - Nova data de validade da CNH.
+ * @param {Object} [updates.dadosBancarios] - Dados bancários a serem atualizados.
+ * @param {string} [updates.dadosBancarios.banco] - Nome do banco.
+ * @param {string} [updates.dadosBancarios.agencia] - Número da agência.
+ * @param {string} [updates.dadosBancarios.agenciaDigito] - Dígito da agência.
+ * @param {string} [updates.dadosBancarios.conta] - Número da conta.
+ * @param {string} [updates.dadosBancarios.contaDigito] - Dígito da conta.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export const atualizarCliente = async (cpf, updates) => {
@@ -202,10 +268,84 @@ export const atualizarCliente = async (cpf, updates) => {
       });
     }
 
+    // Atualiza dados bancários
+    if (updates.dadosBancarios) {
+      const dadosBancariosData = {
+        ...updates.dadosBancarios,
+        dataAtualizacao: new Date().toISOString(),
+      };
+      
+      batch.set(clienteRef.collection('dados-bancarios').doc('principal'), dadosBancariosData, {
+        merge: true,
+      });
+    }
+
     await batch.commit();
     return { success: true };
   } catch (error) {
     console.error(`Erro ao atualizar cliente ${cpf}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Busca um cliente específico por CPF, incluindo todas as suas subcoleções
+ * @param {string} cpf - CPF do cliente (pode estar formatado ou não)
+ * @returns {Promise<{success: boolean, cliente?: Object, error?: string}>}
+ */
+export const buscarClientePorCPF = async (cpf) => {
+  try {
+    const cpfFormatado = cpf.replace(/[-.]/g, '');
+    const clienteRef = db.collection('clientes').doc(cpfFormatado);
+    
+    // Busca o documento principal
+    const doc = await clienteRef.get();
+    if (!doc.exists) {
+      return { success: false, error: 'Cliente não encontrado.' };
+    }
+
+    const clienteData = { id: doc.id, ...doc.data() };
+
+    // Adicionar CPF formatado
+    const cpfFormatadoDisplay = cpfFormatado;
+    clienteData.cpf = `${cpfFormatadoDisplay.substring(0, 3)}.${cpfFormatadoDisplay.substring(3, 6)}.${cpfFormatadoDisplay.substring(6, 9)}-${cpfFormatadoDisplay.substring(9, 11)}`;
+
+    // Busca todas as subcoleções
+    const subcollections = ['enderecos', 'contatos', 'documentos', 'dados-bancarios'];
+    
+    for (const subcollectionName of subcollections) {
+      const snapshot = await clienteRef.collection(subcollectionName).get();
+      if (!snapshot.empty) {
+        clienteData[subcollectionName] = {};
+        snapshot.docs.forEach((subDoc) => {
+          clienteData[subcollectionName][subDoc.id] = subDoc.data();
+        });
+      }
+    }
+
+    // Formatar dados bancários para exibição mais amigável
+    if (clienteData['dados-bancarios']?.principal) {
+      const dadosBancarios = clienteData['dados-bancarios'].principal;
+      clienteData.dadosBancarios = {
+        banco: dadosBancarios.banco,
+        agencia: `${dadosBancarios.agencia}-${dadosBancarios.agenciaDigito}`,
+        conta: `${dadosBancarios.conta}-${dadosBancarios.contaDigito}`,
+        dataCriacao: dadosBancarios.dataCriacao,
+        dataAtualizacao: dadosBancarios.dataAtualizacao
+      };
+      // Remover a estrutura original para evitar duplicação
+      delete clienteData['dados-bancarios'];
+    }
+
+    // Adicionar dados de contato no nível principal para facilitar acesso
+    if (clienteData.contatos?.principal) {
+      clienteData.email = clienteData.contatos.principal.email;
+      clienteData.telefone = clienteData.contatos.principal.telefone;
+    }
+
+    return { success: true, cliente: clienteData };
+  } catch (error) {
+    console.error(`Erro ao buscar cliente ${cpf}:`, error);
     return { success: false, error: error.message };
   }
 };
@@ -226,7 +366,7 @@ export const deletarCliente = async (cpf) => {
     }
 
     // Deleta subcoleções (Firestore não deleta subcoleções automaticamente com o documento pai)
-    const subcollections = ['enderecos', 'contatos', 'documentos'];
+    const subcollections = ['enderecos', 'contatos', 'documentos', 'dados-bancarios'];
     for (const subcollectionName of subcollections) {
       const snapshot = await clienteRef.collection(subcollectionName).get();
       const batch = db.batch();
