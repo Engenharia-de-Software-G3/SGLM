@@ -1,4 +1,4 @@
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../firebaseConfig.js';
 
 /**
  * Adiciona um novo registro de manutenção para um veículo

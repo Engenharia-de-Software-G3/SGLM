@@ -1,5 +1,5 @@
 // databaseUtils.js - Utilitários para operações do Firestore
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../firebaseConfig.js';
 import { errorHandler, BusinessError } from './errorHandler.js';
 import { formatters } from './validators.js';
 

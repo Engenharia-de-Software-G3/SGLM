@@ -1,4 +1,4 @@
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../firebaseConfig.js';
 import { validadores, formatadores } from './validators.js';
 import { tratadorDeErros, ErroDeNegocio } from './errorHandler.js';
 import { COLLECTIONS, STATUS, PAGINATION } from './constants.js';

@@ -5,32 +5,32 @@
 
 import express from 'express';
 import {
-  criarVeiculo,
-  listarVeiculos,
-  buscarPorChassi,
-  buscarPorPlaca,
+  alterarStatusVeiculo,
   atualizarPlaca,
   atualizarQuilometragemVeiculo,
-  listarQuilometragemVeiculo,
-  alterarStatusVeiculo,
-  registrarVenda,
   atualizarVeiculo,
-  listarVeiculosDisponiveis,
+  buscarPorChassi,
+  buscarPorPlaca,
+  criarVeiculo,
   gerarRelatorioFrota,
-} from '../src/scripts/firestore/firestoreVeiculos.js';
+  listarQuilometragemVeiculo,
+  listarVeiculos,
+  listarVeiculosDisponiveis,
+  registrarVenda,
+} from './firestore/firestoreVeiculos.js';
 
 import {
+  asyncHandler,
+  formatarRespostaSucesso,
   handlerErros,
-  validarPaginacao,
+  logRequisicoes,
+  processarUltimoDoc,
+  sanitizarInput,
+  validarCamposObrigatorios,
   validarFiltros,
   validarIdDocumento,
-  asyncHandler,
+  validarPaginacao,
   validateContentType,
-  sanitizarInput,
-  logRequisicoes,
-  validarCamposObrigatorios,
-  formatarRespostaSucesso,
-  processarUltimoDoc,
 } from './middlewareHelper.js';
 
 const router = express.Router();
@@ -249,15 +249,11 @@ router.patch(
   validarIdDocumento('chassi'),
   validarCamposObrigatorios(['quilometragem']),
   asyncHandler(async (req, res) => {
-    await atualizarQuilometragemVeiculo(req.params.chassi, req.body.quilometragem);
-
-    res
-      .status(200)
-      .json(
-        formatarRespostaSucesso(
-          `Quilometragem do veículo ${req.params.chassi} atualizada com sucesso!`,
-        )({}),
-      );
+    const { chassi } = req.params;
+    const { quilometragem } = req.body;
+    await atualizarQuilometragemVeiculo(chassi, quilometragem);
+    const mensagemSucesso = `Quilometragem do veículo ${chassi} atualizada com sucesso!`;
+    res.status(200).json(formatarRespostaSucesso(mensagemSucesso)({}));
   }),
 );
 
@@ -279,7 +275,8 @@ router.patch(
       .status(200)
       .json(
         formatarRespostaSucesso(
-          `Status do veículo ${req.params.chassi} alterado para ${req.body.status} com sucesso!`,
+          `Status do veículo ${req.params.chassi} alterado para ` +
+            `${req.body.status} com sucesso!`,
         )({}),
       );
   }),
@@ -321,27 +318,17 @@ router.delete(
   '/:chassi',
   validarIdDocumento('chassi'),
   asyncHandler(async (req, res) => {
+    const { chassi } = req.params;
     const exclusaoFisica = req.query.exclusaoFisica === 'true';
 
-    if (exclusaoFisica) {
-      // Implementar exclusão física se necessário
-      // Por ora, usar soft delete
-      await alterarStatusVeiculo(req.params.chassi, 'vendido');
+    // Implementar exclusão física se necessário. Por ora, usar soft delete.
+    await alterarStatusVeiculo(chassi, 'vendido');
 
-      res
-        .status(200)
-        .json(formatarRespostaSucesso(`Veículo ${req.params.chassi} excluído com sucesso!`)({}));
-    } else {
-      await alterarStatusVeiculo(req.params.chassi, 'vendido');
+    const mensagem = exclusaoFisica
+      ? `Veículo ${chassi} excluído com sucesso!`
+      : `Veículo ${chassi} marcado como vendido com sucesso!`;
 
-      res
-        .status(200)
-        .json(
-          formatarRespostaSucesso(`Veículo ${req.params.chassi} marcado como vendido com sucesso!`)(
-            {},
-          ),
-        );
-    }
+    res.status(200).json(formatarRespostaSucesso(mensagem)({}));
   }),
 );
 

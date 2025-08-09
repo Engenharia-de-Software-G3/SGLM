@@ -1,6 +1,6 @@
 # Exemplos de Teste para API - Sistema de Locação
 
-Base URL: `http://127.0.0.1:5001/slmg-es/us-central1/api`
+Base URL: `https://api-3dr7n3lena-uc.a.run.app`
 
 ## 📋 CLIENTES
 

@@ -3,7 +3,7 @@
 
 const axios = require('axios');
 
-const BASE_URL = 'http://127.0.0.1:5001/slmg-es/us-central1/api';
+const BASE_URL = 'https://api-3dr7n3lena-uc.a.run.app';
 
 // Configurar timeout para os testes
 jest.setTimeout(30000);

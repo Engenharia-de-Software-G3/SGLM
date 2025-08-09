@@ -1,31 +1,30 @@
 /**
- * @file Funções auxiliares e middlewares para rotas Express.
- * Inclui validações, tratamento de erros, sanitização, paginação, filtros, etc.
+ * @file Helpers e middlewares para rotas Express.
+ * Validações, erros, sanitização, paginação e filtros.
  */
 
-import { ValidationError } from '../src/scripts/firestore/validators.js';
+import { ValidationError } from './firestore/validators.js';
 
 /**
  * Mapeia códigos de erro para status HTTP.
  * @param {Error|Object} error - Objeto de erro.
- * @returns {number} Status HTTP correspondente.
+ * @return {number} - Status HTTP correspondente.
  */
 export const getStatusCodeFromError = (error) => {
-  // Mapear erros de validação
   if (error instanceof ValidationError || error.name === 'ValidationError') {
     return 400;
   }
 
   const errorCodeMap = {
-    // Erros de validação
+    // Validação
     VALIDATION_ERROR: 400,
 
-    // Erros de cliente
+    // Cliente
     CPF_JA_EXISTE: 409,
     CLIENTE_NAO_ENCONTRADO: 404,
     CLIENTE_INATIVO: 400,
 
-    // Erros de veículo
+    // Veículo
     CHASSI_JA_EXISTE: 409,
     PLACA_JA_EXISTE: 409,
     VEICULO_NAO_ENCONTRADO: 404,
@@ -33,10 +32,10 @@ export const getStatusCodeFromError = (error) => {
     VEICULO_INDISPONIVEL: 409,
     VEICULO_JA_VENDIDO: 409,
 
-    // Erros de locação
+    // Locação
     LOCACAO_NAO_ENCONTRADA: 404,
 
-    // Erros de sistema
+    // Sistema
     PERMISSION_DENIED: 403,
     SERVICE_UNAVAILABLE: 503,
     INTERNAL_ERROR: 500,
@@ -48,7 +47,7 @@ export const getStatusCodeFromError = (error) => {
 };
 
 /**
- * Middleware genérico para tratamento de erros.
+ * Middleware genérico de tratamento de erros.
  * @param {Error|Object} error - Objeto de erro.
  * @param {import('express').Request} req - Requisição Express.
  * @param {import('express').Response} res - Resposta Express.
@@ -56,15 +55,14 @@ export const getStatusCodeFromError = (error) => {
  * @returns {void}
  */
 export const handlerErros = (error, req, res, next) => {
-  console.error(`Erro na rota ${req.method} ${req.path}:`, error);
+  const rota = `${req.method} ${req.path}`;
+  console.error(`Erro na rota ${rota}:`, error);
 
-  // Se o erro já vem formatado do sistema refatorado
   if (error.success === false) {
     const statusCode = getStatusCodeFromError(error);
     return res.status(statusCode).json(error);
   }
 
-  // Se é erro de validação
   if (error instanceof ValidationError || error.name === 'ValidationError') {
     return res.status(400).json({
       success: false,
@@ -74,70 +72,71 @@ export const handlerErros = (error, req, res, next) => {
     });
   }
 
-  // Verificar mensagens de erro específicas
   if (error.message) {
+    const msg = error.message;
+
     if (
-      error.message.includes('não encontrado') ||
-      error.message.includes('não encontrada') ||
-      error.message.includes('not found')
+      msg.includes('não encontrado') ||
+      msg.includes('não encontrada') ||
+      msg.includes('not found')
     ) {
       return res.status(404).json({
         success: false,
-        error: error.message,
+        error: msg,
         code: 'NOT_FOUND',
       });
     }
 
-    if (error.message.includes('já existe') || error.message.includes('duplicado')) {
+    if (msg.includes('já existe') || msg.includes('duplicado')) {
       return res.status(409).json({
         success: false,
-        error: error.message,
+        error: msg,
         code: 'ALREADY_EXISTS',
       });
     }
 
-    if (error.message.includes('inválido') || error.message.includes('formato')) {
+    if (msg.includes('inválido') || msg.includes('formato')) {
       return res.status(400).json({
         success: false,
-        error: error.message,
+        error: msg,
         code: 'VALIDATION_ERROR',
       });
     }
 
-    if (error.message.includes('alugado') || error.message.includes('indisponível')) {
+    if (msg.includes('alugado') || msg.includes('indisponível')) {
       return res.status(409).json({
         success: false,
-        error: error.message,
+        error: msg,
         code: 'RESOURCE_UNAVAILABLE',
       });
     }
   }
 
-  // Se é erro do Firebase/Firestore
-  if (error.code && error.code.startsWith('firestore/')) {
+  if (error.code && String(error.code).startsWith('firestore/')) {
     const statusCode = error.code === 'firestore/permission-denied' ? 403 : 500;
-    return res.status(statusCode).json({
-      success: false,
-      error: 'Erro no banco de dados',
-      code: 'DATABASE_ERROR',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-    });
+    const base = { success: false, error: 'Erro no banco de dados' };
+    const payload =
+      process.env.NODE_ENV === 'development'
+        ? { ...base, code: 'DATABASE_ERROR', details: error.message }
+        : { ...base, code: 'DATABASE_ERROR' };
+
+    return res.status(statusCode).json(payload);
   }
 
-  // Erro genérico
-  res.status(500).json({
-    success: false,
-    error: 'Erro interno do servidor',
-    code: 'INTERNAL_ERROR',
-    ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-  });
+  const base = { success: false, error: 'Erro interno do servidor' };
+  const payload =
+    process.env.NODE_ENV === 'development'
+      ? { ...base, code: 'INTERNAL_ERROR', details: error.message }
+      : { ...base, code: 'INTERNAL_ERROR' };
+
+  res.status(500).json(payload);
 };
 
 /**
- * Middleware para validar parâmetros de paginação.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {Function} next
+ * Middleware para validar paginação.
+ * @param {import('express').Request} req - Requisição.
+ * @param {import('express').Response} res - Resposta.
+ * @param {Function} next - Próximo.
  * @returns {void}
  */
 export const validarPaginacao = (req, res, next) => {
@@ -156,7 +155,7 @@ export const validarPaginacao = (req, res, next) => {
 
     req.query.limite = Math.min(Math.max(1, limiteNum), 100);
   } else {
-    req.query.limite = 10; // Default
+    req.query.limite = 10;
   }
 
   next();
@@ -164,9 +163,9 @@ export const validarPaginacao = (req, res, next) => {
 
 /**
  * Middleware para validar e parsear filtros JSON.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {Function} next
+ * @param {import('express').Request} req - Requisição.
+ * @param {import('express').Response} res - Resposta.
+ * @param {Function} next - Próximo.
  * @returns {void}
  */
 export const validarFiltros = (req, res, next) => {
@@ -178,7 +177,7 @@ export const validarFiltros = (req, res, next) => {
     } catch (error) {
       return res.status(400).json({
         success: false,
-        error: 'Filtros devem estar em formato JSON válido',
+        error: 'Filtros devem estar em JSON válido',
         field: 'filtros',
         code: 'VALIDATION_ERROR',
       });
@@ -191,21 +190,22 @@ export const validarFiltros = (req, res, next) => {
 };
 
 /**
- * Middleware para log de requisições.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {Function} next
+ * Middleware de log de requisições.
+ * @param {import('express').Request} req - Requisição.
+ * @param {import('express').Response} res - Resposta.
+ * @param {Function} next - Próximo.
  * @returns {void}
  */
 export const logRequisicoes = (req, res, next) => {
   const start = Date.now();
-
-  console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  const agora = new Date().toISOString();
+  console.log(`IN ${req.method} ${req.path} - ${agora}`);
 
   res.on('finish', () => {
-    const duration = Date.now() - start;
-    const statusEmoji = res.statusCode >= 400 ? 'x' : 'v';
-    console.log(`${statusEmoji} ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+    const dur = Date.now() - start;
+    const ok = res.statusCode >= 400 ? 'ERR' : 'OK';
+    const line = `${ok} ${req.method} ${req.path} - ` + `${res.statusCode} - ${dur}ms`;
+    console.log(line);
   });
 
   next();
@@ -213,8 +213,8 @@ export const logRequisicoes = (req, res, next) => {
 
 /**
  * Middleware para validar IDs de documentos.
- * @param {string} [paramName='id'] - Nome do parâmetro na rota.
- * @returns {Function} Middleware Express.
+ * @param {string} [paramName="id"] - Nome do parâmetro na rota.
+ * @return {Function} - Middleware Express.
  */
 export const validarIdDocumento = (paramName = 'id') => {
   return (req, res, next) => {
@@ -229,7 +229,6 @@ export const validarIdDocumento = (paramName = 'id') => {
       });
     }
 
-    // Validar formato básico do ID
     if (id.length > 100) {
       return res.status(400).json({
         success: false,
@@ -244,11 +243,9 @@ export const validarIdDocumento = (paramName = 'id') => {
 };
 
 /**
- * Wrapper para funções async que automaticamente captura erros.
- * @param {Function} fn - Função async Express.
- * @returns {Function} Middleware Express.
- * @example
- * router.get('/', asyncHandler(async (req, res) => { ... }))
+ * Wrapper para funções async, capturando erros.
+ * @param {Function} fn - Função Express async.
+ * @return {Function} - Middleware Express.
  */
 export const asyncHandler = (fn) => {
   return (req, res, next) => {
@@ -257,10 +254,10 @@ export const asyncHandler = (fn) => {
 };
 
 /**
- * Middleware para validar Content-Type em requisições POST/PUT/PATCH.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {Function} next
+ * Middleware para validar Content-Type em POST/PUT/PATCH.
+ * @param {import('express').Request} req - Requisição.
+ * @param {import('express').Response} res - Resposta.
+ * @param {Function} next - Próximo.
  * @returns {void}
  */
 export const validateContentType = (req, res, next) => {
@@ -273,22 +270,21 @@ export const validateContentType = (req, res, next) => {
       });
     }
   }
-
   next();
 };
 
 /**
- * Middleware para sanitizar entrada de dados.
- * Remove caracteres perigosos básicos e faz trim em strings.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {Function} next
+ * Middleware para sanitizar entrada.
+ * Remove caracteres perigosos e aplica trim em strings.
+ * @param {import('express').Request} req - Requisição.
+ * @param {import('express').Response} res - Resposta.
+ * @param {Function} next - Próximo.
  * @returns {void}
  */
 export const sanitizarInput = (req, res, next) => {
   /**
-   * @param {Object|Array|string|number|boolean|null} obj
-   * @returns {Object|Array|string|number|boolean|null}
+   * @param {Object|Array|string|number|boolean|null} obj - Valor a sanitizar.
+   * @return {Object|Array|string|number|boolean|null} - Valor sanitizado.
    */
   const sanitizarObjeto = (obj) => {
     if (typeof obj !== 'object' || obj === null) {
@@ -302,7 +298,6 @@ export const sanitizarInput = (req, res, next) => {
     const sanitized = {};
     for (const [key, value] of Object.entries(obj)) {
       if (typeof value === 'string') {
-        // Remover caracteres perigosos básicos e trim
         sanitized[key] = value.trim().replace(/[<>]/g, '');
       } else {
         sanitized[key] = sanitizarObjeto(value);
@@ -320,16 +315,17 @@ export const sanitizarInput = (req, res, next) => {
 };
 
 /**
- * Middleware para cache de resposta (headers básicos).
+ * Middleware para cache de resposta (headers).
  * @param {number} [maxAge=300] - Tempo em segundos.
- * @returns {Function} Middleware Express.
+ * @return {Function} - Middleware Express.
  */
 export const setCacheHeaders = (maxAge = 300) => {
   return (req, res, next) => {
     if (req.method === 'GET') {
       res.set('Cache-Control', `public, max-age=${maxAge}`);
     } else {
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const noCache = 'no-cache, no-store, must-revalidate';
+      res.set('Cache-Control', noCache);
     }
 
     next();
@@ -337,10 +333,10 @@ export const setCacheHeaders = (maxAge = 300) => {
 };
 
 /**
- * Middleware para validar dados obrigatórios no body.
- * Suporta campos aninhados (ex: 'dadosPessoais.nome').
+ * Middleware para validar campos obrigatórios no body.
+ * Suporta campos aninhados (ex.: 'dadosPessoais.nome').
  * @param {string[]} fields - Lista de campos obrigatórios.
- * @returns {Function} Middleware Express.
+ * @return {Function} - Middleware Express.
  */
 export const validarCamposObrigatorios = (fields) => {
   return (req, res, next) => {
@@ -348,15 +344,18 @@ export const validarCamposObrigatorios = (fields) => {
 
     fields.forEach((field) => {
       const fieldValue = getValoresAninhados(req.body, field);
-      if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
+      const vazio = fieldValue === undefined || fieldValue === null || fieldValue === '';
+      if (vazio) {
         missingFields.push(field);
       }
     });
 
     if (missingFields.length > 0) {
+      const joined = missingFields.join(', ');
+      const msg = `Campos obrigatórios faltantes: ${joined}`;
       return res.status(400).json({
         success: false,
-        error: `Campos obrigatórios faltantes: ${missingFields.join(', ')}`,
+        error: msg,
         fields: missingFields,
         code: 'VALIDATION_ERROR',
       });
@@ -367,10 +366,10 @@ export const validarCamposObrigatorios = (fields) => {
 };
 
 /**
- * Função auxiliar para acessar valores aninhados em objetos.
+ * Acessa valores aninhados em objetos.
  * @param {Object} obj - Objeto de origem.
- * @param {string} path - Caminho do campo (ex: 'dadosPessoais.nome').
- * @returns {*}
+ * @param {string} path - Caminho (ex.: 'dadosPessoais.nome').
+ * @return {*} - Valor encontrado ou undefined.
  */
 const getValoresAninhados = (obj, path) => {
   return path.split('.').reduce((current, key) => {
@@ -379,11 +378,9 @@ const getValoresAninhados = (obj, path) => {
 };
 
 /**
- * Função para formatar resposta de sucesso.
- * @param {string} [message='Operação realizada com sucesso'] - Mensagem de sucesso.
- * @returns {Function} Função que recebe os dados e retorna o objeto de resposta.
- * @example
- * res.json(formatSuccessResponse('Feito!')({ id: 1 }))
+ * Formata resposta de sucesso.
+ * @param {string} [message="Operação realizada com sucesso"] - Mensagem.
+ * @return {Function} - Função que recebe dados e retorna resposta.
  */
 export const formatarRespostaSucesso = (message = 'Operação realizada com sucesso') => {
   return (data) => ({
@@ -394,19 +391,18 @@ export const formatarRespostaSucesso = (message = 'Operação realizada com suce
 };
 
 /**
- * Middleware para processar ultimoDoc do Firestore para paginação.
+ * Processa ultimoDoc do Firestore para paginação.
  * Adiciona req.ultimoDocSnapshot se válido.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {Function} next
- * @returns {Promise<void>}
+ * @param {import('express').Request} req - Requisição.
+ * @param {import('express').Response} res - Resposta.
+ * @param {Function} next - Próximo.
+ * @returns {Promise<void>} - Promessa.
  */
 export const processarUltimoDoc = async (req, res, next) => {
   const { ultimoDocId } = req.query;
 
   if (ultimoDocId) {
     try {
-      // Determinar coleção baseada na rota
       let collection = 'clientes';
       if (req.path.includes('/veiculos')) collection = 'veiculos';
       if (req.path.includes('/locacoes')) collection = 'locacoes';
@@ -425,9 +421,10 @@ export const processarUltimoDoc = async (req, res, next) => {
 
       req.ultimoDocSnapshot = lastDocSnapshot;
     } catch (error) {
+      const errMsg = 'Erro ao processar ultimoDocId';
       return res.status(400).json({
         success: false,
-        error: 'Erro ao processar ultimoDocId',
+        error: errMsg,
         field: 'ultimoDocId',
         code: 'VALIDATION_ERROR',
       });

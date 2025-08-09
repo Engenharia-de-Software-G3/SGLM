@@ -5,28 +5,28 @@
 
 import express from 'express';
 import {
-  criarCliente,
-  listarClientes,
-  buscarClientePorCPF,
-  atualizarCliente,
-  excluirCliente,
   alterarStatusCliente,
+  atualizarCliente,
+  buscarClientePorCPF,
   buscarClientesPorNome,
+  criarCliente,
+  excluirCliente,
+  listarClientes,
   verificarElegibilidadeLocacao,
-} from '../src/scripts/firestore/firestoreClientes.js';
+} from './firestore/firestoreClientes.js';
 
 import {
+  asyncHandler,
+  formatarRespostaSucesso,
   handlerErros,
-  validarPaginacao,
+  logRequisicoes,
+  processarUltimoDoc,
+  sanitizarInput,
+  validarCamposObrigatorios,
   validarFiltros,
   validarIdDocumento,
-  asyncHandler,
+  validarPaginacao,
   validateContentType,
-  sanitizarInput,
-  logRequisicoes,
-  validarCamposObrigatorios,
-  formatarRespostaSucesso,
-  processarUltimoDoc,
 } from './middlewareHelper.js';
 
 const router = express.Router();
@@ -200,7 +200,7 @@ router.patch(
       .status(200)
       .json(
         formatarRespostaSucesso(
-          `Status do cliente ${req.params.cpf} alterado para ${req.body.status} com sucesso!`,
+          `Status do cliente ${req.params.cpf} alterado para ` + `${req.body.status} com sucesso!`,
         )({}),
       );
   }),

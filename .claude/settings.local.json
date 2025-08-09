@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(npm install:*)",
+      "Bash(firebase functions:config:get:*)",
+      "Bash(firebase functions:delete:*)",
+      "Bash(firebase functions:list:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(copy:*)",
+      "Bash(cp:*)",
+      "Bash(firebase functions:log:*)",
+      "Bash(rm:*)",
+      "WebFetch(domain:api-3dr7n3lena-uc.a.run.app)",
+      "Bash(npm test:*)",
+      "Bash(curl:*)",
+      "Bash(npm run:*)",
+      "Bash(npx jest:*)"
+    ],
+    "deny": []
+  }
+}

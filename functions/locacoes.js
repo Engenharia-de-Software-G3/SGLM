@@ -1,32 +1,32 @@
 /**
- * @file Define as rotas da API RESTful relacionadas a locações.
- * Gerencia operações como criação, listagem, atualização e exclusão de locações.
+ * @file Rotas da API para locações.
+ * Criação, listagem, atualização e exclusão de locações.
  */
 
 import express from 'express';
 import cors from 'cors';
 import {
-  criarLocacao,
-  listarLocacoes,
-  buscarLocacaoPorId,
   atualizarLocacao,
+  buscarLocacaoPorId,
+  criarLocacao,
   excluirLocacao,
   historicoLocacoesCliente,
   historicoLocacoesVeiculo,
-} from '../src/scripts/firestore/firestoreLocacoes.js';
+  listarLocacoes,
+} from './firestore/firestoreLocacoes.js';
 
 import {
+  asyncHandler,
+  formatarRespostaSucesso,
   handlerErros,
-  validarPaginacao,
+  logRequisicoes,
+  processarUltimoDoc,
+  sanitizarInput,
+  validarCamposObrigatorios,
   validarFiltros,
   validarIdDocumento,
-  asyncHandler,
+  validarPaginacao,
   validateContentType,
-  sanitizarInput,
-  logRequisicoes,
-  validarCamposObrigatorios,
-  formatarRespostaSucesso,
-  processarUltimoDoc,
 } from './middlewareHelper.js';
 
 const app = express();
@@ -102,11 +102,12 @@ app.get(
   '/cliente/:cpf',
   validarIdDocumento('cpf'),
   asyncHandler(async (req, res) => {
-    const locacoes = await historicoLocacoesCliente(req.params.cpf);
+    const { cpf } = req.params;
+    const locacoes = await historicoLocacoesCliente(cpf);
 
     res.status(200).json(
       formatarRespostaSucesso('Histórico do cliente obtido com sucesso')({
-        cpf: req.params.cpf,
+        cpf,
         locacoes,
         total: locacoes.length,
       }),
@@ -124,11 +125,12 @@ app.get(
   '/veiculo/:chassi',
   validarIdDocumento('chassi'),
   asyncHandler(async (req, res) => {
-    const locacoes = await historicoLocacoesVeiculo(req.params.chassi);
+    const { chassi } = req.params;
+    const locacoes = await historicoLocacoesVeiculo(chassi);
 
     res.status(200).json(
       formatarRespostaSucesso('Histórico do veículo obtido com sucesso')({
-        chassi: req.params.chassi,
+        chassi,
         locacoes,
         total: locacoes.length,
       }),
@@ -146,9 +148,11 @@ app.get(
   '/:id',
   validarIdDocumento('id'),
   asyncHandler(async (req, res) => {
-    const locacao = await buscarLocacaoPorId(req.params.id);
+    const { id } = req.params;
+    const locacao = await buscarLocacaoPorId(id);
 
-    res.status(200).json(formatarRespostaSucesso('Locação encontrada com sucesso')(locacao));
+    const msg = 'Locação encontrada com sucesso';
+    res.status(200).json(formatarRespostaSucesso(msg)(locacao));
   }),
 );
 
@@ -171,11 +175,11 @@ app.put(
       });
     }
 
-    await atualizarLocacao(req.params.id, req.body);
+    const { id } = req.params;
+    await atualizarLocacao(id, req.body);
 
-    res
-      .status(200)
-      .json(formatarRespostaSucesso(`Locação ${req.params.id} atualizada com sucesso!`)({}));
+    const msg = `Locação ${id} atualizada com sucesso!`;
+    res.status(200).json(formatarRespostaSucesso(msg)({}));
   }),
 );
 
@@ -191,15 +195,13 @@ app.patch(
   validarIdDocumento('id'),
   validarCamposObrigatorios(['status']),
   asyncHandler(async (req, res) => {
-    await atualizarLocacao(req.params.id, { status: req.body.status });
+    const { id } = req.params;
+    const { status } = req.body;
 
-    res
-      .status(200)
-      .json(
-        formatarRespostaSucesso(
-          `Status da locação ${req.params.id} alterado para ${req.body.status} com sucesso!`,
-        )({}),
-      );
+    await atualizarLocacao(id, { status });
+
+    const msg = `Status da locação ${id} alterado para ` + `${status} com sucesso!`;
+    res.status(200).json(formatarRespostaSucesso(msg)({}));
   }),
 );
 
@@ -213,11 +215,11 @@ app.delete(
   '/:id',
   validarIdDocumento('id'),
   asyncHandler(async (req, res) => {
-    await excluirLocacao(req.params.id);
+    const { id } = req.params;
+    await excluirLocacao(id);
 
-    res
-      .status(200)
-      .json(formatarRespostaSucesso(`Locação ${req.params.id} excluída com sucesso!`)({}));
+    const msg = `Locação ${id} excluída com sucesso!`;
+    res.status(200).json(formatarRespostaSucesso(msg)({}));
   }),
 );
 

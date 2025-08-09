@@ -1,30 +1,28 @@
 /**
- * @file Define as rotas da API relacionadas a histórico de manutenções de veículos.
- * Inclui um endpoint para listar manutenções de um veículo específico.
+ * @file Rotas da API de manutenções de veículos.
+ * Inclui endpoint para listar manutenções de um veículo.
  */
 
 import express from 'express';
-import { db } from '../firebaseConfig.js';
+import { db } from './firebaseConfig.js';
+import { listarManutencoes } from './firestore/firestoreManutencao.js';
+
 const router = express.Router();
 
-import { listarManutencoes } from '../src/scripts/firestore/firestoreManutencao.js';
-
 /**
- * Rota GET para listar o histórico de manutenções de um veículo específico.
- * Espera o ID do veículo como parâmetro na URL.
- * @name GET /:veiculoId
- * @function
- * @memberof module:manutencoes
- * @param {object} req - Objeto de requisição do Express. Contém o ID do veículo em `req.params.veiculoId`.
+ * GET /:veiculoId
+ * Lista histórico de manutenções de um veículo.
+ * @param {object} req - Requisição Express. Contém o ID em
+ *   req.params.veiculoId.
  * @param {object} req.params - Parâmetros da rota.
- * @param {string} req.params.veiculoId - O ID do veículo cujo histórico de manutenções será listado.
- * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
- * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
- * @throws {Error} Em caso de erro interno no servidor ou no processo de listagem no Firestore.
+ * @param {string} req.params.veiculoId - ID do veículo a consultar.
+ * @param {object} res - Resposta do Express.
+ * @returns {Promise<void>} Promessa resolvida ao enviar a resposta.
+ * @throws {Error} Erros internos do servidor/Firestore.
  */
 router.get('/:veiculoId', async (req, res) => {
   try {
-    const veiculoId = req.params.veiculoId;
+    const { veiculoId } = req.params;
 
     if (!veiculoId) {
       return res.status(400).send('ID do veículo não fornecido.');
@@ -33,25 +31,27 @@ router.get('/:veiculoId', async (req, res) => {
     const veiculoDoc = await db.collection('veiculos').doc(veiculoId).get();
 
     if (!veiculoDoc.exists) {
-      return res.status(404).send(`Veículo com ID ${veiculoId} não encontrado.`);
+      const notFoundMsg = `Veículo com ID ${veiculoId} não encontrado.`;
+      return res.status(404).send(notFoundMsg);
     }
 
     const listaManutencoes = await listarManutencoes(veiculoId);
 
-    // TODO: Implementar tratamento de caso onde o veículo não existe ou não tem manutenções
-
+    // TODO: Tratar caso sem manutenções, se necessário.
     res.status(200).send(listaManutencoes);
   } catch (error) {
-    // Captura erros inesperados durante o processamento da rota
-    console.error(`Erro inesperado na rota GET /manutencoes/${req.params.veiculoId}:`, error);
+    // Erros inesperados durante o processamento da rota
+    const baseMsg = 'Erro inesperado na rota GET /manutencoes/';
+    const logMsg = `${baseMsg}${req.params.veiculoId}:`;
+    console.error(logMsg, error);
     res.status(500).send('Erro interno do servidor.');
   }
 });
 
-// TODO: Implementar rotas para adicionar novas manutenções (POST) se necessário
+// TODO: Implementar rotas POST para novas manutenções, se necessário.
 
 /**
- * Exporta o roteador Express para ser utilizado no arquivo principal (index.js).
- * @type {express.Router}
+ * Exporta o roteador para uso no arquivo principal.
+ * @type {import('express').Router}
  */
 export default router;
