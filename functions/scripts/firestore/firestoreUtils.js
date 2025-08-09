@@ -1,4 +1,4 @@
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../../firebaseConfig.js';
 
 // Validar CPF/CNPJ duplicado
 export const verificarDocumentoExistente = async (tipo, valor) => {

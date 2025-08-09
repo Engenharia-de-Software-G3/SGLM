@@ -34,7 +34,7 @@ app.use(cors({ origin: true }));
  * @returns {void} Envia uma resposta HTTP.
  */
 app.get('/hello-world', (req, res) => {
-  return res.status(200).send('Hello World!');
+  return res.status(200).send('Hello World from feat/ui-sglm-partial branch!');
 });
 
 // Rota cliente
