@@ -11,10 +11,9 @@ import { useClientsQuery } from '@/services/client';
 
 function toProfileData(
   locacao: any,
-  clientName: string | undefined,
 ): RentalInfoCardData {
   return {
-    locatario: clientName || locacao.clienteId,
+    locatario: locacao.nomeLocatario,
     cnpjcpf: locacao.clienteId,
     telefone: '',
     email: '',
@@ -56,9 +55,8 @@ export const RentalProfile = () => {
 
   const rentalData = useMemo(() => {
     if (!locacaoData) return undefined;
-    const clientName = cpfToClientNameMap.get(locacaoData.clienteId);
-    return toProfileData(locacaoData, clientName);
-  }, [locacaoData, cpfToClientNameMap]);
+    return toProfileData(locacaoData);
+  }, [locacaoData]);
 
   const handleBack = () => {
     navigate('/locacoes');

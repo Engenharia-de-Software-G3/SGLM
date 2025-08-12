@@ -31,8 +31,12 @@ interface FormInputProps<T extends FieldValues> {
 }
 
 const formatCurrency = (value: string): string => {
+  // Remove tudo exceto números
   const onlyNumbers = value.replace(/\D/g, '');
   
+  if (!onlyNumbers) return '';
+  
+  // Converte para centavos e depois para reais
   const numberValue = parseInt(onlyNumbers, 10) / 100;
   
   return numberValue.toLocaleString('pt-BR', {
@@ -46,11 +50,19 @@ const formatCurrency = (value: string): string => {
 const parseCurrency = (formattedValue: string): number => {
   const numberString = formattedValue
     .replace('R$', '')
-    .replace('.', '')
-    .replace(',', '.')
+    .replace(/\./g, '') // Remove todos os pontos (separadores de milhares)
+    .replace(',', '.')  // Substitui vírgula por ponto
     .trim();
   
-  return parseFloat(numberString) || 0;
+  const result = parseFloat(numberString);
+  return isNaN(result) ? 0 : result;
+};
+
+// Função para preservar zeros à direita
+const preserveTrailingZeros = (value: number): number => {
+  // Converte para string com 2 casas decimais para preservar zeros
+  const formatted = value.toFixed(2);
+  return parseFloat(formatted);
 };
 
 export function FormInput<T extends FieldValues>({
@@ -81,9 +93,16 @@ export function FormInput<T extends FieldValues>({
         render={({ field: { onChange, onBlur, value, name: fieldName } }) => {
           const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
             if (type === 'number') {
-              const formattedValue = formatCurrency(e.target.value);
-              e.target.value = formattedValue;
-              onChange(parseCurrency(formattedValue));
+              console.log('handleChange - valor original:', e.target.value);
+              // Remove tudo exceto números
+              const onlyNumbers = e.target.value.replace(/\D/g, '');
+              if (onlyNumbers) {
+                const numberValue = parseInt(onlyNumbers, 10) / 100;
+                console.log('handleChange - valor convertido:', numberValue);
+                onChange(numberValue);
+              } else {
+                onChange(0);
+              }
             } else {
               onChange(e.target.value);
             }
@@ -91,14 +110,22 @@ export function FormInput<T extends FieldValues>({
 
           const handleBlur = () => {
             if (type === 'number' && value) {
-              const formattedValue = formatCurrency(String(value));
-              onChange(parseCurrency(formattedValue));
+              console.log('handleBlur - valor atual:', value);
+              // Preserva zeros à direita
+              const preservedValue = Number(value.toFixed(2));
+              console.log('handleBlur - valor preservado:', preservedValue);
+              onChange(preservedValue);
             }
             onBlur();
           };
 
           const displayValue = type === 'number' 
-            ? value ? formatCurrency(String(value)) : ''
+            ? value ? value.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }) : ''
             : value;
 
           const fieldProps: FieldProps = {

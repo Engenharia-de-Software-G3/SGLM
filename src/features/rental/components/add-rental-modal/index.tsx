@@ -35,6 +35,7 @@ export const AddRentalModal = ({
 
   const handleFormSubmit = async (data: AddRentalFormData) => {
     try {
+      console.log('Dados do formulário:', data);
       await onSubmit(data);
       reset();
       onOpenChange(false);

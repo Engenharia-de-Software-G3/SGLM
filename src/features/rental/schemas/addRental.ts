@@ -7,6 +7,7 @@ export const addRentalSchema = z.object({
   locatario: requiredString,
   cnpjcpf: requiredString.refine((value: string) => {
     const cleanValue = value.replace(/\D/g, '');
+    console.log('CPF limpo:', cleanValue, 'tamanho:', cleanValue.length);
     return cleanValue.length === 11 || cleanValue.length === 14;
   }, 'CNPJ/CPF deve ter 11 dígitos (CPF) ou 14 dígitos (CNPJ)'),
 
@@ -17,9 +18,15 @@ export const addRentalSchema = z.object({
   placaVeiculo: requiredString.regex(
     /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/,
     'Placa deve estar no formato Mercosul (ABC1D23) ou antigo (ABC1234)',
-  ),
+  ).refine((value: string) => {
+    console.log('Placa:', value);
+    return true;
+  }),
 
-  valorLocacao: z.union([requiredString, z.number()]),
+  valorLocacao: z.union([requiredString, z.number()]).refine((value) => {
+    console.log('Valor da locação:', value, 'tipo:', typeof value);
+    return true;
+  }),
 
   periodicidadePagamento: z.string().refine((val) => val !== '', {
     message: 'Campo obrigatório',

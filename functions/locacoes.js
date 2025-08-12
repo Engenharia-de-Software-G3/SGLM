@@ -19,7 +19,9 @@ app.use(express.json());
 app.post('/', async (req, res) => {
   try {
     const locacaoData = req.body;
+    console.log('Dados recebidos:', locacaoData);
     const result = await criarLocacao(locacaoData);
+    console.log('Resultado da criação:', result);
     if (result.success) {
       res.status(201).json(result);
     } else {
@@ -27,7 +29,7 @@ app.post('/', async (req, res) => {
     }
   } catch (error) {
     console.error('Error creating rental:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
