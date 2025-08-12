@@ -116,6 +116,11 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
       query = query.where('tipo', '==', filtros.tipo);
     }
 
+    if (filtros.cpf) {
+      const cleanCpf = filtros.cpf.replace(/\D/g, '');
+      q = query(q, where('cpf', '==', cleanCpf));
+    }
+
     // Paginação (startAfter)
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);

@@ -2,7 +2,6 @@ import { api } from "@/lib/axios";
 import { 
   CreateLocacaoInterface, 
   ListManyLocacoes, 
-  ListManyLocacoesResponse, 
   UpdateLocacaoInterface,
   LocacaoInterface
 } from "./types";

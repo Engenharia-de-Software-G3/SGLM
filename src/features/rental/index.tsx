@@ -14,6 +14,10 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateLocacaoMutation, useDeleteLocacaoMutation, useLocacoesQuery } from '@/services/rental';
 import { useClientsQuery } from '@/services/client';
 import { toast } from 'sonner';
+import { ContractData, generateContractPDF, LocacaoData } from '@/lib/generateContractPDF';
+import { getClientByCpf } from '@/services/client/functions'; 
+import { getVehicleByPlaca } from '@/services/vehicle/functions';
+import { api } from '@/lib/axios'; 
 
 interface DisplayRentalData {
   id: string;
@@ -32,8 +36,8 @@ export const Rental = () => {
 
   const { data: locacoesData, isLoading: isLoadingLocacoes, isError: isErrorLocacoes, error: locacoesError } = useLocacoesQuery();
   const { data: clientsData } = useClientsQuery();
-  const { mutateAsync: createLocacao, isPending: isCreating } = useCreateLocacaoMutation();
-  const { mutateAsync: deleteLocacao, isPending: isDeleting } = useDeleteLocacaoMutation();
+  const { mutateAsync: createLocacao } = useCreateLocacaoMutation(); 
+  const { mutateAsync: deleteLocacao } = useDeleteLocacaoMutation();
 
   const rentals: DisplayRentalData[] = useMemo(() => {
     const source = Array.isArray(locacoesData?.locacoes) ? locacoesData!.locacoes : [];
@@ -91,22 +95,70 @@ export const Rental = () => {
     console.log('submitRental - valor convertido para número:', valorNumerico);
     
     const payload = {
-      cpfLocatario: cleanCpf,
+      clienteId: cleanCpf,
       nomeLocatario: rentalForm.locatario,
       placaVeiculo: cleanPlaca,
       dataInicio: formatDate(rentalForm.inicio),
       dataFim: formatDate(rentalForm.fim),
       valor: valorNumerico,
+      periodicidadePagamento: rentalForm.periodicidadePagamento
     };
     
     console.log('submitRental - payload final:', payload);
 
     try {
-      const result = await createLocacao(payload);
+      const result = await createLocacao(payload) as LocacaoData;
       if (!result) {
         toast('Erro ao criar locação');
         throw new Error('Erro ao criar locação');
       }
+
+      const client = await getClientByCpf(cleanCpf);
+      const vehicle = await getVehicleByPlaca(cleanPlaca);
+
+      // Generate contract
+      const contractData: ContractData = {
+        id: result.id,
+        client: {
+          nomeCompleto: client?.nomeCompleto || result.nomeLocatario || 'Não informado',
+          cpf: cleanCpf,
+          cnpj: client?.cnpj || '',
+          rg: client?.rg || 'Não informado',
+          email: client?.email || 'Não informado',
+          telefone: client?.telefone || 'Não informado',
+          endereco: client?.endereco || 'Não informado',
+          nacionalidade: client?.nacionalidade || 'Brasileiro',
+          estadoCivil: client?.estadoCivil || 'Solteiro',
+          profissao: client?.profissao || 'Autônomo',
+        },
+        vehicle: {
+          marca: vehicle?.marca || 'Não informado',
+          modelo: vehicle?.modelo || 'Não informado',
+          placa: cleanPlaca,
+          renavam: vehicle?.renavam || 'Não informado',
+          chassi: vehicle?.chassi || 'Não informado',
+          motor: vehicle?.motor || 'Não informado',
+          cor: vehicle?.cor || 'Não informado',
+          ano: vehicle?.ano || 'Não informado',
+          quilometragem: vehicle?.quilometragem || '0',
+        },
+        locacao: {
+          id: result.id,
+          clienteId: cleanCpf,
+          nomeLocatario: result.nomeLocatario || client?.nomeCompleto || 'Não informado',
+          placaVeiculo: cleanPlaca,
+          dataInicio: payload.dataInicio,
+          dataFim: payload.dataFim,
+          valor: payload.valor,
+          periodicidadePagamento: payload.periodicidadePagamento || 'Mensal',
+          status: result.status || 'ativa',
+          dataCadastro: result.dataCadastro || new Date().toISOString(),
+          dataAtualizacao: result.dataAtualizacao || new Date().toISOString(),
+        },
+      };
+
+      generateContractPDF(contractData, 'download');
+
       toast('Locação criada com sucesso');
     } catch (error: any) {
       console.error('Erro detalhado:', error);
@@ -127,6 +179,73 @@ export const Rental = () => {
       toast('Erro ao excluir locação');
     }
   };
+
+  const handleViewContract = async (id: string) => {
+    try {
+      const locacoes = locacoesData?.locacoes || [];
+      const locacao = locacoes.find((l: any) => l.id === id);
+      if (!locacao) {
+        throw new Error('Locação não encontrada');
+      }
+
+      const cleanCpf = locacao.clienteId.replace(/\D/g, '');
+      const client = await getClientByCpf(cleanCpf);
+
+      const cleanPlaca = locacao.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      const vehicle = await getVehicleByPlaca(cleanPlaca);
+
+      const contractData: ContractData = {
+        id,
+        client: {
+          nomeCompleto: client?.nomeCompleto || locacao.nomeLocatario || 'Não informado',
+          cpf: locacao.clienteId,
+          cnpj: client?.cnpj || '',
+          rg: client?.rg || 'Não informado',
+          email: client?.email || 'Não informado',
+          telefone: client?.telefone || 'Não informado',
+          endereco: client?.endereco || 'Não informado',
+          nacionalidade: client?.nacionalidade || 'Brasileiro',
+          estadoCivil: client?.estadoCivil || 'Solteiro',
+          profissao: client?.profissao || 'Autônomo',
+        },
+        vehicle: {
+          marca: vehicle.marca || 'Não informado',
+          modelo: vehicle.modelo || 'Não informado',
+          placa: locacao.placaVeiculo,
+          renavam: vehicle.renavam || 'Não informado',
+          chassi: vehicle.chassi || 'Não informado',
+          motor: vehicle.motor || 'Não informado',
+          cor: vehicle.cor || 'Não informado',
+          ano: vehicle.ano || 'Não informado',
+          quilometragem: vehicle.quilometragem || '0',
+        },
+        locacao: {
+          id: locacao.id,
+          clienteId: locacao.clienteId,
+          nomeLocatario: locacao.nomeLocatario || client?.nomeCompleto || 'Não informado',
+          placaVeiculo: locacao.placaVeiculo,
+          dataInicio: locacao.dataInicio,
+          dataFim: locacao.dataFim,
+          valor: locacao.valor,
+          periodicidadePagamento: locacao.periodicidadePagamento || 'Mensal',
+          status: locacao.status || 'ativa',
+          dataCadastro: locacao.dataCadastro || new Date().toISOString(),
+          dataAtualizacao: locacao.dataAtualizacao || new Date().toISOString(),
+        },
+      };
+
+      // Fazer requisição ao backend para obter o PDF
+      const response = await api.post('/api/locacoes/pdf', contractData, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url);
+    } catch (e: any) {
+      toast('Erro ao gerar contrato: ' + e.message);
+    }
+  };
+
 
   const handleOpenForm = () => {
     setTypeModalOpen(true);
@@ -224,7 +343,15 @@ export const Rental = () => {
                     actionText="Excluir locação"
                     onConfirm={() => handleDeleteRental(rental.id as string)}
                   />
-
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-green-600 border-green-300 hover:bg-green-50"
+                    onClick={() => handleViewContract(rental.id)}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    Ver contrato
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"

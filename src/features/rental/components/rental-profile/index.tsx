@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -8,31 +8,35 @@ import type { RentalInfoCardData } from './components/rental-info-card/@types';
 import { useGetLocacaoQuery } from '@/services/rental';
 import { toast } from 'sonner';
 import { useClientsQuery } from '@/services/client';
+import { LocacaoData, ClientData, VehicleData } from '@/lib/generateContractPDF';
+import { useVehiclesQuery } from '@/services/vehicle/functions';
 
 function toProfileData(
-  locacao: any,
+  locacao: LocacaoData,
+  client: ClientData | null,
+  vehicle: VehicleData | null
 ): RentalInfoCardData {
   return {
-    locatario: locacao.nomeLocatario,
-    cnpjcpf: locacao.clienteId,
-    telefone: '',
-    email: '',
+    locatario: client?.nomeCompleto || locacao.nomeLocatario || '',
+    cnpjcpf: client?.cpf || client?.cnpj || '', // Added fallback to empty string
+    telefone: client?.telefone || '',
+    email: client?.email || '',
     placaVeiculo: locacao.placaVeiculo,
-    marca: '',
-    modelo: '',
-    ano: '',
-    cor: '',
-    chassi: '',
+    marca: vehicle?.marca || '',
+    modelo: vehicle?.modelo || '',
+    ano: vehicle?.ano || '',
+    cor: vehicle?.cor || '',
+    chassi: vehicle?.chassi || '',
     inicio: locacao.dataInicio,
     fim: locacao.dataFim,
-    valorLocacao: String(locacao.valor ?? ''),
-    intervaloPagamento: '',
+    valorLocacao: String(locacao.valor) || '',
+    intervaloPagamento: locacao.periodicidadePagamento || 'Mensal',
     observacoes: '',
     formaPagamento: '',
     statusPagamento: '',
     localEntrega: '',
     localDevolucao: '',
-    quilometragemInicial: '',
+    quilometragemInicial: vehicle?.quilometragem || '',
     quilometragemFinal: '',
   };
 }
@@ -42,21 +46,25 @@ export const RentalProfile = () => {
   const navigate = useNavigate();
   const { data: locacaoData, isLoading } = useGetLocacaoQuery(id!);
   const { data: clientsData } = useClientsQuery();
+  const { data: vehiclesData } = useVehiclesQuery();
 
-  const cpfToClientNameMap = useMemo(() => {
-    const map = new Map<string, string>();
-    if (clientsData?.clientes) {
-      for (const c of clientsData.clientes) {
-        map.set(c.cpf, c.nomeCompleto);
-      }
-    }
-    return map;
-  }, [clientsData]);
+
+  const client = useMemo(() => {
+    if (!locacaoData || !clientsData) return null;
+    const cleanCpf = locacaoData.clienteId.replace(/\D/g, '');
+    return clientsData.clientes.find((c: ClientData) => c.cpf.replace(/\D/g, '') === cleanCpf);
+  }, [locacaoData, clientsData]);
+
+  const vehicle = useMemo(() => {
+    if (!locacaoData || !vehiclesData?.vehicles) return null;
+    const cleanPlaca = locacaoData.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return vehiclesData.vehicles.find((v: VehicleData) => v.placa.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanPlaca);
+  }, [locacaoData, vehiclesData]);
 
   const rentalData = useMemo(() => {
-    if (!locacaoData) return undefined;
-    return toProfileData(locacaoData);
-  }, [locacaoData]);
+    if (!locacaoData || !client || !vehicle) return null;
+    return toProfileData(locacaoData, client, vehicle);
+  }, [locacaoData, client, vehicle]);
 
   const handleBack = () => {
     navigate('/locacoes');
@@ -106,3 +114,5 @@ export const RentalProfile = () => {
     </Layout>
   );
 };
+
+

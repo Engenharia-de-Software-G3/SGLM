@@ -7,6 +7,7 @@ import {
   atualizarLocacao,
   excluirLocacao,
 } from '../src/scripts/firestore/firestoreLocacoes.js';
+import * as EmailJS from 'emailjs-com';
 
 const app = express();
 
@@ -23,6 +24,65 @@ app.post('/', async (req, res) => {
     const result = await criarLocacao(locacaoData);
     console.log('Resultado da criação:', result);
     if (result.success) {
+      // Buscar cliente para obter o e-mail
+      const cleanCpf = locacaoData.cpfLocatario.replace(/\D/g, '');
+      const clientSnapshot = await db.collection('clientes').where('cpf', '==', cleanCpf).limit(1).get();
+      if (!clientSnapshot.empty) {
+        const client = clientSnapshot.docs[0].data();
+        if (client.email) {
+          // Gerar o PDF (você precisará mover a lógica do generateContractPDF para o backend)
+          const contractData = {
+            id: result.id,
+            client: {
+              nomeCompleto: client.dadosPessoais.nomeCompleto,
+              cpf: locacaoData.cpfLocatario,
+              rg: client.dadosPessoais.rg || 'Não informado',
+              email: client.email || 'Não informado',
+              telefone: client.dadosPessoais.telefone || 'Não informado',
+              endereco: client.dadosPessoais.endereco || 'Não informado',
+              nacionalidade: client.dadosPessoais.nacionalidade || 'Brasileiro',
+              estadoCivil: client.dadosPessoais.estadoCivil || 'Solteiro',
+              profissao: client.dadosPessoais.profissao || 'Autônomo',
+            },
+            vehicle: {
+              // Buscar veículo
+              marca: locacaoData.marca || 'Não informado',
+              modelo: locacaoData.modelo || 'Não informado',
+              placa: locacaoData.placaVeiculo,
+              renavam: locacaoData.renavam || 'Não informado',
+              chassi: locacaoData.chassi || 'Não informado',
+              motor: locacaoData.motor || 'Não informado',
+              cor: locacaoData.cor || 'Não informado',
+              ano: locacaoData.ano || 'Não informado',
+              quilometragem: locacaoData.quilometragem || '0',
+            },
+            locacao: {
+              dataInicio: locacaoData.dataInicio,
+              dataFim: locacaoData.dataFim,
+              valor: locacaoData.valor,
+              periodicidadePagamento: locacaoData.periodicidadePagamento,
+            },
+          };
+
+          // Mover generateContractPDF para o backend ou chamar via API
+          // Aqui, assumimos que você tem uma função generateContractPDF no backend
+          const pdfBuffer = await generateContractPDF(contractData); // Implementar no backend
+
+          // Enviar e-mail
+          const formData = new FormData();
+          formData.append('attachment', pdfBuffer, `contrato_${result.id}.pdf`);
+          formData.append('to_email', client.email);
+          formData.append('to_name', client.dadosPessoais.nomeCompleto);
+          formData.append('contract_id', result.id);
+
+          await EmailJS.sendForm(
+            'YOUR_SERVICE_ID',
+            'YOUR_TEMPLATE_ID',
+            formData,
+            'YOUR_USER_ID'
+          );
+        }
+      }
       res.status(201).json(result);
     } else {
       res.status(400).json({ error: result.error });

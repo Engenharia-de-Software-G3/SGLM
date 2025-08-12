@@ -1,133 +1,62 @@
-export interface CreateClientInterface {
-    cpf: string; 
-    dadosPessoais: {
-        nome: string; 
-        dataNascimento: string; 
-    };
-    endereco: {
-        cep: string; 
-        rua: string; 
-        numero: string; 
-        bairro: string; 
-        cidade: string; 
-        estado: string; 
-    };
-    contato: {
-        email: string; 
-        telefone: string; 
-    };
-    dadosBancarios?: {
-        banco: string;
-        agencia: string;
-        conta: string;
-    };
-    documentos?: {
-        cnh?: {
-            numero: string; 
-            categoria: string; 
-            dataValidade: string; 
-        };
-    };
-}
-
-export interface UpdateClientInterface {
-    nomeCompleto?: string;
-    dataNascimento?: string;
-    cpf?: string;
+// /home/user/Documentos/es/SGLM/src/services/client/types.d.ts
+export interface ClientData {
+    id: number;
+    cpf: string;
+    nomeCompleto: string;
     email?: string;
     telefone?: string;
-    contatos?: {
-        principal?: {
-            email?: string;
-            telefone?: string;
-        };
-    };
-    enderecos?: {
-        principal?: {
-            cep?: string;
-            rua?: string;
-            numero?: string;
-            bairro?: string;
-            cidade?: string;
-            estado?: string;
-        };
-    };
-    documentos?: {
-        cnh?: {
-            numero?: string;
-            categoria?: string;
-            dataValidade?: string;
-            tipo?: string;
-        };
-    };
-}
-
-export interface SingleClientResponse {
-    contatos: {
-        principal: {
-          email: string;
-          isPrincipal: boolean;
-          telefone: string;
-        };
-      };
-      cpf: string;
-      dataNascimento: string;
-      documentos: {
-        cnh: {
-          categoria: string;
-          dataValidade: string;
-          numero: string;
-          tipo: string;
-        };
-      };
-      email: string;
-      enderecos: {
-        principal: {
-          bairro: string;
-          cep: string;
-          cidade: string;
-          estado: string;
-          isPrincipal: boolean;
-          numero: string;
-          rua: string;
-        };
-      };
-      id: string;
-      nomeCompleto: string;
-      status: string;
-      telefone: string;
-      tipo: string;
-}
-
-export interface ListManyClientsResponseClient {
-    dataNascimento: string; // Format: "DD/MM/YYYY"
-    id: string;            // CPF or other ID
-    nomeCompleto: string;
-    status: "ativo" | "inativo" | "pendente" | "bloqueado"; // Add all possible statuses
-    tipo: "PF" | "PJ"; // Only these two options if applicable
-}
-
-export interface ListManyClientsResponse {
-    clientes: ListManyClientsResponseClient[];
-    paginacao: {
-        possuiMais: boolean;
-        ultimoDocId: string;
-    }
-}
-
-export interface ListManyClientsClient {
+    endereco?: string;
+    rg?: string;
+    cnpj?: string;
+    nacionalidade?: string;
+    estadoCivil?: string;
+    profissao?: string;
+  }
+  
+  export interface CreateClientInterface {
     cpf: string;
-    dataNascimento: string;
-    id: number;
     nomeCompleto: string;
-    status: "ativo" | "inativo" | "pendente" | "bloqueado";
-    tipo: "PF" | "PJ";
-}
+    email?: string;
+    telefone?: string;
+    endereco?: string;
+    rg?: string;
+    cnpj?: string;
+    nacionalidade?: string;
+    estadoCivil?: string;
+    profissao?: string;
+  }
+  
+  export interface UpdateClientInterface {
+    nomeCompleto?: string;
+    email?: string;
+    telefone?: string;
+    endereco?: string;
+    rg?: string;
+    cnpj?: string;
+    nacionalidade?: string;
+    estadoCivil?: string;
+    profissao?: string;
+  }
+  
+  export interface SingleClientResponse {
+    id: number;
+    cpf: string;
+    nomeCompleto: string;
+    email?: string;
+    telefone?: string;
+    endereco?: string;
+    rg?: string;
+    cnpj?: string;
+    nacionalidade?: string;
+    estadoCivil?: string;
+    profissao?: string;
+  }
+  
+  export interface ListManyClientsResponse {
+    clientes: ClientData[];
+    ultimoDoc?: string | null;
+  }
+  
 
-export interface ListManyClients {
-    clientes: ListManyClientsClient[];
-    paginacao: {
-        possuiMais: boolean;
-        ultimoDocId: string;
-    }
-}
+  
+  export interface ListManyClients extends ListManyClientsResponse {}

@@ -128,12 +128,15 @@ export const listarLocacoes = async ({ limite = 10, ultimoDoc = null }) => {
     }
 
     const snapshot = await query.get();
-    const locacoes = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      dataInicio: formatDate(doc.data().dataInicio),
-      dataFim: formatDate(doc.data().dataFim),
-    }));
+    const locacoes = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        dataInicio: data.dataInicio ? new Date(data.dataInicio).toLocaleDateString('pt-BR') : '',
+        dataFim: data.dataFim ? new Date(data.dataFim).toLocaleDateString('pt-BR') : '',
+      };
+    });
 
     return {
       locacoes,
