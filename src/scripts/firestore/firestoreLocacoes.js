@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
  * Cadastra uma nova locação
  * @param {Object} locacaoData - Dados da locação
  * @param {string} locacaoData.cpfLocatario - CPF do cliente (formato: 'XXX.XXX.XXX-XX')
+ * @param {string} locacaoData.nomeLocatario - Nome do locatário
  * @param {string} locacaoData.placaVeiculo - Placa do veículo (formato: 'XXXX-XXXX')
  * @param {string} locacaoData.dataInicio - Data de início (formato: 'DD/MM/YYYY')
  * @param {string} locacaoData.dataFim - Data de término (formato: 'DD/MM/YYYY')
@@ -14,25 +15,52 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export const criarLocacao = async (locacaoData) => {
   try {
-    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor } = locacaoData;
+    console.log('Iniciando criação de locação com dados:', locacaoData);
+    const { cpfLocatario, nomeLocatario, placaVeiculo, dataInicio, dataFim, valor } = locacaoData;
 
-    // 1. Validar cliente
+    // 1. Validar cliente e verificar se o nome corresponde ao CPF
+    console.log('Buscando cliente com CPF:', cpfLocatario);
     const clienteRef = db.collection('clientes').doc(cpfLocatario);
     const clienteDoc = await clienteRef.get();
 
     if (!clienteDoc.exists) {
-      throw new Error('Cliente não encontrado');
+      console.log('Cliente não encontrado para CPF:', cpfLocatario);
+      throw new Error('CPF inválido');
+    }
+
+    const clienteData = clienteDoc.data();
+    console.log('Cliente encontrado:', clienteData);
+    
+    // Verificar se o nome fornecido corresponde ao nome cadastrado
+    console.log('Comparando nomes:', {
+      nomeCadastrado: clienteData.nomeCompleto.toLowerCase(),
+      nomeFornecido: nomeLocatario.toLowerCase()
+    });
+    
+    if (clienteData.nomeCompleto.toLowerCase() !== nomeLocatario.toLowerCase()) {
+      throw new Error('Nome não corresponde ao CPF informado');
     }
 
     // 2. Validar veículo
     const placaFormatada = placaVeiculo.replace(/-/g, '');
+    console.log('Buscando veículo com placa:', placaFormatada);
+    
     const veiculosSnapshot = await db
       .collection('veiculos')
       .where('placa', '==', placaFormatada)
       .limit(1)
       .get();
 
+    console.log('Resultado da busca:', veiculosSnapshot.empty ? 'Nenhum veículo encontrado' : 'Veículo encontrado');
+
     if (veiculosSnapshot.empty) {
+      // Vamos listar todos os veículos para debug
+      const todosVeiculos = await db.collection('veiculos').get();
+      console.log('Veículos cadastrados no sistema:');
+      todosVeiculos.docs.forEach(doc => {
+        const veiculo = doc.data();
+        console.log(`- Placa: "${veiculo.placa}", Status: ${veiculo.status}`);
+      });
       throw new Error('Veículo não encontrado');
     }
 
@@ -59,6 +87,7 @@ export const criarLocacao = async (locacaoData) => {
       .set({
         id,
         clienteId: cpfLocatario,
+        nomeLocatario: nomeLocatario,
         veiculoId: veiculoDoc.id,
         placaVeiculo: placaFormatada,
         dataInicio: parseDate(dataInicio).toISOString(),

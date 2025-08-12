@@ -11,8 +11,8 @@ import { RentalTypeModal } from './components/rental-type-modal';
 import { AddRentalModal } from './components/add-rental-modal';
 import type { AddRentalFormData } from './schemas/addRental';
 import { useNavigate } from 'react-router-dom';
-import { useClientsQuery } from '@/services/client';
 import { useCreateLocacaoMutation, useDeleteLocacaoMutation, useLocacoesQuery } from '@/services/rental';
+import { useClientsQuery } from '@/services/client';
 import { toast } from 'sonner';
 
 interface DisplayRentalData {
@@ -35,30 +35,35 @@ export const Rental = () => {
   const { mutateAsync: createLocacao, isPending: isCreating } = useCreateLocacaoMutation();
   const { mutateAsync: deleteLocacao, isPending: isDeleting } = useDeleteLocacaoMutation();
 
-  const cpfToClientNameMap = useMemo(() => {
-    const map = new Map<string, string>();
-    if (clientsData?.clientes) {
-      for (const client of clientsData.clientes) {
-        const cleanCpf = client.cpf.replace(/\D/g, '');
-        map.set(cleanCpf, client.nomeCompleto);
-      }
-    }
-    return map;
-  }, [clientsData]);
-
   const rentals: DisplayRentalData[] = useMemo(() => {
     const source = Array.isArray(locacoesData?.locacoes) ? locacoesData!.locacoes : [];
     return source.map((locacao) => {
-      const cleanId = String(locacao.clienteId ?? '').replace(/\D/g, '');
-      const locatarioNome = cpfToClientNameMap.get(cleanId) ?? locacao.clienteId;
+      // Se não tem nomeLocatario, tenta buscar pelo CPF nos clientes
+      let locatarioNome = locacao.nomeLocatario;
+      
+      if (!locatarioNome && locacao.clienteId) {
+        // Busca o nome do cliente pelo CPF
+        const cleanCpf = locacao.clienteId.replace(/\D/g, '');
+        const client = clientsData?.clientes?.find((client: any) => {
+          const cleanClientCpf = client.cpf.replace(/\D/g, '');
+          return cleanClientCpf === cleanCpf;
+        });
+        
+        if (client) {
+          locatarioNome = client.nomeCompleto;
+        } else {
+          locatarioNome = locacao.clienteId; // Fallback para CPF
+        }
+      }
+      
       return {
         id: locacao.id,
-        locatario: locatarioNome,
+        locatario: locatarioNome || locacao.clienteId || '',
         placa: locacao.placaVeiculo,
-        cpf: cleanId,
+        cpf: locacao.clienteId, // Mantém o CPF original formatado para exibição
       };
     });
-  }, [locacoesData, cpfToClientNameMap]);
+  }, [locacoesData, clientsData]);
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
@@ -71,22 +76,47 @@ export const Rental = () => {
   }, [rentals, searchByName, searchByPlate]);
 
   async function submitRental(rentalForm: AddRentalFormData) {
+    console.log('submitRental - dados do formulário:', rentalForm);
+    console.log('submitRental - valorLocacao original:', rentalForm.valorLocacao, 'tipo:', typeof rentalForm.valorLocacao);
+    
     const cleanPlaca = rentalForm.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     const cleanCpf = rentalForm.cnpjcpf.replace(/\D/g, '');
+    
+    // As datas já estão no formato DD/MM/YYYY, não precisam ser formatadas
+    const formatDate = (dateString: string) => {
+      return dateString; // Retorna como está, já está no formato correto
+    };
+    
+    const valorNumerico = Number(rentalForm.valorLocacao);
+    console.log('submitRental - valor convertido para número:', valorNumerico);
+    
     const payload = {
       cpfLocatario: cleanCpf,
+      nomeLocatario: rentalForm.locatario,
       placaVeiculo: cleanPlaca,
-      dataInicio: rentalForm.inicio,
-      dataFim: rentalForm.fim,
-      valor: Number(rentalForm.valorLocacao),
+      dataInicio: formatDate(rentalForm.inicio),
+      dataFim: formatDate(rentalForm.fim),
+      valor: valorNumerico,
     };
+    
+    console.log('submitRental - payload final:', payload);
 
-    const result = await createLocacao(payload);
-    if (!result) {
-      toast('Erro ao criar locação');
-      throw new Error('Erro ao criar locação');
+    try {
+      const result = await createLocacao(payload);
+      if (!result) {
+        toast('Erro ao criar locação');
+        throw new Error('Erro ao criar locação');
+      }
+      toast('Locação criada com sucesso');
+    } catch (error: any) {
+      console.error('Erro detalhado:', error);
+      if (error.message?.includes('CPF inválido') || error.message?.includes('Nome não corresponde')) {
+        toast.error(error.message);
+      } else {
+        toast('Erro ao criar locação');
+      }
+      throw error;
     }
-    toast('Locação criada com sucesso');
   }
 
   const handleDeleteRental = async (id: string) => {
@@ -171,7 +201,7 @@ export const Rental = () => {
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-900">{rental.locatario}</div>
-                    <div className="text-sm text-gray-500">{rental.locatario}</div>
+                    <div className="text-sm text-gray-500">{rental.cpf}</div>
                   </div>
                 </div>
               </td>

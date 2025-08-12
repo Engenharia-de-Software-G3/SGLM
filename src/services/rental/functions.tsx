@@ -46,13 +46,21 @@ export async function getLocacoesFunction(): Promise<ListManyLocacoes> {
 }
 
 export async function createLocacaoFunction(payload: CreateLocacaoInterface) {
-    const response = await api.post('/locacoes', payload);
+    try {
+        const response = await api.post('/locacoes', payload);
 
-    if (response.status === 201) {
-        return response.data;
+        if (response.status === 201) {
+            return response.data;
+        }
+
+        return null;
+    } catch (error: any) {
+        // Se o erro vem do backend com uma mensagem específica, vamos propagá-la
+        if (error.response?.data?.error) {
+            throw new Error(error.response.data.error);
+        }
+        throw error;
     }
-
-    return null;
 }
 
 export async function getLocacaoFunction(id: string) {

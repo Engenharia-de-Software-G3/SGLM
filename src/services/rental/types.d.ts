@@ -1,5 +1,6 @@
 export interface CreateLocacaoInterface {
     cpfLocatario: string;
+    nomeLocatario: string;
     placaVeiculo: string;
     dataInicio: string;
     dataFim: string;
@@ -9,6 +10,7 @@ export interface CreateLocacaoInterface {
 export interface LocacaoInterface {
     id: string;
     clienteId: string;          // CPF do cliente (formato: XXX.XXX.XXX-XX)
+    nomeLocatario: string;      // Nome do locatário
     veiculoId: string;
     placaVeiculo: string;       // sem hífen
     dataInicio: string;         // formato DD/MM/YYYY
