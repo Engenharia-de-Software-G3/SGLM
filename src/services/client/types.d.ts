@@ -16,6 +16,11 @@ export interface CreateClientInterface {
         email: string; 
         telefone: string; 
     };
+    dadosBancarios?: {
+        banco: string;
+        agencia: string;
+        conta: string;
+    };
     documentos?: {
         cnh?: {
             numero: string; 
@@ -26,29 +31,72 @@ export interface CreateClientInterface {
 }
 
 export interface UpdateClientInterface {
-    dadosPessoais?: {
-        nome?: string; 
-        dataNascimento?: string; 
+    nomeCompleto?: string;
+    dataNascimento?: string;
+    cpf?: string;
+    email?: string;
+    telefone?: string;
+    contatos?: {
+        principal?: {
+            email?: string;
+            telefone?: string;
+        };
     };
-    endereco?: {
-        cep: string; 
-        rua: string; 
-        numero: string; 
-        bairro: string; 
-        cidade: string; 
-        estado: string; 
-    };
-    contato?: {
-        email: string; 
-        telefone: string; 
+    enderecos?: {
+        principal?: {
+            cep?: string;
+            rua?: string;
+            numero?: string;
+            bairro?: string;
+            cidade?: string;
+            estado?: string;
+        };
     };
     documentos?: {
         cnh?: {
-            numero?: string; 
-            categoria?: string; 
-            dataValidade?: string; 
+            numero?: string;
+            categoria?: string;
+            dataValidade?: string;
+            tipo?: string;
         };
     };
+}
+
+export interface SingleClientResponse {
+    contatos: {
+        principal: {
+          email: string;
+          isPrincipal: boolean;
+          telefone: string;
+        };
+      };
+      cpf: string;
+      dataNascimento: string;
+      documentos: {
+        cnh: {
+          categoria: string;
+          dataValidade: string;
+          numero: string;
+          tipo: string;
+        };
+      };
+      email: string;
+      enderecos: {
+        principal: {
+          bairro: string;
+          cep: string;
+          cidade: string;
+          estado: string;
+          isPrincipal: boolean;
+          numero: string;
+          rua: string;
+        };
+      };
+      id: string;
+      nomeCompleto: string;
+      status: string;
+      telefone: string;
+      tipo: string;
 }
 
 export interface ListManyClientsResponseClient {

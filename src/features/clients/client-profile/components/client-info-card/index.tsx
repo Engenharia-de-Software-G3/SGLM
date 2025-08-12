@@ -6,9 +6,68 @@ import { Input } from '@/components/ui/input';
 import { MaskedInput } from '@/shared/components/masked-input';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
+import { useUpdateClientMutation } from '@/services/client';
+import { useNavigate } from 'react-router-dom';
 
-export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
+export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const [isReadOnly, setIsReadOnly] = useState(false);
+
+  const { mutateAsync: updateClient } = useUpdateClientMutation();
+  const navigate = useNavigate();
+
+  // Create flattened data for the form
+  const [flattenedData, setFlattenedData] = useState(() => {
+    return {
+      id: initialData.id,
+      nomeCompleto: initialData.nomeCompleto,
+      dataNascimento: initialData.dataNascimento,
+      cpf: initialData.cpf,
+      telefone: initialData.telefone,
+      email: initialData.email,
+      enderecos_principal_cep: initialData.enderecos?.principal?.cep || '',
+      enderecos_principal_rua: initialData.enderecos?.principal?.rua || '',
+      enderecos_principal_numero: initialData.enderecos?.principal?.numero || '',
+      enderecos_principal_bairro: initialData.enderecos?.principal?.bairro || '',
+      enderecos_principal_cidade: initialData.enderecos?.principal?.cidade || '',
+      enderecos_principal_estado: initialData.enderecos?.principal?.estado || '',
+      documentos_cnh_numero: initialData.documentos?.cnh?.numero || '',
+      documentos_cnh_categoria: initialData.documentos?.cnh?.categoria || '',
+      documentos_cnh_dataValidade: initialData.documentos?.cnh?.dataValidade || '',
+      documentos_cnh_tipo: initialData.documentos?.cnh?.tipo || '',
+    };
+  });
+
+  // Helper function to restore nested object structure
+  const restoreData = (flattened: Record<string, unknown>): Record<string, unknown> => {
+    const restored: Record<string, unknown> = {};
+    
+    for (const key in flattened) {
+      if (Object.prototype.hasOwnProperty.call(flattened, key)) {
+        const keys = key.split('_');
+        let current = restored as Record<string, unknown>;
+        
+        for (let i = 0; i < keys.length - 1; i++) {
+          const currentKey = keys[i];
+          if (!current[currentKey]) {
+            current[currentKey] = {};
+          }
+          current = current[currentKey] as Record<string, unknown>;
+        }
+        
+        current[keys[keys.length - 1]] = flattened[key];
+      }
+    }
+    
+    return restored;
+  };
+
+  // Helper function to update flattened data
+  const updateFlattenedData = (field: string, value: string) => {
+    setFlattenedData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   useEffect(() => {
     const value = localStorage.getItem('isReadOnly');
@@ -16,13 +75,20 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
     setIsReadOnly(newIsReadOnly);
   }, []);
 
-  const submit = () => {
-    const parsed = clientInfoCardSchema.safeParse(data);
+  const submit = async () => {
+    const parsed = clientInfoCardSchema.safeParse(flattenedData);
     if (!parsed.success) {
       toast('Preencha todos os campos obrigatórios');
       return;
     }
+    
+    // Restore the nested structure before sending to API
+    const restoredData = restoreData(parsed.data);
+    await updateClient({id: Number(initialData.id), payload: restoredData});
     toast('Salvo com sucesso');
+    setTimeout(() => {
+      navigate('/clientes')
+    }, 1000)
   };
 
   return (
@@ -34,8 +100,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
           <Input
             placeholder="Insira o Nome Completo"
-            value={data.name || ''}
-            onChange={(e) => setData((old) => ({ ...old, name: e.target.value }))}
+            value={flattenedData.nomeCompleto || ''}
+            onChange={(e) => updateFlattenedData('nomeCompleto', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -47,8 +113,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <div className="relative">
             <MaskedInput
               type="date"
-              value={data.birthDate || ''}
-              onAccept={(value) => setData((old) => ({ ...old, birthDate: value }))}
+              value={flattenedData.dataNascimento || ''}
+              onAccept={(value) => updateFlattenedData('dataNascimento', value)}
               readOnly={isReadOnly}
             />
             <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -58,8 +124,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
           <MaskedInput
             type="cpf"
-            value={data.cpf || ''}
-            onAccept={(value) => setData((old) => ({ ...old, cpf: value }))}
+            value={flattenedData.cpf || ''}
+            onAccept={(value) => updateFlattenedData('cpf', value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -67,8 +133,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
           <MaskedInput
             type="phone"
-            value={data.phone || ''}
-            onAccept={(value) => setData((old) => ({ ...old, phone: value }))}
+            value={flattenedData.telefone || ''}
+            onAccept={(value) => updateFlattenedData('telefone', value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -79,8 +145,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">CEP</label>
           <MaskedInput
             type="cep"
-            value={data.cep || ''}
-            onAccept={(value) => setData((old) => ({ ...old, cep: value.replace(/\D/g, '') }))}
+            value={flattenedData.enderecos_principal_cep || ''}
+            onAccept={(value) => updateFlattenedData('enderecos_principal_cep', value.replace(/\D/g, ''))}
             readOnly={isReadOnly}
           />
         </div>
@@ -88,8 +154,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Rua</label>
           <Input
             placeholder="Insira sua rua"
-            value={data.street || ''}
-            onChange={(e) => setData((old) => ({ ...old, street: e.target.value }))}
+            value={flattenedData.enderecos_principal_rua || ''}
+            onChange={(e) => updateFlattenedData('enderecos_principal_rua', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -100,8 +166,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Bairro</label>
           <Input
             placeholder="Insira seu bairro"
-            value={data.neighborhood || ''}
-            onChange={(e) => setData((old) => ({ ...old, neighborhood: e.target.value }))}
+            value={flattenedData.enderecos_principal_bairro || ''}
+            onChange={(e) => updateFlattenedData('enderecos_principal_bairro', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -110,38 +176,29 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <Input
             type="number"
             placeholder="Número da residência"
-            value={data.number || ''}
-            onChange={(e) => setData((old) => ({ ...old, number: e.target.value }))}
+            value={flattenedData.enderecos_principal_numero || ''}
+            onChange={(e) => updateFlattenedData('enderecos_principal_numero', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Complemento</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
           <Input
-            placeholder="Complemento (opcional)"
-            value={data.complement || ''}
-            onChange={(e) => setData((old) => ({ ...old, complement: e.target.value }))}
+            placeholder="Ex: nome@gmail.com"
+            value={flattenedData.email || ''}
+            onChange={(e) => updateFlattenedData('email', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-          <Input
-            placeholder="Ex: nome@gmail.com"
-            value={data.email || ''}
-            onChange={(e) => setData((old) => ({ ...old, email: e.target.value }))}
-            readOnly={isReadOnly}
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
           <Input
             placeholder="Insira sua cidade"
-            value={data.city || ''}
-            onChange={(e) => setData((old) => ({ ...old, city: e.target.value }))}
+            value={flattenedData.enderecos_principal_cidade || ''}
+            onChange={(e) => updateFlattenedData('enderecos_principal_cidade', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -149,8 +206,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
           <Input
             placeholder="Insira seu estado"
-            value={data.state || ''}
-            onChange={(e) => setData((old) => ({ ...old, state: e.target.value }))}
+            value={flattenedData.enderecos_principal_estado || ''}
+            onChange={(e) => updateFlattenedData('enderecos_principal_estado', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -158,56 +215,34 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
 
       {/* Dados Bancários Abaixo */}
       <p className="text-xl font-semibold mt-5 mb-1">Dados Bancários</p>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Banco</label>
-        <Input
-          placeholder="Insira o nome do banco"
-          value={data.bank || ''}
-          onChange={(e) => setData((old) => ({ ...old, bank: e.target.value }))}
-          readOnly={isReadOnly}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Banco</label>
+          <Input
+            placeholder="Insira o nome do banco"
+            value=""
+            readOnly={true}
+            disabled={true}
+          />
+        </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Agência</label>
           <Input
             type="number"
             placeholder="Insira o número de sua agência"
-            value={data.agency || ''}
-            onChange={(e) => setData((old) => ({ ...old, agency: e.target.value }))}
-            readOnly={isReadOnly}
+            value=""
+            readOnly={true}
+            disabled={true}
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Dígito</label>
-          <Input
-            type="number"
-            value={data.agencyDigit || ''}
-            onChange={(e) => setData((old) => ({ ...old, agencyDigit: e.target.value }))}
-            readOnly={isReadOnly}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Conta</label>
           <Input
             type="number"
             placeholder="Insira o número da conta"
-            value={data.account || ''}
-            onChange={(e) => setData((old) => ({ ...old, account: e.target.value }))}
-            readOnly={isReadOnly}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Dígito</label>
-          <Input
-            type="number"
-            value={data.accountDigit || ''}
-            onChange={(e) => setData((old) => ({ ...old, accountDigit: e.target.value }))}
-            readOnly={isReadOnly}
+            value=""
+            readOnly={true}
+            disabled={true}
           />
         </div>
       </div>
@@ -220,8 +255,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <Input
             type="number"
             placeholder="Insira o número de CNH"
-            value={data.cnhNumber || ''}
-            onChange={(e) => setData((old) => ({ ...old, cnhNumber: e.target.value }))}
+            value={flattenedData.documentos_cnh_numero}
+            onChange={(e) => updateFlattenedData('documentos_cnh_numero', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -229,8 +264,8 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
           <Input
             placeholder="Insira a categoria"
-            value={data.cnhCategory || ''}
-            onChange={(e) => setData((old) => ({ ...old, cnhCategory: e.target.value }))}
+            value={flattenedData.documentos_cnh_categoria || ''}
+            onChange={(e) => updateFlattenedData('documentos_cnh_categoria', e.target.value)}
             readOnly={isReadOnly}
           />
         </div>
@@ -238,27 +273,26 @@ export const ClientInfoCard = ({ data, setData }: ClientInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Registro</label>
-          <Input
-            type="number"
-            placeholder="Insira o número de registro da CNH"
-            value={data.cnhRegister || ''}
-            onChange={(e) => setData((old) => ({ ...old, cnhRegister: e.target.value }))}
-            readOnly={isReadOnly}
-          />
-        </div>
-        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Data de Validade</label>
           <div className="relative">
             <MaskedInput
               type="date"
               placeholder="Ex: 27/12/2030"
-              value={data.cnhExpirationDate || ''}
-              onAccept={(value) => setData((old) => ({ ...old, cnhExpirationDate: value }))}
+              value={flattenedData.documentos_cnh_dataValidade || ''}
+              onAccept={(value) => updateFlattenedData('documentos_cnh_dataValidade', value)}
               readOnly={isReadOnly}
             />
             <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+          <Input
+            placeholder="Insira o tipo da CNH"
+            value={flattenedData.documentos_cnh_tipo || ''}
+            onChange={(e) => updateFlattenedData('documentos_cnh_tipo', e.target.value)}
+            readOnly={isReadOnly}
+          />
         </div>
       </div>
 

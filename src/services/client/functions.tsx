@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import { CreateClientInterface, ListManyClients, ListManyClientsResponse, UpdateClientInterface,  } from "./types"
+import { CreateClientInterface, ListManyClients, ListManyClientsResponse, SingleClientResponse, UpdateClientInterface,  } from "./types"
 import { formatCPF } from "../utils/formatCpf"
 
 export async function getClientsFunction(): Promise<ListManyClients> {
@@ -38,7 +38,7 @@ export async function createClientFunction(payload: CreateClientInterface) {
 export async function getClientFunction(id: number) {
     const response = await api.get(`/clientes/${id}`)
 
-    return response.data
+    return response.data.cliente as SingleClientResponse
 }
 
 export async function updateClientFunction(id: number, payload: UpdateClientInterface) {

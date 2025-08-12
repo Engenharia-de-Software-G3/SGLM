@@ -9,16 +9,16 @@ import { ActionButton } from '@/shared/components/display-table/components/actio
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { Badge } from '@/components/ui/badge';
-import { useClientsQuery } from '@/services/client';
+import { useClientsQuery, useDeleteClientMutation } from '@/services/client';
 import { ListManyClientsClient } from '@/services/client/types';
+import { toast } from 'sonner';
 
 export const Clients = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: clientsData, isLoading } = useClientsQuery()
+  const { mutateAsync: deleteClient } = useDeleteClientMutation()
   const navigate = useNavigate();
   const location = useLocation();
-
-
 
   const handleViewClientWithReadOnly = (clientId: number) => {
     localStorage.setItem('isReadOnly', 'true');
@@ -30,8 +30,9 @@ export const Clients = () => {
     navigate(`/clientes/${clientId}`);
   };
 
-  const handleDeleteClient = (clientId: number) => {
-    console.log({clientId})
+  async function handleDeleteClient (clientId: number) {
+    await deleteClient(clientId)
+    toast.success('Cliente deletado com sucesso')
   };
 
   const filteredClients = useMemo(() => {
