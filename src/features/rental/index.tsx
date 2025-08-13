@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { DeleteModal } from '@/shared/components/delete-modal';
@@ -38,6 +38,29 @@ export const Rental = () => {
   const { data: clientsData } = useClientsQuery();
   const { mutateAsync: createLocacao } = useCreateLocacaoMutation(); 
   const { mutateAsync: deleteLocacao } = useDeleteLocacaoMutation();
+
+  useEffect(() => {
+    const storedClient = localStorage.getItem('filterRentalsByClient');
+    const storedVehicle = localStorage.getItem('filterRentalsByVehicle');
+
+    if (storedClient) {
+      try {
+        setsearchByName(JSON.parse(storedClient));
+      } catch (error) {
+        console.error('Erro ao parsear filterRentalsByClient:', error);
+      }
+      localStorage.removeItem('filterRentalsByClient');
+    }
+
+    if (storedVehicle) {
+      try {
+        setSearchByPlate(JSON.parse(storedVehicle));
+      } catch (error) {
+        console.error('Erro ao parsear filterRentalsByVehicle:', error);
+      }
+      localStorage.removeItem('filterRentalsByVehicle');
+    }
+  }, []);
 
   const rentals: DisplayRentalData[] = useMemo(() => {
     const source = Array.isArray(locacoesData?.locacoes) ? locacoesData!.locacoes : [];
