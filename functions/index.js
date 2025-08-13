@@ -91,6 +91,15 @@ app.use('/vistorias', vistoriasRouter);
 import locacoesRouter from './locacoes.js';
 app.use('/locacoes', locacoesRouter);
 
+// Rota contrato
+/**
+ * Importa e monta o roteador para as operações relacionadas a contratos.
+ * Todas as rotas definidas em './contrato' serão acessíveis sob o prefixo '/contratos'.
+ * @type {express.Router}
+ */
+import contratosRouter from './contrato.js';
+app.use('/contratos', contratosRouter);
+
 /**
  * Exporta o aplicativo Express como uma Cloud Function HTTP.
  * Esta função será o ponto de entrada para todas as requisições HTTP
@@ -103,12 +112,3 @@ app.use('/locacoes', locacoesRouter);
  * @returns {void} Envia uma resposta HTTP através do aplicativo Express.
  */
 export const api = functions.https.onRequest(app);
-
-// Rota contrato
-/**
- * Importa e monta o roteador para as operações relacionadas a contratos.
- * Todas as rotas definidas em './contrato' serão acessíveis sob o prefixo '/contratos'.
- * @type {express.Router}
- */
-import contratosRouter from './contrato.js';
-app.use('/contratos', contratosRouter);

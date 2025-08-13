@@ -8,7 +8,7 @@ const router = express.Router();
 import {
   criarContratoJuridico,
   buscarContratoPorId,
-} from '../src/scripts/firestore/firestoreContratos.js';
+} from './scripts/firestore/firestoreContratos.js';
 
 /**
  * Rota POST para criar um novo contrato jurídico.

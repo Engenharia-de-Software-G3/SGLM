@@ -1,4 +1,4 @@
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 import { buscarClientePorCPF } from './firestoreClientes.js'; // Importa a função de busca de cliente
 import { buscarPorChassi } from './firestoreVeiculos.js'; // Importa a função de busca de veículo
