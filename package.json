@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "cd functions && npm test",
+    "test:watch": "cd functions && npm run test:watch", 
+    "test:coverage": "cd functions && npm run test:coverage"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
@@ -68,5 +71,21 @@
     "typescript-eslint": "^8.38.0",
     "vite": "^7.0.6",
     "vite-plugin-eslint": "^1.8.1"
-  }
+  },
+  "description": "O **SGLM** é uma aplicação desenvolvida com o objetivo de automatizar o processo de locação de motocicletas. A plataforma permite o cadastro e gerenciamento de clientes, veículos, contratos, manutenções, relatórios financeiros, entre outros recursos essenciais para uma operação organizada e eficiente.",
+  "main": "eslint.config.js",
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Engenharia-de-Software-G3/SGLM.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Engenharia-de-Software-G3/SGLM/issues"
+  },
+  "homepage": "https://github.com/Engenharia-de-Software-G3/SGLM#readme"
 }
