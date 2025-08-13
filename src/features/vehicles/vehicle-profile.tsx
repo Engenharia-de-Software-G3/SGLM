@@ -61,6 +61,7 @@ const activities = [
   },
 ];
 
+
 export const VehicleProfile = () => {
   const { vehicleId } = useParams<{ vehicleId: string }>();
   const navigate = useNavigate();
@@ -99,6 +100,11 @@ export const VehicleProfile = () => {
     };
     setVehicle(mockVehicle);
   }, [vehicleId]);
+
+    const filterByVehicle = () => {
+      localStorage.setItem("filterRentalsByVehicle", JSON.stringify(vehicle.plate || ''))
+      navigate("/locacoes");
+    };
 
   if (!vehicle) {
     return <div className="p-6">Carregando...</div>;
@@ -273,6 +279,11 @@ export const VehicleProfile = () => {
               </CardContent>
             </Card>
           </div>
+
+          <Button onClick={() => filterByVehicle()} className="bg-blue-600 hover:bg-blue-700 mt-5 w-100">
+              Ver histórico de locações do veículo
+          </Button>
+
         </div>
 
         {showActionDialog && (
@@ -302,6 +313,7 @@ export const VehicleProfile = () => {
           </div>
         )}
       </div>
+
       <VehicleActionDialog
         isOpen={isActionDialogOpen}
         onClose={() => setIsActionDialogOpen(false)}

@@ -15,6 +15,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const { mutateAsync: updateClient } = useUpdateClientMutation();
   const navigate = useNavigate();
 
+  const filterByClient = () => {
+    localStorage.setItem("filterRentalsByClient", JSON.stringify(flattenedData.nomeCompleto || ''))
+    navigate("/locacoes");
+  };
+
   // Create flattened data for the form
   const [flattenedData, setFlattenedData] = useState(() => {
     return {
@@ -295,6 +300,12 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
       </div>
+
+      {isReadOnly && (
+          <Button onClick={() => filterByClient()} style={{ width: "25%" }} className="bg-blue-600 hover:bg-blue-700 mt-5">
+            Ver histórico de locações do cliente
+          </Button>
+      )}
 
       {!isReadOnly && (
         <Button onClick={submit} className="bg-blue-600 hover:bg-blue-700">
