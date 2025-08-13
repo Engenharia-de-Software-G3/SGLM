@@ -66,3 +66,24 @@ export const criarContratoJuridico = async ({ cpfCliente, chassiVeiculo, termosC
     return { success: false, error: error.message };
   }
 };
+
+
+/**
+ * Busca um contrato específico pelo seu ID.
+ * @param {string} id - O ID do contrato.
+ * @returns {Promise<{success: boolean, contrato?: Object, error?: string}>}
+ */
+export const buscarContratoPorId = async (id) => {
+  try {
+    const contratoRef = db.collection('contratos').doc(id);
+    const doc = await contratoRef.get();
+
+    if (!doc.exists) {
+      return { success: false, error: 'Contrato não encontrado.' };
+    }
+    return { success: true, contrato: doc.data() };
+  } catch (error) {
+    console.error(`Erro ao buscar contrato ${id}:`, error);
+    return { success: false, error: error.message };
+  }
+};

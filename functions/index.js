@@ -103,3 +103,12 @@ app.use('/locacoes', locacoesRouter);
  * @returns {void} Envia uma resposta HTTP através do aplicativo Express.
  */
 export const api = functions.https.onRequest(app);
+
+// Rota contrato
+/**
+ * Importa e monta o roteador para as operações relacionadas a contratos.
+ * Todas as rotas definidas em './contrato' serão acessíveis sob o prefixo '/contratos'.
+ * @type {express.Router}
+ */
+import contratosRouter from './contrato.js';
+app.use('/contratos', contratosRouter);
