@@ -37,7 +37,6 @@ export const criarVeiculo = async (veiculoData) => {
         modelo: veiculoData.modelo,
         marca: veiculoData.marca,
         renavam: veiculoData.renavam,
-        numeroDocumento: veiculoData.numeroDocumento,
         anoModelo: {
           fabricacao: parseInt(veiculoData.anoFabricacao),
           modelo: parseInt(veiculoData.anoModelo),
