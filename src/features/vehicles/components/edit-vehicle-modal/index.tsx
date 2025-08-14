@@ -8,6 +8,13 @@ import { vehicleFormSchema } from '../../schemas/vehicleFormSchema';
 import type { EditVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
 
+function maskData(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
+  return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+}
+
 export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehicleModalProps) => {
   const [formData, setFormData] = useState<VeiculoFormulario>({
     marca: '',
@@ -15,140 +22,68 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
     placa: '',
     ano: '',
     cor: '',
-    combustivel: '',
-    categoria: '',
-    renavam: '',
     chassi: '',
-    motor: '',
-    portas: '',
-    assentos: '',
-    transmissao: '',
-    valorDiario: '',
     quilometragemAtual: '',
     quilometragemCompra: '',
-    proximaManutencao: '',
-    numeroDocumento: '',
     dataCompra: '',
     local: '',
     nome: '',
     observacoes: '',
     status: 'Disponível',
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (vehicle) {
-      console.log('Initializing form with vehicle:', vehicle);
-      const newFormData: VeiculoFormulario = {
+      setFormData({
         marca: vehicle.brand,
         modelo: vehicle.model,
         placa: vehicle.plate,
-        ano: vehicle.year.toString(),
+        ano: vehicle.year?.toString() || '',
         cor: vehicle.color,
-        combustivel: vehicle.fuel,
-        categoria: vehicle.category,
-        renavam: vehicle.renavam,
-        chassi: vehicle.chassis,
-        motor: vehicle.engine,
-        portas: vehicle.doors.toString(),
-        assentos: vehicle.seats.toString(),
-        transmissao: vehicle.transmission,
-        valorDiario: vehicle.dailyRate.toString(),
-        quilometragemAtual: vehicle.currentMileage.toString(),
+        chassi: vehicle.chassis || '',
+        quilometragemAtual: vehicle.currentMileage?.toString() || '',
         quilometragemCompra: vehicle.initialMileage?.toString() || '',
-        proximaManutencao: vehicle.nextMaintenanceKm.toString(),
-        numeroDocumento: vehicle.insurancePolicy || '',
+        renavam: vehicle.insurancePolicy || '',
         dataCompra: vehicle.acquisitionDate || '',
-        local: '',
-        nome: '',
-        observacoes: '',
+        local: vehicle.location || '',
+        nome: vehicle.ownerName || '',
+        observacoes: vehicle.observations || '',
         status: vehicle.status || 'Disponível',
-      };
-      setFormData(newFormData);
-      console.log('Form data initialized:', newFormData);
+      });
     }
   }, [vehicle]);
 
   const handleInputChange = (
-    e:
-      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      | { target: { id: string; value: string } },
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { id: string; value: string } },
   ) => {
     const { id, value } = 'target' in e ? e.target : e;
-    console.log(`Input changed: ${id} = ${value}`);
-    if (id === 'status') {
-      console.log('Status changed to:', value);
-    }
-    setFormData((prev) => {
-      const newFormData = { ...prev, [id]: value };
-      console.log('Updated form data:', newFormData);
-      return newFormData;
-    });
-    if (errors[id]) {
-      setErrors((prev) => ({ ...prev, [id]: '' }));
-    }
+    const maskedValue = id === 'dataCompra' ? maskData(value) : value;
+    setFormData((prev) => ({ ...prev, [id]: maskedValue }));
+    if (errors[id]) setErrors((prev) => ({ ...prev, [id]: '' }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form data on submit:', formData);
-    if (!formData.status || !['Disponível', 'Locado', 'Manutenção'].includes(formData.status)) {
-      setErrors({ status: 'Status é obrigatório e deve ser válido' });
-      console.log('Validation failed: Invalid or missing status');
-      return;
-    }
     const result = vehicleFormSchema.safeParse(formData);
     if (!result.success) {
-      console.log('Validation errors:', result.error.issues);
       const fieldErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {
         const field = Array.isArray(issue.path) ? issue.path[0]?.toString() : '';
-        if (field) {
-          fieldErrors[field] = issue.message;
-        }
+        if (field) fieldErrors[field] = issue.message;
       });
       setErrors(fieldErrors);
       return;
     }
-
-    // Adiciona log para depurar os dados validados
-    console.log('Data to save before onSave:', result.data);
     setErrors({});
-    onSave(result.data); // Garante que result.data contém status
+    onSave(result.data);
     onClose();
   };
 
   const handleReset = () => {
-    if (vehicle) {
-      const newFormData: VeiculoFormulario = {
-        marca: vehicle.brand,
-        modelo: vehicle.model,
-        placa: vehicle.plate,
-        ano: vehicle.year.toString(),
-        cor: vehicle.color,
-        combustivel: vehicle.fuel,
-        categoria: vehicle.category,
-        renavam: vehicle.renavam,
-        chassi: vehicle.chassis,
-        motor: vehicle.engine,
-        portas: vehicle.doors.toString(),
-        assentos: vehicle.seats.toString(),
-        transmissao: vehicle.transmission,
-        valorDiario: vehicle.dailyRate.toString(),
-        quilometragemAtual: vehicle.currentMileage.toString(),
-        quilometragemCompra: vehicle.initialMileage?.toString() || '',
-        proximaManutencao: vehicle.nextMaintenanceKm.toString(),
-        numeroDocumento: vehicle.insurancePolicy || '',
-        dataCompra: vehicle.acquisitionDate || '',
-        local: '',
-        nome: '',
-        observacoes: '',
-        status: vehicle.status || 'Disponível',
-      };
-      setFormData(newFormData);
-      console.log('Form reset to:', newFormData);
-      setErrors({});
-    }
+    if (vehicle) setFormData((prev) => ({ ...prev, ...vehicle }));
+    setErrors({});
   };
 
   return (
@@ -162,137 +97,38 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>
-              <Input id="marca" value={formData.marca} onChange={handleInputChange} required />
+              <Input
+                id="marca"
+                value={formData.marca}
+                onChange={handleInputChange}
+                readOnly
+                className="bg-gray-200 cursor-not-allowed"
+              />
               {errors.marca && <p className="text-sm text-red-500">{errors.marca}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="modelo">Modelo</Label>
-              <Input id="modelo" value={formData.modelo} onChange={handleInputChange} required />
+              <Input
+                id="modelo"
+                value={formData.modelo}
+                onChange={handleInputChange}
+                readOnly
+                className="bg-gray-200 cursor-not-allowed"
+              />
               {errors.modelo && <p className="text-sm text-red-500">{errors.modelo}</p>}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa</Label>
               <Input id="placa" value={formData.placa} onChange={handleInputChange} required />
               {errors.placa && <p className="text-sm text-red-500">{errors.placa}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ano">Ano</Label>
-              <Input
-                id="ano"
-                type="number"
-                value={formData.ano}
-                onChange={handleInputChange}
-                required
-              />
-              {errors.ano && <p className="text-sm text-red-500">{errors.ano}</p>}
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="cor">Cor</Label>
               <Input id="cor" value={formData.cor} onChange={handleInputChange} required />
               {errors.cor && <p className="text-sm text-red-500">{errors.cor}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria</Label>
-              <RadioGroup
-                value={formData.categoria}
-                onValueChange={(value) => handleInputChange({ target: { id: 'categoria', value } })}
-                required
-                defaultValue={formData.categoria || 'Sedan'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Hatch" id="hatch" />
-                  <Label htmlFor="hatch">Hatch</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Sedan" id="sedan" />
-                  <Label htmlFor="sedan">Sedan</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="SUV" id="suv" />
-                  <Label htmlFor="suv">SUV</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Moto" id="moto" />
-                  <Label htmlFor="moto">Moto</Label>
-                </div>
-              </RadioGroup>
-              {errors.categoria && <p className="text-sm text-red-500">{errors.categoria}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <RadioGroup
-                value={formData.status}
-                onValueChange={(value) => handleInputChange({ target: { id: 'status', value } })}
-                required
-                defaultValue={formData.status || 'Disponível'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Disponível" id="disponivel" />
-                  <Label htmlFor="disponivel">Disponível</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Locado" id="locado" />
-                  <Label htmlFor="locado">Locado</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Manutenção" id="manutencao" />
-                  <Label htmlFor="manutencao">Manutenção</Label>
-                </div>
-              </RadioGroup>
-              {errors.status && <p className="text-sm text-red-500">{errors.status}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="combustivel">Combustível</Label>
-              <RadioGroup
-                value={formData.combustivel}
-                onValueChange={(value) =>
-                  handleInputChange({ target: { id: 'combustivel', value } })
-                }
-                required
-                defaultValue={formData.combustivel || 'Gasolina'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Gasolina" id="gasolina" />
-                  <Label htmlFor="gasolina">Gasolina</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Etanol" id="etanol" />
-                  <Label htmlFor="etanol">Etanol</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Flex" id="flex" />
-                  <Label htmlFor="flex">Flex</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Diesel" id="diesel" />
-                  <Label htmlFor="diesel">Diesel</Label>
-                </div>
-              </RadioGroup>
-              {errors.combustivel && <p className="text-sm text-red-500">{errors.combustivel}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="transmissao">Transmissão</Label>
-              <RadioGroup
-                value={formData.transmissao}
-                onValueChange={(value) =>
-                  handleInputChange({ target: { id: 'transmissao', value } })
-                }
-                required
-                defaultValue={formData.transmissao || 'Manual'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Manual" id="manual" />
-                  <Label htmlFor="manual">Manual</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Automático" id="automatico" />
-                  <Label htmlFor="automatico">Automático</Label>
-                </div>
-              </RadioGroup>
-              {errors.transmissao && <p className="text-sm text-red-500">{errors.transmissao}</p>}
             </div>
           </div>
 
@@ -307,50 +143,13 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
               <Input id="chassi" value={formData.chassi} onChange={handleInputChange} required />
               {errors.chassi && <p className="text-sm text-red-500">{errors.chassi}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="motor">Motor</Label>
-              <Input id="motor" value={formData.motor} onChange={handleInputChange} required />
-              {errors.motor && <p className="text-sm text-red-500">{errors.motor}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="portas">Número de Portas</Label>
-              <Input
-                id="portas"
-                type="number"
-                value={formData.portas}
-                onChange={handleInputChange}
-                required
-              />
-              {errors.portas && <p className="text-sm text-red-500">{errors.portas}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="assentos">Número de Assentos</Label>
-              <Input
-                id="assentos"
-                type="number"
-                value={formData.assentos}
-                onChange={handleInputChange}
-                required
-              />
-              {errors.assentos && <p className="text-sm text-red-500">{errors.assentos}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="valorDiario">Valor Diário (R$)</Label>
-              <Input
-                id="valorDiario"
-                type="number"
-                step="0.01"
-                value={formData.valorDiario}
-                onChange={handleInputChange}
-                required
-              />
-              {errors.valorDiario && <p className="text-sm text-red-500">{errors.valorDiario}</p>}
-            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quilometragemAtual">Quilometragem Atual</Label>
               <Input
                 id="quilometragemAtual"
-                type="number"
                 value={formData.quilometragemAtual}
                 onChange={handleInputChange}
                 required
@@ -360,32 +159,23 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="proximaManutencao">Próxima Manutenção (km)</Label>
+              <Label htmlFor="quilometragemCompra">Quilometragem na Compra</Label>
               <Input
-                id="proximaManutencao"
-                type="number"
-                value={formData.proximaManutencao}
+                id="quilometragemCompra"
+                value={formData.quilometragemCompra}
                 onChange={handleInputChange}
                 required
               />
-              {errors.proximaManutencao && (
-                <p className="text-sm text-red-500">{errors.proximaManutencao}</p>
+              {errors.quilometragemCompra && (
+                <p className="text-sm text-red-500">{errors.quilometragemCompra}</p>
               )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="numeroDocumento">Nº do Documento</Label>
-              <Input
-                id="numeroDocumento"
-                placeholder="Insira o nº do documento"
-                value={formData.numeroDocumento}
-                onChange={handleInputChange}
-              />
-              {errors.numeroDocumento && (
-                <p className="text-sm text-red-500">{errors.numeroDocumento}</p>
-              )}
+              <Label htmlFor="local">Local</Label>
+              <Input id="local" value={formData.local} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataCompra">Data da Compra</Label>
@@ -398,28 +188,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
               {errors.dataCompra && <p className="text-sm text-red-500">{errors.dataCompra}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="local">Local</Label>
-              <Input
-                id="local"
-                placeholder="Insira o local de aquisição"
-                value={formData.local}
-                onChange={handleInputChange}
-              />
-              {errors.local && <p className="text-sm text-red-500">{errors.local}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
-                id="nome"
-                placeholder="Insira o nome do dono do veículo"
-                value={formData.nome}
-                onChange={handleInputChange}
-              />
-              {errors.nome && <p className="text-sm text-red-500">{errors.nome}</p>}
-            </div>
-          </div>
+
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observações</Label>
             <textarea

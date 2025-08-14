@@ -240,7 +240,7 @@ export const Vehicles = () => {
       <div className="flex-1 overflow-auto p-6">
         <DisplayTableHeader>
           <SearchBar
-            placeholder="Filtrar por placa, status ou marca"
+            placeholder="Filtrar por marca, modelo ou placa"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

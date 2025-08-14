@@ -89,7 +89,7 @@ export const VehicleProfile = () => {
       doors: 4,
       seats: 5,
       transmission: 'Automático',
-      acquisitionDate: '2022-01-15',
+      acquisitionDate: '2022/01/15',
       acquisitionValue: 85000,
       dailyRate: 120,
       insuranceCompany: 'Porto Seguro',
@@ -102,7 +102,7 @@ export const VehicleProfile = () => {
   }, [vehicleId]);
 
     const filterByVehicle = () => {
-      localStorage.setItem("filterRentalsByVehicle", JSON.stringify(vehicle.plate || ''))
+      localStorage.setItem("filterRentalsByVehicle", JSON.stringify(vehicle.placa || ''))
       navigate("/locacoes");
     };
 
