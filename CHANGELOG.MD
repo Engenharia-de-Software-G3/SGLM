@@ -212,3 +212,25 @@
 ### Melhorado
 
 -   Tratamento de erros na rota de contratos, retornando 404 Not Found caso o cliente ou o veículo não sejam encontrados antes da criação do contrato.
+
+
+# [0.0.0i] - 13/08/2025
+
+### Adicionado
+
+-   **Implementação do schema e da API para Manutenções.**
+    -   Nova coleção `manutencoes` no Firestore para armazenar os documentos de manutenções.
+    -   Criação do arquivo `src/scripts/firestore/firestoreContratos.js` com a função `criarContratoJuridico`. Esta função é responsável por:
+        -   Salvar o objeto da manutenção na nova coleção `manutencoes` do Firestore.
+    -   Criação da rota `POST /manutencoes` no arquivo de roteamento `functions/manutencoes.js`.
+    -   Criação da rota `GET /manutencoes` no arquivo de roteamento `functions/manutencoes.js`.
+    - Criação da rota `DELETE /manutencoes/<idManutencoes>` no arquivo de roteamento `functions/manutencoes.js`.
+
+### Documentação
+
+-   Adição de documentação completa (Docstrings JSDoc) para as novas funções e rotas de manutenções.
+-   Descrição detalhada do schema de manutenções.
+
+### Melhorado
+
+-   Tratamento de erros na rota de manutencoes, retornando 404 Not Found caso o veículo não seja encontrado antes da criação da manutenção.
