@@ -190,3 +190,25 @@
 ### Melhorado
 
 -   Tratamento de erros e respostas HTTP mais específicas para as operações PUT e DELETE de clientes (e.g., 404 para cliente não encontrado).
+
+# [0.0.0h] - 12/08/2025
+
+### Adicionado
+
+-   **Implementação do schema e da API para Contratos Jurídicos.**
+    -   Nova coleção `contratos` no Firestore para armazenar os documentos de contrato.
+    -   Criação do arquivo `src/scripts/firestore/firestoreContratos.js` com a função `criarContratoJuridico`. Esta função é responsável por:
+        -   Buscar os dados completos do cliente e do veículo usando as funções de busca existentes (`buscarClientePorCPF` e `buscarPorChassi`).
+        -   Unir os dados do cliente e do veículo com os termos do contrato fornecidos.
+        -   Salvar o objeto do contrato na nova coleção `contratos` do Firestore.
+    -   Criação da rota `POST /contratos` no arquivo de roteamento `functions/contrato.js`.
+    -   Integração do novo roteador de contratos em `functions/index.js`.
+
+### Documentação
+
+-   Adição de documentação completa (Docstrings JSDoc) para as novas funções e rotas de contratos.
+-   Descrição detalhada do schema de contrato jurídico, incluindo a união dos dados de cliente e veículo com os termos do contrato.
+
+### Melhorado
+
+-   Tratamento de erros na rota de contratos, retornando 404 Not Found caso o cliente ou o veículo não sejam encontrados antes da criação do contrato.
