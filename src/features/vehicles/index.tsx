@@ -1,3 +1,4 @@
+// Refactored file: /home/user/Documentos/es/SGLM/src/features/vehicles/index.tsx
 import { useState, useEffect } from 'react';
 import { Car, Edit, FileText, Plus } from 'lucide-react';
 import { Layout } from '../../shared/components/layout';
@@ -14,94 +15,65 @@ import { useNavigate } from 'react-router-dom';
 import { EditVehicleModal } from './components/edit-vehicle-modal';
 import { statusColorMap } from '@/lib/utils';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
-import type { VehicleEdit } from './components/edit-vehicle-modal/@types';
+
+interface VehicleEdit extends VeiculoFormulario {
+  id: number;
+  statusColor: string;
+}
 
 export const Vehicles = () => {
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<VehicleEdit[]>([
     {
       id: 1,
-      plate: 'ABC-1234',
-      brand: 'Toyota',
-      model: 'Corolla',
+      marca: 'Toyota',
+      modelo: 'Corolla',
+      placa: 'ABC-1234',
+      ano: '2022',
+      cor: 'Branco',
+      chassi: '9BWHE21JX24060831',
+      quilometragemAtual: '45000',
+      quilometragemCompra: '20000',
+      dataCompra: '2022-01-15',
+      local: '',
+      nome: '',
+      observacoes: '',
       status: 'Disponível',
       statusColor: statusColorMap['Disponível'],
-      year: 2022,
-      color: 'Branco',
-      fuel: 'Flex',
-      category: 'Sedan',
-      currentMileage: 45000,
-      dailyRate: 120,
-      initialMileage: 20000,
-      renavam: '12345678901',
-      chassis: '9BWHE21JX24060831',
-      engine: '2.0 16V',
-      doors: 4,
-      seats: 5,
-      transmission: 'Automático',
-      acquisitionDate: '2022-01-15',
-      acquisitionValue: 85000,
-      insuranceCompany: 'Porto Seguro',
-      insurancePolicy: 'PS123456789',
-      insuranceExpiry: '2024-12-31',
-      licensePlateExpiry: '2024-08-15',
-      nextMaintenanceKm: 50000,
     },
     {
       id: 2,
-      plate: 'XXX-002',
-      brand: 'Honda',
-      model: 'Fan 150',
+      marca: 'Honda',
+      modelo: 'Fan 150',
+      placa: 'XXX-002',
+      ano: '2021',
+      cor: 'Vermelho',
+      chassi: '9BWHE21JX24060832',
+      quilometragemAtual: '25000',
+      quilometragemCompra: '10000',
+      dataCompra: '2021-06-10',
+      local: '',
+      nome: '',
+      observacoes: '',
       status: 'Manutenção',
       statusColor: statusColorMap['Manutenção'],
-      year: 2021,
-      color: 'Vermelho',
-      fuel: 'Gasolina',
-      category: 'Moto',
-      currentMileage: 25000,
-      dailyRate: 80,
-      initialMileage: 10000,
-      renavam: '98765432109',
-      chassis: '9BWHE21JX24060832',
-      engine: '150cc',
-      doors: 0,
-      seats: 2,
-      transmission: 'Manual',
-      acquisitionDate: '2021-06-10',
-      acquisitionValue: 15000,
-      insuranceCompany: 'Porto Seguro',
-      insurancePolicy: 'PS987654321',
-      insuranceExpiry: '2024-11-30',
-      licensePlateExpiry: '2024-07-20',
-      nextMaintenanceKm: 30000,
     },
     {
       id: 3,
-      plate: 'XXX-003',
-      brand: 'Yamaha',
-      model: 'Scooter',
+      marca: 'Yamaha',
+      modelo: 'Scooter',
+      placa: 'XXX-003',
+      ano: '2023',
+      cor: 'Azul',
+      chassi: '9BWHE21JX24060833',
+      quilometragemAtual: '15000',
+      quilometragemCompra: '5000',
+      dataCompra: '2023-03-05',
+      local: '',
+      nome: '',
+      observacoes: '',
       status: 'Disponível',
       statusColor: statusColorMap['Disponível'],
-      year: 2023,
-      color: 'Azul',
-      fuel: 'Gasolina',
-      category: 'Moto',
-      currentMileage: 15000,
-      dailyRate: 60,
-      initialMileage: 5000,
-      renavam: '45678912345',
-      chassis: '9BWHE21JX24060833',
-      engine: '125cc',
-      doors: 0,
-      seats: 2,
-      transmission: 'Automático',
-      acquisitionDate: '2023-03-05',
-      acquisitionValue: 12000,
-      insuranceCompany: 'Porto Seguro',
-      insurancePolicy: 'PS456789123',
-      insuranceExpiry: '2025-01-15',
-      licensePlateExpiry: '2024-09-10',
-      nextMaintenanceKm: 20000,
     },
   ]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,41 +100,27 @@ export const Vehicles = () => {
   const handleEditSave = (data: VeiculoFormulario) => {
     if (vehicleToEdit) {
       console.log('Received form data:', data);
-      console.log('Data status:', data.status);
-      console.log('Vehicle to edit status:', vehicleToEdit.status);
       if (!data.status || !['Disponível', 'Locado', 'Manutenção'].includes(data.status)) {
         console.error('Error: Invalid or missing status');
         return;
       }
       const status = data.status;
-      console.log('Selected status:', status);
-      const updatedVehicle = {
+      const updatedVehicle: VehicleEdit = {
         ...vehicleToEdit,
-        brand: data.marca,
-        model: data.modelo,
-        plate: data.placa,
+        marca: data.marca,
+        modelo: data.modelo,
+        placa: data.placa,
+        ano: data.ano,
+        cor: data.cor,
+        chassi: data.chassi,
+        quilometragemAtual: data.quilometragemAtual,
+        quilometragemCompra: data.quilometragemCompra,
+        dataCompra: data.dataCompra,
+        local: data.local,
+        nome: data.nome,
+        observacoes: data.observacoes,
         status,
         statusColor: statusColorMap[status] || 'bg-gray-100 text-gray-800',
-        year: Number(data.ano),
-        color: data.cor,
-        fuel: data.combustivel,
-        category: data.categoria,
-        currentMileage: Number(data.quilometragemAtual),
-        dailyRate: Number(data.valorDiario),
-        initialMileage: Number(data.quilometragemCompra) || vehicleToEdit.initialMileage,
-        renavam: data.renavam,
-        chassis: data.chassi,
-        engine: data.motor,
-        doors: Number(data.portas),
-        seats: Number(data.assentos),
-        transmission: data.transmissao,
-        acquisitionDate: data.dataCompra || vehicleToEdit.acquisitionDate,
-        acquisitionValue: Number(data.valorDiario) * 365,
-        insuranceCompany: vehicleToEdit.insuranceCompany,
-        insurancePolicy: data.numeroDocumento || vehicleToEdit.insurancePolicy,
-        insuranceExpiry: vehicleToEdit.insuranceExpiry,
-        licensePlateExpiry: vehicleToEdit.licensePlateExpiry,
-        nextMaintenanceKm: Number(data.proximaManutencao),
       };
       console.log('Updating vehicle:', updatedVehicle);
       setVehicles((prev) => {
@@ -192,31 +150,20 @@ export const Vehicles = () => {
     }
     const newVehicle: VehicleEdit = {
       id: vehicles.length + 1,
-      plate: data.placa,
-      brand: data.marca,
-      model: data.modelo,
+      marca: data.marca,
+      modelo: data.modelo,
+      placa: data.placa,
+      ano: data.ano,
+      cor: data.cor,
+      chassi: data.chassi,
+      quilometragemAtual: data.quilometragemAtual,
+      quilometragemCompra: data.quilometragemCompra,
+      dataCompra: data.dataCompra,
+      local: data.local,
+      nome: data.nome,
+      observacoes: data.observacoes,
       status: data.status,
       statusColor: statusColorMap[data.status] || 'bg-gray-100 text-gray-800',
-      year: Number(data.ano),
-      color: data.cor,
-      fuel: data.combustivel,
-      category: data.categoria,
-      currentMileage: Number(data.quilometragemAtual),
-      dailyRate: Number(data.valorDiario),
-      initialMileage: Number(data.quilometragemCompra) || 0,
-      renavam: data.renavam,
-      chassis: data.chassi,
-      engine: data.motor,
-      doors: Number(data.portas),
-      seats: Number(data.assentos),
-      transmission: data.transmissao,
-      acquisitionDate: data.dataCompra || new Date().toISOString().split('T')[0],
-      acquisitionValue: Number(data.valorDiario) * 365,
-      insuranceCompany: '',
-      insurancePolicy: data.numeroDocumento || '',
-      insuranceExpiry: '',
-      licensePlateExpiry: '',
-      nextMaintenanceKm: Number(data.proximaManutencao),
     };
     setVehicles((prev) => [...prev, newVehicle]);
     setShowAddModal(false);
@@ -225,9 +172,9 @@ export const Vehicles = () => {
   const filteredVehicles = vehicles.filter((vehicle) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
-      vehicle.plate.toLowerCase().includes(term) ||
-      vehicle.brand.toLowerCase().includes(term) ||
-      vehicle.model.toLowerCase().includes(term);
+      vehicle.placa.toLowerCase().includes(term) ||
+      vehicle.marca.toLowerCase().includes(term) ||
+      vehicle.modelo.toLowerCase().includes(term);
     const matchesStatus = statusFilter === '' || vehicle.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -299,9 +246,9 @@ export const Vehicles = () => {
           key={JSON.stringify(vehicles)} // Atualizado para usar JSON.stringify do estado completo
           data={filteredVehicles}
           columns={[
-            { key: 'brand', title: 'Marca do veículo' },
-            { key: 'model', title: 'Modelo' },
-            { key: 'plate', title: 'Placa' },
+            { key: 'marca', title: 'Marca do veículo' },
+            { key: 'modelo', title: 'Modelo' },
+            { key: 'placa', title: 'Placa' },
             { key: 'status', title: 'Status' },
             { key: 'actions', title: 'Ações' },
           ]}
@@ -312,11 +259,11 @@ export const Vehicles = () => {
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <Car className="w-4 h-4 text-blue-600" />
                   </div>
-                  <div className="font-medium">{vehicle.brand}</div>
+                  <div className="font-medium">{vehicle.marca}</div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.model}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.plate}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.modelo}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.placa}</td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <Badge className={vehicle.statusColor || 'bg-gray-100 text-gray-800'}>
                   {vehicle.status || 'Desconhecido'}

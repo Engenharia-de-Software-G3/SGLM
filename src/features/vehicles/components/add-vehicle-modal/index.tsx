@@ -19,23 +19,23 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     marca: '',
     modelo: '',
     placa: '',
+    ano: '',
     cor: '',
-    renavam: '',
     chassi: '',
     quilometragemAtual: '',
     quilometragemCompra: '',
-    nome: '',
-    local: '',
     dataCompra: '',
+    local: '',
+    nome: '',
     observacoes: '',
+    status: 'Disponível',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleChange = (
-    e:
-      | ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      | { target: { id: string; value: string } },
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { id: string; value: string } },
   ) => {
     const { id, value } = 'target' in e ? e.target : e;
     let maskedValue = value;
@@ -47,26 +47,33 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     setFormData((prev) => ({ ...prev, [id]: maskedValue }));
   };
 
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+    console.log('Arquivo selecionado:', file);
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Aqui você pode validar o formulário antes de enviar
     setErrors({});
-    onSubmit(formData);
+    onSubmit({ ...formData, arquivo: selectedFile }); // Include file in submission
     onOpenChange(false);
     setFormData({
       marca: '',
       modelo: '',
       placa: '',
+      ano: '',
       cor: '',
-      renavam: '',
       chassi: '',
       quilometragemAtual: '',
       quilometragemCompra: '',
-      nome: '',
-      local: '',
       dataCompra: '',
+      local: '',
+      nome: '',
       observacoes: '',
+      status: 'Disponível',
     });
+    setSelectedFile(null);
   };
 
   return (
@@ -110,24 +117,24 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cor">Cor</Label>
+              <Label htmlFor="ano">Ano</Label>
               <Input
-                id="cor"
-                value={formData.cor}
+                id="ano"
+                value={formData.ano}
                 onChange={handleChange}
-                placeholder="Insira a cor do veículo"
+                placeholder="Insira o ano do veículo"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="renavam">RENAVAM</Label>
+              <Label htmlFor="cor">Cor</Label>
               <Input
-                id="renavam"
-                value={formData.renavam}
+                id="cor"
+                value={formData.cor}
                 onChange={handleChange}
-                placeholder="Insira o RENAVAM"
+                placeholder="Insira a cor do veículo"
               />
             </div>
             <div className="space-y-2">
@@ -148,7 +155,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
                 id="quilometragemAtual"
                 value={formData.quilometragemAtual}
                 onChange={handleChange}
-                placeholder="Insira a quilometragem"
+                placeholder="Insira a quilometragem atual"
               />
             </div>
             <div className="space-y-2">
@@ -157,19 +164,9 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
                 id="quilometragemCompra"
                 value={formData.quilometragemCompra}
                 onChange={handleChange}
-                placeholder="Insira a quilometragem"
+                placeholder="Insira a quilometragem na compra"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              value={formData.nome}
-              onChange={handleChange}
-              placeholder="Insira o nome do dono do veículo"
-            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -179,7 +176,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
                 id="local"
                 value={formData.local}
                 onChange={handleChange}
-                placeholder="Insira o local da compra"
+                placeholder="Insira o local"
               />
             </div>
             <div className="space-y-2">
@@ -195,12 +192,22 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="nome">Nome</Label>
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={handleChange}
+              placeholder="Insira o nome"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="observacoes">Observações</Label>
             <textarea
               id="observacoes"
               value={formData.observacoes}
               onChange={handleChange}
-              placeholder="Insira informações adicionais"
+              placeholder="Insira observações"
               className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-none"
             />
           </div>
@@ -214,7 +221,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               className="hidden"
-              onChange={(e) => console.log('Arquivo selecionado:', e.target.files?.[0])}
+              onChange={handleFileChange}
             />
           </Label>
 
