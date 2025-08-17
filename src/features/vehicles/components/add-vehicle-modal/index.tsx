@@ -7,13 +7,6 @@ import { CloudUpload } from 'lucide-react';
 import type { AddVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
 
-function maskData(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
-  return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
-}
-
 export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModalProps) => {
   const [formData, setFormData] = useState<VeiculoFormulario>({
     marca: '',
@@ -40,8 +33,19 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     const { id, value } = 'target' in e ? e.target : e;
     let maskedValue = value;
 
+    // Máscara Fabricação/Modelo AAAA/YYYY
+    if (id === 'ano') {
+      let val = value.replace(/\D/g, '').slice(0, 8);
+      if (val.length > 4) val = val.slice(0, 4) + '/' + val.slice(4);
+      maskedValue = val;
+    }
+
+    // Máscara Data Compra DD/MM/YYYY
     if (id === 'dataCompra') {
-      maskedValue = maskData(value);
+      const digits = value.replace(/\D/g, '').slice(0, 8);
+      if (digits.length <= 2) maskedValue = digits;
+      else if (digits.length <= 4) maskedValue = digits.slice(0, 2) + '/' + digits.slice(2);
+      else maskedValue = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
     }
 
     setFormData((prev) => ({ ...prev, [id]: maskedValue }));
@@ -50,13 +54,12 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
-    console.log('Arquivo selecionado:', file);
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setErrors({});
-    onSubmit({ ...formData, arquivo: selectedFile }); // Include file in submission
+    onSubmit({ ...formData, arquivo: selectedFile });
     onOpenChange(false);
     setFormData({
       marca: '',
@@ -88,117 +91,61 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>
-              <Input
-                id="marca"
-                value={formData.marca}
-                onChange={handleChange}
-                placeholder="Insira a marca do veículo"
-              />
+              <Input id="marca" value={formData.marca} onChange={handleChange} placeholder="Marca do veículo" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="modelo">Modelo</Label>
-              <Input
-                id="modelo"
-                value={formData.modelo}
-                onChange={handleChange}
-                placeholder="Insira o modelo do veículo"
-              />
+              <Input id="modelo" value={formData.modelo} onChange={handleChange} placeholder="Modelo do veículo" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa</Label>
-              <Input
-                id="placa"
-                value={formData.placa}
-                onChange={handleChange}
-                placeholder="Insira a placa do veículo"
-              />
+              <Input id="placa" value={formData.placa} onChange={handleChange} placeholder="Placa do veículo" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ano">Ano</Label>
-              <Input
-                id="ano"
-                value={formData.ano}
-                onChange={handleChange}
-                placeholder="Insira o ano do veículo"
-              />
+              <Label htmlFor="ano">Fabricação/Modelo</Label>
+              <Input id="ano" value={formData.ano} onChange={handleChange} placeholder="AAAA/YYYY" maxLength={9} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cor">Cor</Label>
-              <Input
-                id="cor"
-                value={formData.cor}
-                onChange={handleChange}
-                placeholder="Insira a cor do veículo"
-              />
+              <Input id="cor" value={formData.cor} onChange={handleChange} placeholder="Cor do veículo" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="chassi">Chassi</Label>
-              <Input
-                id="chassi"
-                value={formData.chassi}
-                onChange={handleChange}
-                placeholder="Insira o chassi"
-              />
+              <Input id="chassi" value={formData.chassi} onChange={handleChange} placeholder="Número do chassi" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quilometragemAtual">Quilometragem Atual</Label>
-              <Input
-                id="quilometragemAtual"
-                value={formData.quilometragemAtual}
-                onChange={handleChange}
-                placeholder="Insira a quilometragem atual"
-              />
+              <Input id="quilometragemAtual" value={formData.quilometragemAtual} onChange={handleChange} placeholder="KM atual" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="quilometragemCompra">Quilometragem na Compra</Label>
-              <Input
-                id="quilometragemCompra"
-                value={formData.quilometragemCompra}
-                onChange={handleChange}
-                placeholder="Insira a quilometragem na compra"
-              />
+              <Input id="quilometragemCompra" value={formData.quilometragemCompra} onChange={handleChange} placeholder="KM na compra" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="local">Local</Label>
-              <Input
-                id="local"
-                value={formData.local}
-                onChange={handleChange}
-                placeholder="Insira o local"
-              />
+              <Input id="local" value={formData.local} onChange={handleChange} placeholder="Local do veículo" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataCompra">Data da Compra</Label>
-              <Input
-                id="dataCompra"
-                value={formData.dataCompra}
-                onChange={handleChange}
-                placeholder="DD/MM/YYYY"
-                maxLength={10}
-              />
+              <Input id="dataCompra" value={formData.dataCompra} onChange={handleChange} placeholder="DD/MM/YYYY" maxLength={10} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              value={formData.nome}
-              onChange={handleChange}
-              placeholder="Insira o nome"
-            />
+            <Input id="nome" value={formData.nome} onChange={handleChange} placeholder="Nome do veículo" />
           </div>
 
           <div className="space-y-2">
@@ -207,31 +154,21 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               id="observacoes"
               value={formData.observacoes}
               onChange={handleChange}
-              placeholder="Insira observações"
+              placeholder="Observações adicionais"
               className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-none"
             />
           </div>
 
-          <Label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block hover:border-blue-400 transition">
+          <Label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition">
             <div className="flex justify-center mb-2 text-blue-500">
               <CloudUpload className="w-10 h-10" />
             </div>
             <p className="text-gray-600">Anexe o documento do veículo</p>
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              className="hidden"
-              onChange={handleFileChange}
-            />
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleFileChange} />
           </Label>
 
           <div className="flex space-x-3 pt-4">
-            <Button
-              variant="outline"
-              className="flex-1 text-blue-600 border-blue-600"
-              onClick={() => onOpenChange(false)}
-              type="button"
-            >
+            <Button variant="outline" className="flex-1 text-blue-600 border-blue-600" onClick={() => onOpenChange(false)} type="button">
               Cancelar
             </Button>
             <Button className="flex-1 bg-blue-600 hover:bg-blue-700" type="submit">

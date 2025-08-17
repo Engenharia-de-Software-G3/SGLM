@@ -7,11 +7,19 @@ import { CloudUpload } from 'lucide-react';
 import type { EditVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
 
+// Máscara para data (DD/MM/YYYY)
 function maskData(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   if (digits.length <= 2) return digits;
   if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
   return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+}
+
+// Máscara para Fabricação/Modelo (AAAA/YYYY)
+function maskAnoModelo(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  return digits.slice(0, 4) + '/' + digits.slice(4);
 }
 
 export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehicleModalProps) => {
@@ -55,10 +63,16 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
   }, [vehicle]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | { target: { id: string; value: string } },
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | 
+       { target: { id: string; value: string } },
   ) => {
     const { id, value } = 'target' in e ? e.target : e;
-    const maskedValue = id === 'dataCompra' ? maskData(value) : value;
+
+    const maskedValue =
+      id === 'dataCompra' ? maskData(value) :
+      id === 'ano' ? maskAnoModelo(value) :
+      value;
+
     setFormData((prev) => ({ ...prev, [id]: maskedValue }));
     if (errors[id]) setErrors((prev) => ({ ...prev, [id]: '' }));
   };
@@ -66,7 +80,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
-    console.log('Arquivo selecionado:', file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -107,6 +120,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Marca e Modelo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>
@@ -115,8 +129,8 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                 value={formData.marca}
                 onChange={handleInputChange}
                 className="bg-gray-200 cursor-not-allowed"
+                disabled
               />
-              {errors.marca && <p className="text-sm text-red-500">{errors.marca}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="modelo">Modelo</Label>
@@ -125,37 +139,56 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                 value={formData.modelo}
                 onChange={handleInputChange}
                 className="bg-gray-200 cursor-not-allowed"
+                disabled
               />
-              {errors.modelo && <p className="text-sm text-red-500">{errors.modelo}</p>}
             </div>
           </div>
 
+          {/* Placa e Fabricação/Modelo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa</Label>
-              <Input id="placa" value={formData.placa} onChange={handleInputChange} />
-              {errors.placa && <p className="text-sm text-red-500">{errors.placa}</p>}
+              <Input 
+                id="placa" 
+                value={formData.placa} 
+                onChange={handleInputChange} 
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ano">Ano</Label>
-              <Input id="ano" value={formData.ano} onChange={handleInputChange} />
-              {errors.ano && <p className="text-sm text-red-500">{errors.ano}</p>}
+              <Label htmlFor="ano">Fabricação/Modelo</Label>
+              <Input
+                id="ano"
+                placeholder="AAAA/YYYY"
+                value={formData.ano}
+                onChange={handleInputChange}
+                className="bg-gray-200 cursor-not-allowed"
+                disabled
+              />
             </div>
           </div>
 
+          {/* Cor e Chassi */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cor">Cor</Label>
-              <Input id="cor" value={formData.cor} onChange={handleInputChange} />
-              {errors.cor && <p className="text-sm text-red-500">{errors.cor}</p>}
+              <Input 
+                id="cor" 
+                value={formData.cor} 
+                onChange={handleInputChange} 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="chassi">Chassi</Label>
-              <Input id="chassi" value={formData.chassi} onChange={handleInputChange} />
-              {errors.chassi && <p className="text-sm text-red-500">{errors.chassi}</p>}
+              <Input
+                id="chassi"
+                value={formData.chassi}
+                className="bg-gray-200 cursor-not-allowed"
+                disabled
+              />
             </div>
           </div>
 
+          {/* Quilometragens */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quilometragemAtual">Quilometragem Atual</Label>
@@ -164,9 +197,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                 value={formData.quilometragemAtual}
                 onChange={handleInputChange}
               />
-              {errors.quilometragemAtual && (
-                <p className="text-sm text-red-500">{errors.quilometragemAtual}</p>
-              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="quilometragemCompra">Quilometragem na Compra</Label>
@@ -175,16 +205,18 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                 value={formData.quilometragemCompra}
                 onChange={handleInputChange}
               />
-              {errors.quilometragemCompra && (
-                <p className="text-sm text-red-500">{errors.quilometragemCompra}</p>
-              )}
             </div>
           </div>
 
+          {/* Local e Data */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="local">Local</Label>
-              <Input id="local" value={formData.local} onChange={handleInputChange} />
+              <Input 
+                id="local" 
+                value={formData.local} 
+                onChange={handleInputChange} 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataCompra">Data da Compra</Label>
@@ -194,31 +226,37 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                 value={formData.dataCompra}
                 onChange={handleInputChange}
               />
-              {errors.dataCompra && <p className="text-sm text-red-500">{errors.dataCompra}</p>}
             </div>
           </div>
 
+          {/* Nome e Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome</Label>
-              <Input id="nome" value={formData.nome} onChange={handleInputChange} />
+              <Input 
+                id="nome" 
+                value={formData.nome} 
+                onChange={handleInputChange} 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Disponível">Disponível</option>
-                <option value="Locado">Locado</option>
-                <option value="Manutenção">Manutenção</option>
-              </select>
-              {errors.status && <p className="text-sm text-red-500">{errors.status}</p>}
+              <div className="relative">
+                <select
+                  id="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="w-full h-10 px-3 py-2 border border-input rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="Disponível">Disponível</option>
+                  <option value="Locado">Locado</option>
+                  <option value="Manutenção">Manutenção</option>
+                </select>
+              </div>
             </div>
           </div>
 
+          {/* Observações */}
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observações</Label>
             <textarea
@@ -230,6 +268,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             />
           </div>
 
+          {/* Upload */}
           <Label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block hover:border-blue-400 transition">
             <div className="flex justify-center mb-2 text-blue-500">
               <CloudUpload className="w-10 h-10" />
@@ -243,6 +282,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             />
           </Label>
 
+          {/* Botões */}
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={handleReset}>
               Resetar
