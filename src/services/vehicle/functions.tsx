@@ -1,5 +1,11 @@
-import { api } from "@/lib/axios";
-import { ListManyVehicles, VehicleData } from "./types";
+import { api } from '@/lib/axios';
+import {
+  VehicleData,
+  CreateVehicleInterface,
+  ListManyVehicles,
+  SingleVehicleResponse,
+  UpdateVehicleInterface,
+} from './types';
 import { useQuery } from '@tanstack/react-query';
 
 export async function getVehiclesFunction(): Promise<ListManyVehicles> {
@@ -18,6 +24,42 @@ export async function getVehiclesFunction(): Promise<ListManyVehicles> {
       id: Number(vehicle.id),
     })),
   };
+}
+
+export async function createVehicleFunction(payload: CreateVehicleInterface) {
+  const response = await api.post('/veiculos', payload);
+
+  if (response.status === 201) {
+    return response.data;
+  }
+
+  return null;
+}
+
+export async function getVehicleFunction(id: number) {
+  const response = await api.get(`/veiculos/${id}`);
+
+  return response.data.vehicle as SingleVehicleResponse;
+}
+
+export async function updateVehicleFunction(id: number, payload: UpdateVehicleInterface) {
+  const response = await api.put(`/veiculos/${id}`, payload);
+
+  if (response.status !== 200) {
+    throw new Error('Erro ao atualizar veículo');
+  }
+
+  return null;
+}
+
+export async function deleteVehicleFunction(id: number) {
+  const response = await api.delete(`/veiculos/${id}`);
+
+  if (response.status !== 200) {
+    throw new Error('Erro ao deletar veículo');
+  }
+
+  return null;
 }
 
 export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
@@ -39,19 +81,6 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
   }
 }
 
-export function useVehiclesQuery() {
-  return useQuery({
-    queryKey: ['veiculos'],
-    queryFn: async () => {
-      const response = await api.get('/veiculos');
-      return response.data as ListManyVehicles;
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutos
-  });
-
-  
-}
-
 export async function getVehicleByChassi(chassi: string): Promise<VehicleData> {
   try {
     const response = await api.get('/veiculos', {
@@ -68,4 +97,15 @@ export async function getVehicleByChassi(chassi: string): Promise<VehicleData> {
     console.error('Erro ao buscar veículo por chassi:', error);
     throw new Error('Erro ao buscar veículo por chassi');
   }
+}
+
+export function useVehiclesQuery() {
+  return useQuery({
+    queryKey: ['veiculos'],
+    queryFn: async () => {
+      const response = await api.get('/veiculos');
+      return response.data as ListManyVehicles;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  });
 }

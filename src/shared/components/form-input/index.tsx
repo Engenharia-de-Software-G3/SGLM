@@ -30,41 +30,6 @@ interface FormInputProps<T extends FieldValues> {
   children?: ReactNode | ((props: FieldProps) => ReactNode);
 }
 
-const formatCurrency = (value: string): string => {
-  // Remove tudo exceto números
-  const onlyNumbers = value.replace(/\D/g, '');
-  
-  if (!onlyNumbers) return '';
-  
-  // Converte para centavos e depois para reais
-  const numberValue = parseInt(onlyNumbers, 10) / 100;
-  
-  return numberValue.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
-
-const parseCurrency = (formattedValue: string): number => {
-  const numberString = formattedValue
-    .replace('R$', '')
-    .replace(/\./g, '') // Remove todos os pontos (separadores de milhares)
-    .replace(',', '.')  // Substitui vírgula por ponto
-    .trim();
-  
-  const result = parseFloat(numberString);
-  return isNaN(result) ? 0 : result;
-};
-
-// Função para preservar zeros à direita
-const preserveTrailingZeros = (value: number): number => {
-  // Converte para string com 2 casas decimais para preservar zeros
-  const formatted = value.toFixed(2);
-  return parseFloat(formatted);
-};
-
 export function FormInput<T extends FieldValues>({
   label,
   id,
@@ -119,19 +84,22 @@ export function FormInput<T extends FieldValues>({
             onBlur();
           };
 
-          const displayValue = type === 'number' 
-            ? value ? value.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              }) : ''
-            : value;
+          const displayValue =
+            type === 'number'
+              ? value
+                ? value.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : ''
+              : value;
 
           const fieldProps: FieldProps = {
             id,
             name: fieldName,
-            type: type === 'number' ? 'text' : type, 
+            type: type === 'number' ? 'text' : type,
             placeholder,
             disabled,
             className: `h-10 ${error ? 'border-red-500 focus:border-red-500' : ''} ${className}`,

@@ -43,7 +43,6 @@ export interface LocacaoData {
   dataAtualizacao?: string; // Made optional to align with LocacaoInterface
 }
 
-
 export interface ContractData {
   id: string;
   client: ClientData;
@@ -53,9 +52,42 @@ export interface ContractData {
 
 function numeroExtenso(n: number): string {
   const unidades = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
-  const dezenas = ['', 'dez', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
-  const especiais = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
-  const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  const dezenas = [
+    '',
+    'dez',
+    'vinte',
+    'trinta',
+    'quarenta',
+    'cinquenta',
+    'sessenta',
+    'setenta',
+    'oitenta',
+    'noventa',
+  ];
+  const especiais = [
+    'dez',
+    'onze',
+    'doze',
+    'treze',
+    'quatorze',
+    'quinze',
+    'dezesseis',
+    'dezessete',
+    'dezoito',
+    'dezenove',
+  ];
+  const centenas = [
+    '',
+    'cento',
+    'duzentos',
+    'trezentos',
+    'quatrocentos',
+    'quinhentos',
+    'seiscentos',
+    'setecentos',
+    'oitocentos',
+    'novecentos',
+  ];
 
   if (n === 0) return 'zero';
   if (n < 10) return unidades[n];
@@ -92,10 +124,10 @@ const company = {
 };
 
 const periodMap: Record<string, string> = {
-  'Diária': 'diariamente',
-  'Semanal': 'semanalmente',
-  'Quinzenal': 'quinzenalmente',
-  'Mensal': 'mensalmente',
+  Diária: 'diariamente',
+  Semanal: 'semanalmente',
+  Quinzenal: 'quinzenalmente',
+  Mensal: 'mensalmente',
 };
 
 const template = `
@@ -311,9 +343,10 @@ ___________________________________             ________________________________
                     Testemunha         	            	                           Testemunha  
 `;
 
-
-
-export function generateContractPDF(contractData: ContractData, mode: 'download' | 'open' = 'download') {
+export function generateContractPDF(
+  contractData: ContractData,
+  mode: 'download' | 'open' = 'download',
+) {
   const { client, vehicle, locacao } = contractData;
 
   const valorNumerico = typeof locacao.valor === 'string' ? Number(locacao.valor) : locacao.valor;
@@ -322,7 +355,7 @@ export function generateContractPDF(contractData: ContractData, mode: 'download'
   }
   const valorLocacao = valorNumerico.toFixed(2);
 
-  let filled = template
+  const filled = template
     .replace(/\[Nome da Empresa\]/g, company.nome)
     .replace(/\[Endereço da Empresa\]/g, company.endereco)
     .replace(/\[CNPJ da Empresa\]/g, company.cnpj)
@@ -358,16 +391,16 @@ export function generateContractPDF(contractData: ContractData, mode: 'download'
     .replace(/\[Valor Extenso\]/g, numeroExtenso(valorNumerico) + ' reais')
     .replace(/\[Periodicidade\]/g, periodMap[locacao.periodicidadePagamento] || 'semanalmente');
 
-    const docDefinition: TDocumentDefinitions = {
-      pageMargins: [40, 60, 40, 60], 
-      content: [
-        {
-          text: filled,
-          fontSize: 12,
-          lineHeight: 1.2,
-        },
-      ],
-    };
+  const docDefinition: TDocumentDefinitions = {
+    pageMargins: [40, 60, 40, 60],
+    content: [
+      {
+        text: filled,
+        fontSize: 12,
+        lineHeight: 1.2,
+      },
+    ],
+  };
 
   const pdf = pdfMake.createPdf(docDefinition);
 
