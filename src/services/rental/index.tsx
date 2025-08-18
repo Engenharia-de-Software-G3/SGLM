@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, UseQueryResult, UseMutationResult } from "@tanstack/react-query";
 import { 
   createLocacaoFunction, 
   deleteLocacaoFunction, 
@@ -6,19 +6,19 @@ import {
   getLocacoesFunction, 
   updateLocacaoFunction 
 } from "./functions";
-import { UpdateLocacaoInterface } from "./types";
+import { UpdateLocacaoInterface, ListManyLocacoes, LocacaoInterface, CreateLocacaoInterface } from "./types";
 
-export function useLocacoesQuery() {
+export function useLocacoesQuery():  UseQueryResult<ListManyLocacoes, Error> {
     return useQuery({
         queryKey: ['locacoes'],
         queryFn: getLocacoesFunction,
     });
 }
 
-export function useCreateLocacaoMutation() {
+export function useCreateLocacaoMutation(): UseMutationResult<LocacaoInterface, Error, CreateLocacaoInterface> {
     const queryClient = useQueryClient();
     
-    return useMutation({
+    return useMutation<LocacaoInterface, Error, CreateLocacaoInterface>({
         mutationFn: createLocacaoFunction,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['locacoes'] });
@@ -26,7 +26,7 @@ export function useCreateLocacaoMutation() {
     });
 }
 
-export function useUpdateLocacaoMutation() {
+export function useUpdateLocacaoMutation():  UseMutationResult<LocacaoInterface, Error, {id: string, payload: UpdateLocacaoInterface}> {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -38,17 +38,17 @@ export function useUpdateLocacaoMutation() {
     });
 }
 
-export function useGetLocacaoQuery(id: string) {
+export function useGetLocacaoQuery(id: string): UseQueryResult<LocacaoInterface, Error> {
     return useQuery({
         queryKey: ['locacao', id],
         queryFn: () => getLocacaoFunction(id),
     });
 }
 
-export function useDeleteLocacaoMutation() {
+export function useDeleteLocacaoMutation(): UseMutationResult<void, Error, string> {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation<void, Error, string>({
         mutationFn: deleteLocacaoFunction,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['locacoes'] });
