@@ -9,12 +9,12 @@ import { useGetLocacaoQuery } from '@/services/rental';
 import { toast } from 'sonner';
 import { useClientsQuery } from '@/services/client';
 import { LocacaoData, ClientData, VehicleData } from '@/lib/generateContractPDF';
-import { useVehiclesQuery } from '@/services/vehicle/functions';
+import { useVehiclesQuery } from '@/services/vehicle';
 
 function toProfileData(
   locacao: LocacaoData,
   client: ClientData | null,
-  vehicle: VehicleData | null
+  vehicle: VehicleData | null,
 ): RentalInfoCardData {
   return {
     locatario: client?.nomeCompleto || locacao.nomeLocatario || '',
@@ -48,7 +48,6 @@ export const RentalProfile = () => {
   const { data: clientsData } = useClientsQuery();
   const { data: vehiclesData } = useVehiclesQuery();
 
-
   const client = useMemo(() => {
     if (!locacaoData || !clientsData) return null;
     const cleanCpf = locacaoData.clienteId.replace(/\D/g, '');
@@ -58,7 +57,9 @@ export const RentalProfile = () => {
   const vehicle = useMemo(() => {
     if (!locacaoData || !vehiclesData?.vehicles) return null;
     const cleanPlaca = locacaoData.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    return vehiclesData.vehicles.find((v: VehicleData) => v.placa.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanPlaca);
+    return vehiclesData.vehicles.find(
+      (v: VehicleData) => v.placa.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanPlaca,
+    );
   }, [locacaoData, vehiclesData]);
 
   const rentalData = useMemo(() => {
@@ -114,5 +115,3 @@ export const RentalProfile = () => {
     </Layout>
   );
 };
-
-

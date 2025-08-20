@@ -47,7 +47,7 @@ const routes = [
     protected: true,
   },
   {
-    path: '/veiculos/:veiculoId',
+    path: '/veiculos/:chassi',
     element: <VehicleProfile />,
     protected: true,
   },

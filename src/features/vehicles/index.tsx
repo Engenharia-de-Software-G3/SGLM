@@ -1,4 +1,3 @@
-// Refactored file: /home/user/Documentos/es/SGLM/src/features/vehicles/index.tsx
 import { useState, useEffect } from 'react';
 import { Car, Edit, FileText, Plus } from 'lucide-react';
 import { Layout } from '../../shared/components/layout';
@@ -8,7 +7,6 @@ import { SearchBar } from '@/shared/components/display-table/components/search-b
 import { ActionButton } from '@/shared/components/display-table/components/action-button';
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { Badge } from '@/components/ui/badge';
-import { VehicleActionDialog } from './components/vehicle-action-dialog';
 import { AddVehicleModal } from './components/add-vehicle-modal';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -78,8 +76,6 @@ export const Vehicles = () => {
   ]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showActionDialog, setShowActionDialog] = useState(false);
-  const [selectedVehicle] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState<VehicleEdit | null>(null);
@@ -291,12 +287,6 @@ export const Vehicles = () => {
           )}
         />
       </div>
-
-      <VehicleActionDialog
-        isOpen={showActionDialog}
-        onClose={() => setShowActionDialog(false)}
-        vehicleId={selectedVehicle ?? null}
-      />
 
       <AddVehicleModal
         open={showAddModal}

@@ -10,28 +10,31 @@ import { VehicleActionDialog } from './components/vehicle-action-dialog';
 import { useGetVehicleQuery, useGetVehicleActivitiesQuery } from '@/services/vehicle';
 
 export const VehicleProfile = () => {
-  const { vehicleId } = useParams<{ vehicleId: string }>();
+  const { chassi } = useParams<{ chassi: string }>();
   const navigate = useNavigate();
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
 
+  // Buscar dados do veículo
   const {
     data: vehicle,
     isLoading: isLoadingVehicle,
     error: vehicleError,
-  } = useGetVehicleQuery(Number(vehicleId));
+  } = useGetVehicleQuery(chassi || '');
 
+  // Buscar atividades do veículo
   const {
-    data: activities,
+    data: activities = [], // Valor padrão para evitar undefined
     isLoading: isLoadingActivities,
-    error: activitiesError,
-  } = useGetVehicleActivitiesQuery(Number(vehicleId));
+  } = useGetVehicleActivitiesQuery(chassi || '');
 
   const filterByVehicle = () => {
-    localStorage.setItem('filterRentalsByVehicle', JSON.stringify(vehicle?.placa || ''));
-    navigate('/locacoes');
+    if (vehicle?.placa) {
+      localStorage.setItem('filterRentalsByVehicle', JSON.stringify(vehicle.placa));
+      navigate('/locacoes');
+    }
   };
 
-  if (isLoadingVehicle || isLoadingActivities) {
+  if (isLoadingVehicle) {
     return (
       <Layout>
         <ReturnHeader title="Perfil do Veículo" onBack={() => navigate('/veiculos')} />
@@ -43,11 +46,18 @@ export const VehicleProfile = () => {
   }
 
   if (vehicleError || !vehicle) {
+    console.error('❌ Vehicle error:', vehicleError);
+    console.error('❌ Chassi used:', chassi);
+
     return (
       <Layout>
         <ReturnHeader title="Perfil do Veículo" onBack={() => navigate('/veiculos')} />
         <div className="p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados do veículo</p>
+          <p className="text-red-600 mb-2">Erro ao carregar dados do veículo</p>
+          <p className="text-gray-600 text-sm">Chassi: {chassi || 'não fornecido'}</p>
+          <p className="text-gray-600 text-sm">
+            Erro: {vehicleError?.message || 'Erro desconhecido'}
+          </p>
         </div>
       </Layout>
     );
@@ -81,22 +91,18 @@ export const VehicleProfile = () => {
             quilometragemAtual={vehicle.quilometragem || '0'}
           />
 
-          {activitiesError ? (
-            <div className="mt-4 text-red-600">Erro ao carregar atividades recentes</div>
-          ) : (
-            <VehicleRecentActivitiesCard
-              activities={activities || []}
-              onFilterByVehicle={filterByVehicle}
-              isLoading={isLoadingActivities}
-            />
-          )}
+          <VehicleRecentActivitiesCard
+            activities={activities}
+            isLoading={isLoadingActivities} // Passando isLoading das atividades
+          />
         </div>
       </div>
 
       <VehicleActionDialog
         isOpen={isActionDialogOpen}
         onClose={() => setIsActionDialogOpen(false)}
-        vehicleId={Number(vehicleId)}
+        vehicleId={chassi || ''}
+        onFilterByVehicle={filterByVehicle}
       />
     </Layout>
   );
