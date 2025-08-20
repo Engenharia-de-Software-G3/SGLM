@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Calendar, Clock } from 'lucide-react';
 
 interface VehicleActivity {
@@ -11,9 +12,13 @@ interface VehicleActivity {
 
 interface VehicleRecentActivitiesCardProps {
   activities: VehicleActivity[];
+  onFilterByVehicle: () => void;
 }
 
-export const VehicleRecentActivitiesCard = ({ activities }: VehicleRecentActivitiesCardProps) => {
+export const VehicleRecentActivitiesCard = ({
+  activities,
+  onFilterByVehicle,
+}: VehicleRecentActivitiesCardProps) => {
   return (
     <Card>
       <CardHeader>
@@ -39,6 +44,12 @@ export const VehicleRecentActivitiesCard = ({ activities }: VehicleRecentActivit
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <Button onClick={onFilterByVehicle} className="bg-blue-600 hover:bg-blue-700 w-full">
+            Ver histórico de locações do veículo
+          </Button>
         </div>
       </CardContent>
     </Card>

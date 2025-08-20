@@ -91,7 +91,6 @@ export const Vehicles = () => {
   const handleEdit = (id: number) => {
     const vehicle = vehicles.find((v) => v.id === id);
     if (vehicle) {
-      console.log('Vehicle to edit:', vehicle);
       setVehicleToEdit(vehicle);
       setShowEditModal(true);
     }
@@ -99,7 +98,6 @@ export const Vehicles = () => {
 
   const handleEditSave = (data: VeiculoFormulario) => {
     if (vehicleToEdit) {
-      console.log('Received form data:', data);
       if (!data.status || !['Disponível', 'Locado', 'Manutenção'].includes(data.status)) {
         console.error('Error: Invalid or missing status');
         return;
@@ -122,14 +120,9 @@ export const Vehicles = () => {
         status,
         statusColor: statusColorMap[status] || 'bg-gray-100 text-gray-800',
       };
-      console.log('Updating vehicle:', updatedVehicle);
-      setVehicles((prev) => {
-        const newVehicles = prev.map((vehicle) =>
-          vehicle.id === vehicleToEdit.id ? updatedVehicle : vehicle,
-        );
-        console.log('New vehicles state:', newVehicles);
-        return [...newVehicles];
-      });
+      setVehicles((prev) =>
+        prev.map((vehicle) => (vehicle.id === vehicleToEdit.id ? updatedVehicle : vehicle)),
+      );
       setShowEditModal(false);
       setVehicleToEdit(null);
     }
@@ -178,9 +171,6 @@ export const Vehicles = () => {
     const matchesStatus = statusFilter === '' || vehicle.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  console.log('Rendering with filteredVehicles:', filteredVehicles);
-  console.log('Current statusFilter:', statusFilter);
 
   return (
     <Layout title="Gerenciamento de Veículos" subtitle="Veja a lista de todos os seus veículos">
@@ -243,7 +233,7 @@ export const Vehicles = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
-          key={JSON.stringify(vehicles)} // Atualizado para usar JSON.stringify do estado completo
+          key={vehicles.length} // Simplificado para reagir a mudanças no array
           data={filteredVehicles}
           columns={[
             { key: 'marca', title: 'Marca do veículo' },
@@ -262,7 +252,9 @@ export const Vehicles = () => {
                   <div className="font-medium">{vehicle.marca}</div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.modelo}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {vehicle.modelo}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.placa}</td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <Badge className={vehicle.statusColor || 'bg-gray-100 text-gray-800'}>
