@@ -20,9 +20,11 @@ export async function getLocacoesFunction(): Promise<ListManyLocacoes> {
     // Suporte a diferentes formatos de resposta
     let locacoesRaw: LocacaoInterface[] = [];
     let ultimoDoc: string | null = null;
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Array.isArray((raw as any)?.locacoes)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         locacoesRaw = (raw as any).locacoes;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ultimoDoc = (raw as any).ultimoDoc ?? null;
     } else if (Array.isArray(raw)) {
         locacoesRaw = raw;
