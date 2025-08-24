@@ -8,7 +8,7 @@ interface VehicleInfoCardProps {
   placa: string;
   ano: string;
   cor: string;
-  status: 'Disponível' | 'Locado' | 'Manutenção';
+  status: string;
   quilometragemAtual: string;
 }
 
@@ -23,11 +23,11 @@ export const VehicleInfoCard = ({
 }: VehicleInfoCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Disponível':
+      case 'disponivel':
         return 'bg-green-100 text-green-800';
-      case 'Locado':
+      case 'vendido':
         return 'bg-blue-100 text-blue-800';
-      case 'Manutenção':
+      case 'locado':
         return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -36,12 +36,12 @@ export const VehicleInfoCard = ({
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'Disponível':
+      case 'vendido':
+        return 'Vendido';
+      case 'disponivel':
         return 'Disponível';
-      case 'Locado':
+      case 'locado':
         return 'Locado';
-      case 'Manutenção':
-        return 'Manutenção';
       default:
         return 'Desconhecido';
     }

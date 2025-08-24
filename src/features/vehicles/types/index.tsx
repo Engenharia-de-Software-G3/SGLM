@@ -1,3 +1,5 @@
+import { StatusVehicle } from "@/services/vehicle/types";
+
 export interface VeiculoFormulario {
   marca: string;
   modelo: string;
@@ -11,6 +13,6 @@ export interface VeiculoFormulario {
   local: string;
   nome: string;
   observacoes: string;
-  status: 'Disponível' | 'Locado' | 'Manutenção';
+  status: StatusVehicle;
   arquivo?: File | null;
 }

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { CloudUpload } from 'lucide-react';
 import type { EditVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
+import { StatusVehicle } from '@/services/vehicle/types';
 
 // Máscara para data (DD/MM/YYYY)
 function maskData(value: string) {
@@ -36,7 +37,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
     local: '',
     nome: '',
     observacoes: '',
-    status: 'Disponível',
+    status: 'disponivel',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,17 +49,17 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         marca: vehicle.marca || '',
         modelo: vehicle.modelo || '',
         placa: vehicle.placa || '',
-        ano: vehicle.ano?.toString() || '',
-        cor: vehicle.cor || '',
+        ano: vehicle.anoModelo.fabricacao?.toString() || '',
+        cor: 'nao implementado',
         chassi: vehicle.chassi || '',
-        quilometragemAtual: vehicle.quilometragemAtual?.toString() || '',
-        quilometragemCompra: vehicle.quilometragemCompra?.toString() || '',
+        quilometragemAtual: vehicle.quilometragem?.toString() || '',
+        quilometragemCompra: vehicle.quilometragemNaCompra?.toString() || '',
         dataCompra: vehicle.dataCompra || '',
         local: vehicle.local || '',
         nome: vehicle.nome || '',
         observacoes: vehicle.observacoes || '',
-        status: vehicle.status || 'Disponível',
-      });
+        status: vehicle.status as StatusVehicle,
+      }); 
     }
   }, [vehicle]);
 
@@ -85,6 +86,8 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    console.log({ formData, selectedFile})
     onSave({ ...formData, arquivo: selectedFile });
     onClose();
     setSelectedFile(null);
@@ -96,21 +99,25 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         marca: vehicle.marca || '',
         modelo: vehicle.modelo || '',
         placa: vehicle.placa || '',
-        ano: vehicle.ano?.toString() || '',
-        cor: vehicle.cor || '',
+        ano: vehicle.anoModelo.fabricacao?.toString() || '',
+        cor: 'nao implementado',
         chassi: vehicle.chassi || '',
-        quilometragemAtual: vehicle.quilometragemAtual?.toString() || '',
-        quilometragemCompra: vehicle.quilometragemCompra?.toString() || '',
+        quilometragemAtual: vehicle.quilometragem?.toString() || '',
+        quilometragemCompra: vehicle.quilometragemNaCompra?.toString() || '',
         dataCompra: vehicle.dataCompra || '',
         local: vehicle.local || '',
         nome: vehicle.nome || '',
         observacoes: vehicle.observacoes || '',
-        status: vehicle.status || 'Disponível',
+        status: vehicle.status as 'disponivel' | 'locado' | 'vendido',
       });
     }
     setErrors({});
     setSelectedFile(null);
   };
+
+  useEffect(() => {
+    console.log({formData})
+  }, [formData])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -248,9 +255,9 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                   onChange={handleInputChange}
                   className="w-full h-10 px-3 py-2 border border-input rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  <option value="Disponível">Disponível</option>
-                  <option value="Locado">Locado</option>
-                  <option value="Manutenção">Manutenção</option>
+                  <option value="disponivel">Disponível</option>
+                  <option value="locado">Locado</option>
+                  <option value="vendido">Vendido</option>
                 </select>
               </div>
             </div>

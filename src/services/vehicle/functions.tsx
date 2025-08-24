@@ -7,24 +7,6 @@ import {
   UpdateVehicleInterface,
 } from './types';
 
-// Interface for raw vehicle data from the backend
-interface RawVehicle {
-  id: string | number;
-  placa: string;
-  marca: string;
-  modelo: string;
-  ano?: string;
-  anoModelo?: {
-    fabricacao?: number;
-    modelo?: number;
-  };
-  cor: string;
-  chassi: string;
-  renavam?: string;
-  motor?: string;
-  quilometragem?: number;
-}
-
 function convertDateToISO(dateString: string): string {
   if (!dateString) return new Date().toISOString();
 
@@ -44,7 +26,6 @@ function parseAno(anoString: string): { fabricacao: number; modelo: number } {
 
 export async function getVehiclesFunction(): Promise<ListManyVehicles> {
   try {
-    console.log('🚗 Fetching vehicles from:', import.meta.env.VITE_API_URL);
     const response = await api.get('/veiculos');
 
     if (response.status !== 200) {
@@ -52,29 +33,8 @@ export async function getVehiclesFunction(): Promise<ListManyVehicles> {
     }
 
     const data = response.data;
-    console.log('📊 Raw API response:', data);
 
-    const vehicles = (data.veiculos || []).map((vehicle: RawVehicle) => ({
-      id: vehicle.id,
-      placa: vehicle.placa,
-      marca: vehicle.marca,
-      modelo: vehicle.modelo,
-      ano: vehicle.anoModelo
-        ? `${vehicle.anoModelo.fabricacao || ''}/${vehicle.anoModelo.modelo || ''}`
-        : vehicle.ano || '',
-      cor: vehicle.cor,
-      chassi: vehicle.chassi,
-      renavam: vehicle.renavam,
-      motor: vehicle.motor,
-      quilometragem: vehicle.quilometragem?.toString() || '0',
-    }));
-
-    console.log('✅ Mapped vehicles:', vehicles);
-
-    return {
-      vehicles,
-      ultimoDoc: data.paginacao?.proximoDocId || null,
-    };
+    return data as ListManyVehicles;
   } catch (error) {
     console.error('❌ Error fetching vehicles:', error);
     throw error;
@@ -85,7 +45,7 @@ export async function createVehicleFunction(payload: CreateVehicleInterface) {
   try {
     console.log('➕ Creating vehicle with payload:', payload);
 
-    const anoData = parseAno(payload.ano);
+    const anoData = parseAno(payload.anoModelo.fabricacao);
 
     const backendPayload = {
       chassi: payload.chassi,
@@ -95,10 +55,10 @@ export async function createVehicleFunction(payload: CreateVehicleInterface) {
       renavam: payload.renavam || '',
       anoFabricacao: anoData.fabricacao,
       anoModelo: anoData.modelo,
-      quilometragem: parseInt(payload.quilometragemAtual) || 0,
-      quilometragemNaCompra: parseInt(payload.quilometragemCompra) || 0,
+      quilometragem: parseInt(payload.quilometragem) || 0,
+      quilometragemNaCompra: parseInt(payload.quilometragemNaCompra) || 0,
       dataCompra: convertDateToISO(payload.dataCompra),
-      cor: payload.cor,
+      cor: payload,
       local: payload.local || '',
       nome: payload.nome || '',
       observacoes: payload.observacoes || '',
@@ -139,25 +99,9 @@ export async function getVehicleFunction(chassi: string) {
       throw new Error('Veículo não encontrado');
     }
 
-    const vehicle: RawVehicle = response.data.veiculos[0];
+    const vehicle: VehicleData = response.data.veiculos[0];
 
-    const mappedVehicle = {
-      id: vehicle.id,
-      placa: vehicle.placa,
-      marca: vehicle.marca,
-      modelo: vehicle.modelo,
-      ano: vehicle.anoModelo
-        ? `${vehicle.anoModelo.fabricacao || ''}/${vehicle.anoModelo.modelo || ''}`
-        : vehicle.ano || '',
-      cor: vehicle.cor,
-      chassi: vehicle.chassi,
-      renavam: vehicle.renavam,
-      motor: vehicle.motor,
-      quilometragem: vehicle.quilometragem?.toString() || '0',
-    };
-
-    console.log('✅ Mapped vehicle:', mappedVehicle);
-    return mappedVehicle as SingleVehicleResponse;
+    return vehicle as SingleVehicleResponse;
   } catch (error) {
     console.error('❌ Error fetching vehicle by chassi:', error);
     throw error;
@@ -214,21 +158,8 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
       throw new Error('Veículo não encontrado');
     }
 
-    const vehicle: RawVehicle = data.veiculos[0];
-    return {
-      id: vehicle.id,
-      placa: vehicle.placa,
-      marca: vehicle.marca,
-      modelo: vehicle.modelo,
-      ano: vehicle.anoModelo
-        ? `${vehicle.anoModelo.fabricacao}/${vehicle.anoModelo.modelo}`
-        : vehicle.ano || '',
-      cor: vehicle.cor,
-      chassi: vehicle.chassi,
-      renavam: vehicle.renavam,
-      motor: vehicle.motor,
-      quilometragem: vehicle.quilometragem?.toString() || '0',
-    };
+    const vehicle: VehicleData = data.veiculos[0];
+    return vehicle as SingleVehicleResponse;
   } catch (error) {
     console.error('Erro ao buscar veículo por placa:', error);
     throw new Error('Erro ao buscar veículo por placa');

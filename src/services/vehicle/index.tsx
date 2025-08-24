@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createVehicleFunction,
   deleteVehicleFunction,
@@ -6,36 +6,23 @@ import {
   getVehiclesFunction,
   updateVehicleFunction,
 } from './functions';
-import { CreateVehicleInterface, UpdateVehicleInterface } from './types';
+import { CreateVehicleInterface, StatusVehicle, UpdateVehicleInterface } from './types';
+import { queryClient } from '@/lib/tanstack/query-client';
 
 export function useCreateVehicleMutation() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (payload: CreateVehicleInterface) => createVehicleFunction(payload),
     onSuccess: () => {
-      console.log('✅ Vehicle created, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-    },
-    onError: (error) => {
-      console.error('❌ Create vehicle mutation error:', error);
+      queryClient.invalidateQueries({ queryKey: ['vehicle'] });
     },
   });
 }
 
 export function useUpdateVehicleMutation() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ chassi, payload }: { chassi: string; payload: UpdateVehicleInterface }) =>
       updateVehicleFunction(chassi, payload),
-    onSuccess: () => {
-      console.log('✅ Vehicle updated, invalidating queries...');
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-    },
-    onError: (error) => {
-      console.error('❌ Update vehicle mutation error:', error);
-    },
   });
 }
 
@@ -50,16 +37,11 @@ export function useGetVehicleQuery(chassi: string) {
 }
 
 export function useDeleteVehicleMutation() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (chassi: string) => deleteVehicleFunction(chassi),
     onSuccess: () => {
-      console.log('✅ Vehicle deleted, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-    },
-    onError: (error) => {
-      console.error('❌ Delete vehicle mutation error:', error);
+      queryClient.invalidateQueries({ queryKey: ['vehicle'] });
     },
   });
 }
@@ -73,7 +55,7 @@ export function useGetVehicleActivitiesQuery(chassi: string) {
           id: 1,
           title: 'Último aluguel finalizado',
           date: '2 dias atrás',
-          status: 'Concluído',
+          status: 'concluido' as StatusVehicle,
           statusColor: 'text-green-600',
         },
       ];

@@ -1,4 +1,5 @@
 import type { VeiculoFormulario } from '@/features/vehicles/types';
+import { VehicleData } from '@/services/vehicle/types';
 
 export interface VeiculoEditado {
   id: number;
@@ -23,5 +24,5 @@ export interface EditVehicleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: VeiculoFormulario) => void;
-  vehicle: VeiculoEditado | null;
+  vehicle:  VehicleData| null;
 }

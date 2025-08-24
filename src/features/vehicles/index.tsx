@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Car, Edit, FileText, Plus } from 'lucide-react';
 import { Layout } from '../../shared/components/layout';
 import { PaginatedTable } from '@/shared/components/display-table';
@@ -11,162 +11,102 @@ import { AddVehicleModal } from './components/add-vehicle-modal';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { EditVehicleModal } from './components/edit-vehicle-modal';
-import { statusColorMap } from '@/lib/utils';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
-
-interface VehicleEdit extends VeiculoFormulario {
-  id: number;
-  statusColor: string;
-}
+import { useCreateVehicleMutation, useDeleteVehicleMutation, useUpdateVehicleMutation, useVehiclesQuery } from '@/services/vehicle';
+import { CreateVehicleInterface, StatusVehicle, UpdateVehicleInterface, VehicleData } from '@/services/vehicle/types';
 
 export const Vehicles = () => {
   const navigate = useNavigate();
-  const [vehicles, setVehicles] = useState<VehicleEdit[]>([
-    {
-      id: 1,
-      marca: 'Toyota',
-      modelo: 'Corolla',
-      placa: 'ABC-1234',
-      ano: '2022',
-      cor: 'Branco',
-      chassi: '9BWHE21JX24060831',
-      quilometragemAtual: '45000',
-      quilometragemCompra: '20000',
-      dataCompra: '2022-01-15',
-      local: '',
-      nome: '',
-      observacoes: '',
-      status: 'Disponível',
-      statusColor: statusColorMap['Disponível'],
-    },
-    {
-      id: 2,
-      marca: 'Honda',
-      modelo: 'Fan 150',
-      placa: 'XXX-002',
-      ano: '2021',
-      cor: 'Vermelho',
-      chassi: '9BWHE21JX24060832',
-      quilometragemAtual: '25000',
-      quilometragemCompra: '10000',
-      dataCompra: '2021-06-10',
-      local: '',
-      nome: '',
-      observacoes: '',
-      status: 'Manutenção',
-      statusColor: statusColorMap['Manutenção'],
-    },
-    {
-      id: 3,
-      marca: 'Yamaha',
-      modelo: 'Scooter',
-      placa: 'XXX-003',
-      ano: '2023',
-      cor: 'Azul',
-      chassi: '9BWHE21JX24060833',
-      quilometragemAtual: '15000',
-      quilometragemCompra: '5000',
-      dataCompra: '2023-03-05',
-      local: '',
-      nome: '',
-      observacoes: '',
-      status: 'Disponível',
-      statusColor: statusColorMap['Disponível'],
-    },
-  ]);
+  const { data: vehicles } = useVehiclesQuery();
+
+  const { mutate: createVehicle } = useCreateVehicleMutation();
+  const { mutate: deleteVehicle } = useDeleteVehicleMutation();
+  const { mutate: updateVehicle } = useUpdateVehicleMutation();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [vehicleToEdit, setVehicleToEdit] = useState<VehicleEdit | null>(null);
+  const [vehicleToEdit, setVehicleToEdit] = useState<VehicleData | null>(null);
 
   useEffect(() => {
-    console.log('Vehicles state updated:', vehicles);
+    console.log(vehicles);
   }, [vehicles]);
 
-  const handleEdit = (id: number) => {
-    const vehicle = vehicles.find((v) => v.id === id);
+  const handleEditSave = (data: VeiculoFormulario) => {
+    if (vehicleToEdit) {
+      if (!data.status || !['disponivel', 'locado', 'vendido'].includes(data.status)) {
+        console.error('Error: Invalid or missing status');
+        return;
+      }
+
+      updateVehicle({ chassi: vehicleToEdit.chassi, payload: data as UpdateVehicleInterface });
+    }
+  };
+
+  const handleOpenEditModal = (chassi: string) => {
+    const vehicle = vehicles?.veiculos.find((v) => v.chassi === chassi);
     if (vehicle) {
       setVehicleToEdit(vehicle);
       setShowEditModal(true);
     }
   };
 
-  const handleEditSave = (data: VeiculoFormulario) => {
-    if (vehicleToEdit) {
-      if (!data.status || !['Disponível', 'Locado', 'Manutenção'].includes(data.status)) {
-        console.error('Error: Invalid or missing status');
-        return;
-      }
-      const status = data.status;
-      const updatedVehicle: VehicleEdit = {
-        ...vehicleToEdit,
-        marca: data.marca,
-        modelo: data.modelo,
-        placa: data.placa,
-        ano: data.ano,
-        cor: data.cor,
-        chassi: data.chassi,
-        quilometragemAtual: data.quilometragemAtual,
-        quilometragemCompra: data.quilometragemCompra,
-        dataCompra: data.dataCompra,
-        local: data.local,
-        nome: data.nome,
-        observacoes: data.observacoes,
-        status,
-        statusColor: statusColorMap[status] || 'bg-gray-100 text-gray-800',
-      };
-      setVehicles((prev) =>
-        prev.map((vehicle) => (vehicle.id === vehicleToEdit.id ? updatedVehicle : vehicle)),
-      );
-      setShowEditModal(false);
-      setVehicleToEdit(null);
-    }
+  const handleActions = (chassi: string) => {
+    navigate(`/veiculos/${chassi}`);
   };
 
-  const handleActions = (id: number) => {
-    navigate(`/veiculos/${id}`);
-  };
-
-  const handleDelete = (id: number) => {
-    setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
+  const handleDelete = (chassi: string) => {
+    deleteVehicle(chassi);
   };
 
   const handleAddVehicleSubmit = (data: VeiculoFormulario) => {
-    if (!data.status || !['Disponível', 'Locado', 'Manutenção'].includes(data.status)) {
-      console.error('Error: Invalid or missing status in add vehicle');
-      return;
-    }
-    const newVehicle: VehicleEdit = {
-      id: vehicles.length + 1,
-      marca: data.marca,
-      modelo: data.modelo,
-      placa: data.placa,
-      ano: data.ano,
-      cor: data.cor,
+    
+
+    const payload: CreateVehicleInterface = {
       chassi: data.chassi,
-      quilometragemAtual: data.quilometragemAtual,
-      quilometragemCompra: data.quilometragemCompra,
       dataCompra: data.dataCompra,
       local: data.local,
+      marca: data.marca,
+      modelo: data.modelo,
       nome: data.nome,
       observacoes: data.observacoes,
-      status: data.status,
-      statusColor: statusColorMap[data.status] || 'bg-gray-100 text-gray-800',
+      placa: data.placa,
+      quilometragem: data.quilometragemAtual,
+      quilometragemNaCompra: data.quilometragemCompra,
+      anoModelo: {
+        fabricacao: data.ano,
+        modelo: data.modelo,
+      },
+      renavam: "",
+      status: data.status as StatusVehicle,
+      dataCadastro: "",
+      dataAtualizacao: "",
+      dataVenda: "",
     };
-    setVehicles((prev) => [...prev, newVehicle]);
-    setShowAddModal(false);
+
+    createVehicle(payload);
   };
 
-  const filteredVehicles = vehicles.filter((vehicle) => {
-    const term = searchTerm.toLowerCase();
-    const matchesSearch =
-      vehicle.placa.toLowerCase().includes(term) ||
-      vehicle.marca.toLowerCase().includes(term) ||
-      vehicle.modelo.toLowerCase().includes(term);
-    const matchesStatus = statusFilter === '' || vehicle.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredVehicles = useMemo(() => {
+    if (!vehicles || !vehicles.veiculos) return [];
+
+    // return vehicles?.vehicles.filter((vehicle) => {
+    //   const term = searchTerm.toLowerCase();
+    //   const matchesSearch =
+    //     vehicle.placa.toLowerCase().includes(term) ||
+    //     vehicle.marca.toLowerCase().includes(term) ||
+    //     vehicle.modelo.toLowerCase().includes(term);
+    //   // const matchesStatus = statusFilter === '' 
+    //   // return matchesSearch ;
+    //   return true;
+    // });
+    return vehicles.veiculos
+  }, [vehicles])
+
+  useEffect(() => {
+    console.log({vehicles})
+  }, [vehicles])
 
   return (
     <Layout title="Gerenciamento de Veículos" subtitle="Veja a lista de todos os seus veículos">
@@ -229,8 +169,8 @@ export const Vehicles = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
-          key={vehicles.length} // Simplificado para reagir a mudanças no array
-          data={filteredVehicles}
+          key={vehicles?.veiculos?.length || 0} // Simplificado para reagir a mudanças no array
+          data={filteredVehicles || []}
           columns={[
             { key: 'marca', title: 'Marca do veículo' },
             { key: 'modelo', title: 'Modelo' },
@@ -238,8 +178,8 @@ export const Vehicles = () => {
             { key: 'status', title: 'Status' },
             { key: 'actions', title: 'Ações' },
           ]}
-          renderRow={(vehicle) => (
-            <tr key={vehicle.id} className="hover:bg-gray-50">
+          renderRow={(vehicle: VehicleData) => (
+            <tr key={vehicle.chassi} className="hover:bg-gray-50">
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -253,8 +193,8 @@ export const Vehicles = () => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.placa}</td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <Badge className={vehicle.statusColor || 'bg-gray-100 text-gray-800'}>
-                  {vehicle.status || 'Desconhecido'}
+                <Badge className={'bg-gray-100 text-gray-800'}>
+                  {/* {vehicle.status || 'Desconhecido'} */}
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -262,7 +202,7 @@ export const Vehicles = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleActions(vehicle.id)}
+                    onClick={() => handleActions(vehicle.chassi)}
                     className="border-orange-300 text-orange-600 hover:bg-orange-50"
                   >
                     <FileText className="w-4 h-4" />
@@ -271,13 +211,13 @@ export const Vehicles = () => {
                     title="Tem certeza que você deseja excluir este veículo?"
                     description="Todos os dados salvos serão excluídos."
                     actionText="Excluir veículo"
-                    onConfirm={() => handleDelete(vehicle.id)}
+                    onConfirm={() => handleDelete(vehicle.chassi)}
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-green-600 border-green-300 hover:bg-green-50"
-                    onClick={() => handleEdit(vehicle.id)}
+                    onClick={() => handleOpenEditModal(vehicle.chassi)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -301,7 +241,7 @@ export const Vehicles = () => {
           setVehicleToEdit(null);
         }}
         onSave={handleEditSave}
-        vehicle={vehicleToEdit}
+        vehicle={vehicleToEdit }
       />
     </Layout>
   );

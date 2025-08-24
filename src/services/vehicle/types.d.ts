@@ -1,87 +1,49 @@
 export interface VehicleData {
-  id: number | string;
-  placa: string;
-  marca: string;
-  modelo: string;
-  ano: string; // Formato "AAAA/YYYY"
-  cor: string;
-  chassi: string;
-  renavam?: string;
-  motor?: string;
-  quilometragem?: string;
-}
-
-export interface CreateVehicleInterface {
-  chassi: string;
-  placa: string;
-  marca: string;
-  modelo: string;
-  ano: string; // Formato "AAAA/YYYY"
-  cor: string;
-  renavam?: string;
-  motor?: string;
-  quilometragemAtual: string;
-  quilometragemCompra: string;
-  dataCompra: string; // Formato "DD/MM/YYYY"
-  local: string;
-  nome: string;
-  observacoes: string;
-}
-
-export interface UpdateVehicleInterface {
-  placa?: string;
-  quilometragem?: number;
-  dataVenda?: string; // Formato "YYYY-MM-DD" para o backend
-}
-
-export interface SingleVehicleResponse {
-  id: number | string;
-  placa: string;
-  marca: string;
-  modelo: string;
-  ano: string;
-  cor: string;
-  chassi: string;
-  renavam?: string;
-  motor?: string;
-  quilometragem?: string;
-}
-
-export interface ListManyVehiclesResponse {
-  vehicles: VehicleData[];
-  ultimoDoc?: string | null;
-}
-
-export type ListManyVehicles = ListManyVehiclesResponse;
-
-export interface BackendVehicleData {
-  id: string;
+  id?: number | string;
   chassi: string;
   placa: string;
   modelo: string;
   marca: string;
-  renavam?: string;
-  numeroDocumento?: string;
+  renavam: string;
   anoModelo: {
-    fabricacao: number;
-    modelo: number;
+    fabricacao: string;
+    modelo: string;
   };
-  quilometragem: number;
-  quilometragemNaCompra: number;
-  dataCompra: string; // ISO format
-  dataVenda?: string; // ISO format
+  quilometragem: string;
+  quilometragemNaCompra: string;
+  dataCompra: string;
+  dataVenda: string;
   local: string;
   nome: string;
   observacoes: string;
-  status: 'disponivel' | 'vendido';
+  status: StatusVehicle;
   dataCadastro: string;
   dataAtualizacao: string;
 }
+
+export type CreateVehicleInterface = VehicleData;
+
+export type UpdateVehicleInterface = Partial<VehicleData>;
+
+export type SingleVehicleResponse = VehicleData;
+
+export interface ListManyVehiclesResponse {
+  veiculos: VehicleData[];
+  paginacao: {
+    possuiMais: boolean;
+    proximoDocId: string;
+  }
+}
+
+export type ListManyVehicles = ListManyVehiclesResponse;
 export interface VehicleActivity {
   id: number | string;
   title: string;
   date: string;
-  status: string;
+  status: StatusVehicle;
   statusColor: string;
   description?: string; // Opcional, conforme usado no componente
 }
+
+
+export type StatusVehicle = 'disponivel' | 'locado' | 'vendido' | 'concluido';
