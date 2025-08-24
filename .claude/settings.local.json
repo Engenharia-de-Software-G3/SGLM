@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx jest:*)",
+      "Bash(npm test)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\mnt\\c\\Users\\Mikael\\Documents\\GitHub\\SGLM"
+    ]
+  }
+}
