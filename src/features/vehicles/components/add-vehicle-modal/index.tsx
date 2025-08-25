@@ -21,7 +21,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     local: '',
     nome: '',
     observacoes: '',
-    status: 'Disponível',
+    status: 'disponivel',
   });
  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -74,7 +74,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
       local: '',
       nome: '',
       observacoes: '',
-      status: 'Disponível',
+      status: 'disponivel',
     });
     setSelectedFile(null);
   };

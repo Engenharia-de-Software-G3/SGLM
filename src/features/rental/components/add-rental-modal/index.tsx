@@ -8,11 +8,12 @@ import { MaskedFormInput } from '@/shared/components/masked-form-input';
 import { FormInput } from '@/shared/components/form-input';
 import { FormSelect } from '@/shared/components/form-select';
 import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useState } from 'react';
 
 export const AddRentalModal = ({
   open,
   onOpenChange,
-  clientType,
   onSubmit,
 }: AddRentalModalProps) => {
   const {
@@ -28,12 +29,14 @@ export const AddRentalModal = ({
       inicio: '',
       fim: '',
       placaVeiculo: '',
-      valorLocacao: '',
+      valorLocacao: 0,
       periodicidadePagamento: '',
     },
   });
 
-  const handleFormSubmit = async (data: AddRentalFormData) => {
+  const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
+
+  const handleFormSubmit = handleSubmit(async (data: AddRentalFormData) => {
     try {
       console.log('Dados do formulário:', data);
       await onSubmit(data);
@@ -44,7 +47,7 @@ export const AddRentalModal = ({
       console.error('Erro ao salvar locação:', error);
       toast('Erro ao salvar locação');
     }
-  };
+  });
 
   const handleCancel = () => {
     reset();
@@ -58,7 +61,35 @@ export const AddRentalModal = ({
           <DialogTitle>Cadastro de locação</DialogTitle>
           <p className="text-sm text-gray-600">Insira os dados abaixo</p>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        
+        {/* Seleção do tipo de pessoa */}
+        <div className="flex space-x-4 mb-4">
+          <RadioGroup
+            value={clientType}
+            onValueChange={(value) => setClientType(value as 'fisica' | 'juridica')}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value="fisica"
+                id="fisica"
+                className="w-4 h-4 rounded-full border border-gray-400 checked:bg-[#6080BE] checked:border-[#6080BE] focus:ring-2 focus:ring-[#6080BE]"
+              />
+              <label htmlFor="fisica" className="text-sm select-none">Pessoa Física</label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value="juridica"
+                id="juridica"
+                className="w-4 h-4 rounded-full border border-gray-400 checked:bg-[#6080BE] checked:border-[#6080BE] focus:ring-2 focus:ring-[#6080BE]"
+              />
+              <label htmlFor="juridica" className="text-sm select-none">Pessoa Jurídica</label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           <FormInput
             label="Locatário"
             placeholder="Digite o nome do locatário"

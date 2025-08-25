@@ -4,6 +4,12 @@ import { z } from 'zod';
 // Custom schema for required string fields
 export const requiredString = z.string().min(1, 'Campo Obrigatório');
 
+// Função para converter string DD/MM/YYYY em Date
+function parseDDMMYYYY(dateStr: string): Date {
+  const [day, month, year] = dateStr.split('/').map(Number);
+  return new Date(year, month - 1, day); // mês é 0-indexado
+}
+
 export const addRentalSchema = z.object({
   locatario: requiredString,
   cnpjcpf: requiredString.refine((value: string) => {
@@ -19,21 +25,16 @@ export const addRentalSchema = z.object({
     'Placa deve estar no formato Mercosul (ABC1D23) ou antigo (ABC1234)',
   ),
 
-  valorLocacao: z.union([requiredString, z.number()]).transform((value: string) => {
-    // Convert string to number if necessary
-    return typeof value === 'string' ? parseFloat(value) : value;
-  }).refine((value: number) => !isNaN(value) && value >= 0, {
-    message: 'Valor da locação deve ser um número válido e não negativo',
-  }),
+  valorLocacao: z.number().min(0, 'Valor da locação deve ser um número válido e não negativo'),
 
   periodicidadePagamento: z.string().refine((val) => val !== '', {
     message: 'Campo obrigatório',
   }),
 }).refine(
   (data: { inicio: string; fim: string }) => {
-    const inicioDate = new Date(data.inicio);
-    const fimDate = new Date(data.fim);
-    return !isNaN(inicioDate.getTime()) && !isNaN(fimDate.getTime()) && fimDate > inicioDate;
+    const inicioDate = parseDDMMYYYY(data.inicio);
+    const fimDate = parseDDMMYYYY(data.fim);
+    return fimDate > inicioDate;
   },
   {
     message: 'Data de fim deve ser posterior à data de início',

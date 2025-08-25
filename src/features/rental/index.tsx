@@ -27,6 +27,7 @@ interface DisplayRentalData {
 }
 
 export const Rental = () => {
+  const [search, setSearch] = useState('');
   const [searchByName, setsearchByName] = useState('');
   const [searchByPlate, setSearchByPlate] = useState('');
   const [isTypeModalOpen, setTypeModalOpen] = useState(false);
@@ -94,13 +95,17 @@ export const Rental = () => {
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
-
+  
+    const lowerSearch = search.toLowerCase();
+  
     return rentals.filter(
       (rental) =>
-        rental.locatario.toLowerCase().includes(searchByName.toLowerCase()) &&
-        rental.placa.toLowerCase().includes(searchByPlate.toLowerCase()),
+        rental.locatario.toLowerCase().includes(lowerSearch) ||
+        rental.placa.toLowerCase().includes(lowerSearch)
     );
-  }, [rentals, searchByName, searchByPlate]);
+  }, [rentals, search]);
+  
+  
 
   async function submitRental(rentalForm: AddRentalFormData) {
     console.log('submitRental - dados do formulário:', rentalForm);
@@ -271,7 +276,8 @@ export const Rental = () => {
 
 
   const handleOpenForm = () => {
-    setTypeModalOpen(true);
+    setClientType('fisica');
+    setFormModalOpen(true);
   };
 
   const handleTypeSelect = (type: 'fisica' | 'juridica') => {
@@ -290,18 +296,11 @@ export const Rental = () => {
         <DisplayTableHeader>
           <div className="flex gap-2 w-full pr-4">
             <SearchBar
-              placeholder="Filtrar por locatário"
-              value={searchByName}
-              onChange={(e) => setsearchByName(e.target.value)}
-            />
-
-            <SearchBar
-              placeholder="Filtrar por placa"
-              value={searchByPlate}
-              onChange={(e) => setSearchByPlate(e.target.value)}
+              placeholder="Filtrar por locatário ou placa"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-
           <ActionButton
             label="Cadastrar locação"
             icon={<Plus className="h-4 w-4 mr-1" />}
@@ -343,7 +342,6 @@ export const Rental = () => {
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-900">{rental.locatario}</div>
-                    <div className="text-sm text-gray-500">{rental.cpf}</div>
                   </div>
                 </div>
               </td>

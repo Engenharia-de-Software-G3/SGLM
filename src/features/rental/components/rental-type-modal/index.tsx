@@ -16,7 +16,7 @@ export const RentalTypeModal = ({
   return (
     <Dialog
       open={open}
-      onOpenChange={(v) => {
+      onOpenChange={(v: boolean) => {
         if (!v) setTempSelection(clientType);
         onOpenChange(v);
       }}
@@ -31,7 +31,7 @@ export const RentalTypeModal = ({
 
         <RadioGroup
           value={tempSelection}
-          onValueChange={(v) => setTempSelection(v as 'fisica' | 'juridica')}
+          onValueChange={(v: ClientTypes) => setTempSelection(v as 'fisica' | 'juridica')}
         >
           <div className="flex justify-between px-6 mt-2">
             <div className="flex items-center space-x-2">
