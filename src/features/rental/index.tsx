@@ -11,13 +11,22 @@ import { RentalTypeModal } from './components/rental-type-modal';
 import { AddRentalModal } from './components/add-rental-modal';
 import type { AddRentalFormData } from './schemas/addRental';
 import { useNavigate } from 'react-router-dom';
-import { useCreateLocacaoMutation, useDeleteLocacaoMutation, useLocacoesQuery } from '@/services/rental';
+import {
+  useCreateLocacaoMutation,
+  useDeleteLocacaoMutation,
+  useLocacoesQuery,
+} from '@/services/rental';
 import { useClientsQuery } from '@/services/client';
 import { toast } from 'sonner';
-import { ContractData, generateContractPDF, LocacaoData } from '@/lib/generateContractPDF';
-import { getClientByCpf } from '@/services/client/functions'; 
+import {
+  ContractData,
+  generateContractPDF,
+  LocacaoData,
+  ClientData,
+} from '@/lib/generateContractPDF';
+import { getClientByCpf } from '@/services/client/functions';
 import { getVehicleByPlaca } from '@/services/vehicle/functions';
-import { api } from '@/lib/axios'; 
+import { api } from '@/lib/axios';
 
 interface DisplayRentalData {
   id: string;
@@ -28,16 +37,19 @@ interface DisplayRentalData {
 
 export const Rental = () => {
   const [search, setSearch] = useState('');
-  const [searchByName, setsearchByName] = useState('');
-  const [searchByPlate, setSearchByPlate] = useState('');
   const [isTypeModalOpen, setTypeModalOpen] = useState(false);
   const [isFormModalOpen, setFormModalOpen] = useState(false);
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
   const navigate = useNavigate();
 
-  const { data: locacoesData, isLoading: isLoadingLocacoes, isError: isErrorLocacoes, error: locacoesError } = useLocacoesQuery();
+  const {
+    data: locacoesData,
+    isLoading: isLoadingLocacoes,
+    isError: isErrorLocacoes,
+    error: locacoesError,
+  } = useLocacoesQuery();
   const { data: clientsData } = useClientsQuery();
-  const { mutateAsync: createLocacao } = useCreateLocacaoMutation(); 
+  const { mutateAsync: createLocacao } = useCreateLocacaoMutation();
   const { mutateAsync: deleteLocacao } = useDeleteLocacaoMutation();
 
   useEffect(() => {
@@ -46,7 +58,7 @@ export const Rental = () => {
 
     if (storedClient) {
       try {
-        setsearchByName(JSON.parse(storedClient));
+        setSearch(JSON.parse(storedClient));
       } catch (error) {
         console.error('Erro ao parsear filterRentalsByClient:', error);
       }
@@ -55,7 +67,7 @@ export const Rental = () => {
 
     if (storedVehicle) {
       try {
-        setSearchByPlate(JSON.parse(storedVehicle));
+        setSearch(JSON.parse(storedVehicle));
       } catch (error) {
         console.error('Erro ao parsear filterRentalsByVehicle:', error);
       }
@@ -65,63 +77,63 @@ export const Rental = () => {
 
   const rentals: DisplayRentalData[] = useMemo(() => {
     const source = Array.isArray(locacoesData?.locacoes) ? locacoesData!.locacoes : [];
-    return source.map((locacao) => {
-      // Se não tem nomeLocatario, tenta buscar pelo CPF nos clientes
+    return source.map((locacao: LocacaoData) => {
       let locatarioNome = locacao.nomeLocatario;
-      
+
       if (!locatarioNome && locacao.clienteId) {
-        // Busca o nome do cliente pelo CPF
         const cleanCpf = locacao.clienteId.replace(/\D/g, '');
-        const client = clientsData?.clientes?.find((client: any) => {
+        const client = clientsData?.clientes?.find((client: ClientData) => {
           const cleanClientCpf = client.cpf.replace(/\D/g, '');
           return cleanClientCpf === cleanCpf;
         });
-        
+
         if (client) {
           locatarioNome = client.nomeCompleto;
         } else {
-          locatarioNome = locacao.clienteId; // Fallback para CPF
+          locatarioNome = locacao.clienteId;
         }
       }
-      
+
       return {
         id: locacao.id,
         locatario: locatarioNome || locacao.clienteId || '',
         placa: locacao.placaVeiculo,
-        cpf: locacao.clienteId, // Mantém o CPF original formatado para exibição
+        cpf: locacao.clienteId,
       };
     });
   }, [locacoesData, clientsData]);
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
-  
+
     const lowerSearch = search.toLowerCase();
-  
+
     return rentals.filter(
       (rental) =>
         rental.locatario.toLowerCase().includes(lowerSearch) ||
-        rental.placa.toLowerCase().includes(lowerSearch)
+        rental.placa.toLowerCase().includes(lowerSearch),
     );
   }, [rentals, search]);
-  
-  
 
   async function submitRental(rentalForm: AddRentalFormData) {
     console.log('submitRental - dados do formulário:', rentalForm);
-    console.log('submitRental - valorLocacao original:', rentalForm.valorLocacao, 'tipo:', typeof rentalForm.valorLocacao);
-    
+    console.log(
+      'submitRental - valorLocacao original:',
+      rentalForm.valorLocacao,
+      'tipo:',
+      typeof rentalForm.valorLocacao,
+    );
+
     const cleanPlaca = rentalForm.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     const cleanCpf = rentalForm.cnpjcpf.replace(/\D/g, '');
-    
-    // As datas já estão no formato DD/MM/YYYY, não precisam ser formatadas
+
     const formatDate = (dateString: string) => {
-      return dateString; // Retorna como está, já está no formato correto
+      return dateString;
     };
-    
+
     const valorNumerico = Number(rentalForm.valorLocacao);
     console.log('submitRental - valor convertido para número:', valorNumerico);
-    
+
     const payload = {
       clienteId: cleanCpf,
       nomeLocatario: rentalForm.locatario,
@@ -129,22 +141,21 @@ export const Rental = () => {
       dataInicio: formatDate(rentalForm.inicio),
       dataFim: formatDate(rentalForm.fim),
       valor: valorNumerico,
-      periodicidadePagamento: rentalForm.periodicidadePagamento
+      periodicidadePagamento: rentalForm.periodicidadePagamento,
     };
-    
+
     console.log('submitRental - payload final:', payload);
 
     try {
-      const result = await createLocacao(payload) as LocacaoData;
+      const result = (await createLocacao(payload)) as LocacaoData;
       if (!result) {
-        toast('Erro ao criar locação');
+        toast.error('Erro ao criar locação');
         throw new Error('Erro ao criar locação');
       }
 
       const client = await getClientByCpf(cleanCpf);
       const vehicle = await getVehicleByPlaca(cleanPlaca);
 
-      // Generate contract
       const contractData: ContractData = {
         id: result.id,
         client: {
@@ -160,15 +171,24 @@ export const Rental = () => {
           profissao: client?.profissao || 'Autônomo',
         },
         vehicle: {
-          marca: vehicle?.marca || 'Não informado',
-          modelo: vehicle?.modelo || 'Não informado',
-          placa: cleanPlaca,
-          renavam: vehicle?.renavam || 'Não informado',
+          id: vehicle?.id,
           chassi: vehicle?.chassi || 'Não informado',
-          motor: vehicle?.motor || 'Não informado',
+          placa: cleanPlaca,
+          modelo: vehicle?.modelo || 'Não informado',
+          marca: vehicle?.marca || 'Não informado',
+          renavam: vehicle?.renavam || 'Não informado',
+          anoModelo: vehicle?.anoModelo || { fabricacao: 'Não informado', modelo: 'Não informado' },
           cor: vehicle?.cor || 'Não informado',
-          ano: vehicle?.ano || 'Não informado',
           quilometragem: vehicle?.quilometragem || '0',
+          quilometragemNaCompra: vehicle?.quilometragemNaCompra || '0',
+          dataCompra: vehicle?.dataCompra || 'Não informado',
+          dataVenda: vehicle?.dataVenda || 'Não informado',
+          local: vehicle?.local || 'Não informado',
+          nome: vehicle?.nome || 'Não informado',
+          observacoes: vehicle?.observacoes || 'Não informado',
+          status: vehicle?.status || 'ativo',
+          dataCadastro: vehicle?.dataCadastro || 'Não informado',
+          dataAtualizacao: vehicle?.dataAtualizacao || 'Não informado',
         },
         locacao: {
           id: result.id,
@@ -187,13 +207,16 @@ export const Rental = () => {
 
       generateContractPDF(contractData, 'download');
 
-      toast('Locação criada com sucesso');
-    } catch (error: any) {
+      toast.success('Locação criada com sucesso');
+    } catch (error: unknown) {
       console.error('Erro detalhado:', error);
-      if (error.message?.includes('CPF inválido') || error.message?.includes('Nome não corresponde')) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('CPF inválido') || error.message.includes('Nome não corresponde'))
+      ) {
         toast.error(error.message);
       } else {
-        toast('Erro ao criar locação');
+        toast.error('Erro ao criar locação');
       }
       throw error;
     }
@@ -202,16 +225,16 @@ export const Rental = () => {
   const handleDeleteRental = async (id: string) => {
     try {
       await deleteLocacao(id);
-      toast('Locação excluída com sucesso');
-    } catch (e) {
-      toast('Erro ao excluir locação');
+      toast.success('Locação excluída com sucesso');
+    } catch {
+      toast.error('Erro ao excluir locação');
     }
   };
 
   const handleViewContract = async (id: string) => {
     try {
       const locacoes = locacoesData?.locacoes || [];
-      const locacao = locacoes.find((l: any) => l.id === id);
+      const locacao = locacoes.find((l: LocacaoData) => l.id === id);
       if (!locacao) {
         throw new Error('Locação não encontrada');
       }
@@ -237,15 +260,24 @@ export const Rental = () => {
           profissao: client?.profissao || 'Autônomo',
         },
         vehicle: {
-          marca: vehicle.marca || 'Não informado',
-          modelo: vehicle.modelo || 'Não informado',
-          placa: locacao.placaVeiculo,
-          renavam: vehicle.renavam || 'Não informado',
-          chassi: vehicle.chassi || 'Não informado',
-          motor: vehicle.motor || 'Não informado',
-          cor: vehicle.cor || 'Não informado',
-          ano: vehicle.ano || 'Não informado',
-          quilometragem: vehicle.quilometragem || '0',
+          id: vehicle?.id,
+          chassi: vehicle?.chassi || 'Não informado',
+          placa: cleanPlaca,
+          modelo: vehicle?.modelo || 'Não informado',
+          marca: vehicle?.marca || 'Não informado',
+          renavam: vehicle?.renavam || 'Não informado',
+          anoModelo: vehicle?.anoModelo || { fabricacao: 'Não informado', modelo: 'Não informado' },
+          cor: vehicle?.cor || 'Não informado',
+          quilometragem: vehicle?.quilometragem || '0',
+          quilometragemNaCompra: vehicle?.quilometragemNaCompra || '0',
+          dataCompra: vehicle?.dataCompra || 'Não informado',
+          dataVenda: vehicle?.dataVenda || 'Não informado',
+          local: vehicle?.local || 'Não informado',
+          nome: vehicle?.nome || 'Não informado',
+          observacoes: vehicle?.observacoes || 'Não informado',
+          status: vehicle?.status || 'ativo',
+          dataCadastro: vehicle?.dataCadastro || 'Não informado',
+          dataAtualizacao: vehicle?.dataAtualizacao || 'Não informado',
         },
         locacao: {
           id: locacao.id,
@@ -262,18 +294,17 @@ export const Rental = () => {
         },
       };
 
-      // Fazer requisição ao backend para obter o PDF
       const response = await api.post('/api/locacoes/pdf', contractData, {
         responseType: 'blob',
       });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       window.open(url);
-    } catch (e: any) {
-      toast('Erro ao gerar contrato: ' + e.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error('Erro ao gerar contrato: ' + errorMessage);
     }
   };
-
 
   const handleOpenForm = () => {
     setClientType('fisica');
@@ -315,76 +346,78 @@ export const Rental = () => {
 
         {isErrorLocacoes && (
           <div className="px-6 py-10 text-red-600">
-            Erro ao carregar locações{locacoesError instanceof Error ? `: ${locacoesError.message}` : ''}
+            Erro ao carregar locações
+            {locacoesError instanceof Error ? `: ${locacoesError.message}` : ''}
           </div>
         )}
 
         {!isLoadingLocacoes && !isErrorLocacoes && (
           <PaginatedTable
-          data={filteredRentals}
-          columns={[
-            { key: 'client', title: 'Locatário' },
-            { key: 'placa', title: 'Placa' },
-            { key: 'cpf', title: 'CPF/CNPJ' },
-            { key: 'actions', title: 'Ações' },
-          ]}
-          renderRow={(rental) => (
-            <tr key={rental.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-blue-600 font-medium">
-                      {rental.locatario
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
-                    </span>
+            data={filteredRentals}
+            columns={[
+              { key: 'locatario', title: 'Locatário' },
+              { key: 'placa', title: 'Placa' },
+              { key: 'cpf', title: 'CPF/CNPJ' },
+              { key: 'actions', title: 'Ações' },
+            ]}
+            renderRow={(rental) => (
+              <tr key={rental.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-medium">
+                        {rental.locatario
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{rental.locatario}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{rental.locatario}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {rental.placa}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rental.cpf}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                      onClick={() => handleViewRental(rental.id)}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <DeleteModal
+                      title="Tem certeza que deseja excluir essa locação?"
+                      description="Todos os dados salvos serão excluídos."
+                      actionText="Excluir locação"
+                      onConfirm={() => handleDeleteRental(rental.id as string)}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-green-600 border-green-300 hover:bg-green-50"
+                      onClick={() => handleViewContract(rental.id)}
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Ver contrato
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                    >
+                      <ExternalLinkIcon className="h-4 w-4" />
+                    </Button>
                   </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rental.placa}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rental.cpf}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                    onClick={() => handleViewRental(rental.id)}
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-
-                  <DeleteModal
-                    title="Tem certeza que deseja excluir essa locação?"
-                    description="Todos os dados salvos serão excluídos."
-                    actionText="Excluir locação"
-                    onConfirm={() => handleDeleteRental(rental.id as string)}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-green-600 border-green-300 hover:bg-green-50"
-                    onClick={() => handleViewContract(rental.id)}
-                  >
-                    <FileText className="h-4 w-4 mr-1" />
-                    Ver contrato
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                  >
-                    <ExternalLinkIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          )}
-        />
+                </td>
+              </tr>
+            )}
+          />
         )}
       </div>
 

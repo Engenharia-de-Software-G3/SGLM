@@ -9,6 +9,7 @@ export interface VehicleData {
     fabricacao: string;
     modelo: string;
   };
+  cor: string;
   quilometragem: string;
   quilometragemNaCompra: string;
   dataCompra: string;
@@ -32,7 +33,7 @@ export interface ListManyVehiclesResponse {
   paginacao: {
     possuiMais: boolean;
     proximoDocId: string;
-  }
+  };
 }
 
 export type ListManyVehicles = ListManyVehiclesResponse;
@@ -44,6 +45,5 @@ export interface VehicleActivity {
   statusColor: string;
   description?: string; // Opcional, conforme usado no componente
 }
-
 
 export type StatusVehicle = 'disponivel' | 'locado' | 'vendido' | 'concluido';

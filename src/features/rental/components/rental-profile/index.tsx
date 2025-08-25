@@ -8,8 +8,9 @@ import type { RentalInfoCardData } from './components/rental-info-card/@types';
 import { useGetLocacaoQuery } from '@/services/rental';
 import { toast } from 'sonner';
 import { useClientsQuery } from '@/services/client';
-import { LocacaoData, ClientData, VehicleData } from '@/lib/generateContractPDF';
+import { LocacaoData, ClientData } from '@/lib/generateContractPDF';
 import { useVehiclesQuery } from '@/services/vehicle';
+import { VehicleData } from '@/services/vehicle/types';
 
 function toProfileData(
   locacao: LocacaoData,
@@ -24,7 +25,7 @@ function toProfileData(
     placaVeiculo: locacao.placaVeiculo,
     marca: vehicle?.marca || '',
     modelo: vehicle?.modelo || '',
-    ano: vehicle?.ano || '',
+    ano: vehicle?.anoModelo ? `${vehicle.anoModelo.fabricacao}/${vehicle.anoModelo.modelo}` : '',
     cor: vehicle?.cor || '',
     chassi: vehicle?.chassi || '',
     inicio: locacao.dataInicio,
@@ -55,9 +56,9 @@ export const RentalProfile = () => {
   }, [locacaoData, clientsData]);
 
   const vehicle = useMemo(() => {
-    if (!locacaoData || !vehiclesData?.vehicles) return null;
+    if (!locacaoData || !vehiclesData?.veiculos) return null;
     const cleanPlaca = locacaoData.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    return vehiclesData.vehicles.find(
+    return vehiclesData.veiculos.find(
       (v: VehicleData) => v.placa.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanPlaca,
     );
   }, [locacaoData, vehiclesData]);
