@@ -26,6 +26,10 @@ export const addRentalSchema = z.object({
 
   valorLocacao: z.number().min(0, 'Valor da locação deve ser um número válido e não negativo'),
 
+  metodoPagamento: z.string().refine((val) => val !== '', {
+    message: 'Campo obrigatório',
+  }),
+
   periodicidadePagamento: z.string().refine((val) => val !== '', {
     message: 'Campo obrigatório',
   }),

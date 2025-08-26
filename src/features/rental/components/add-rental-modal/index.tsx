@@ -30,6 +30,7 @@ export const AddRentalModal = ({
       placaVeiculo: '',
       valorLocacao: 0,
       periodicidadePagamento: '',
+      //metodoPagamento: '',
     },
   });
 
@@ -154,6 +155,22 @@ export const AddRentalModal = ({
                 { value: 'Semanal', label: 'Semanal' },
                 { value: 'Quinzenal', label: 'Quinzenal' },
                 { value: 'Mensal', label: 'Mensal' },
+              ]}
+            />
+          </div>
+
+         <div className="col-span-2">
+            <FormSelect
+              name="metodoPagamento"
+              control={control}
+              label="Método de pagamento"
+              required
+              error={errors.metodoPagamento?.message}
+              options={[
+                { value: 'Pix', label: 'Pix' },
+                { value: 'Dinheiro', label: 'Dinheiro' },
+                { value: 'Débito', label: 'Débito' },
+                { value: 'Crédito', label: 'Crédito' },
               ]}
             />
           </div>

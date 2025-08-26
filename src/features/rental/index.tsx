@@ -162,6 +162,7 @@ export const Rental = () => {
       dataFim: rentalForm.fim,
       valor: valorNumerico,
       periodicidadePagamento: rentalForm.periodicidadePagamento,
+      //metodoPagamento: rentalForm.metodoPagamento;
     };
 
     console.log('submitRental - payload final:', payload);
