@@ -89,8 +89,8 @@ export const VehicleProfile = () => {
             marca={vehicle.marca}
             modelo={vehicle.modelo}
             placa={vehicle.placa}
-            ano={vehicle.anoModelo.fabricacao}
-            cor={"nao implementado"}
+            ano={vehicle.ano}
+            cor={vehicle.cor}
             status={vehicle.status}
             quilometragemAtual={vehicle.quilometragem || '0'}
           />

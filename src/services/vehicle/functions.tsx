@@ -7,22 +7,17 @@ import {
   UpdateVehicleInterface,
 } from './types';
 
-function convertDateToISO(dateString: string): string {
-  if (!dateString) return new Date().toISOString();
+// function convertDateToISO(dateString: string): string {
+//   if (!dateString) {
+//     const today = new Date();
+//     return today.toISOString().split('T')[0];
+//   }
 
-  const [day, month, year] = dateString.split('/');
-  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString();
-}
+//   const [day, month, year] = dateString.split('/');
+//   const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+//   return date.toISOString().split('T')[0];
+// }
 
-function parseAno(anoString: string): { fabricacao: number; modelo: number } {
-  if (!anoString) return { fabricacao: new Date().getFullYear(), modelo: new Date().getFullYear() };
-
-  const [fabricacao, modelo] = anoString.split('/');
-  return {
-    fabricacao: parseInt(fabricacao) || new Date().getFullYear(),
-    modelo: parseInt(modelo) || new Date().getFullYear(),
-  };
-}
 
 export async function getVehiclesFunction(): Promise<ListManyVehicles> {
   try {
@@ -45,28 +40,7 @@ export async function createVehicleFunction(payload: CreateVehicleInterface) {
   try {
     console.log('➕ Creating vehicle with payload:', payload);
 
-    const anoData = parseAno(payload.anoModelo.fabricacao);
-
-    const backendPayload = {
-      chassi: payload.chassi,
-      placa: payload.placa.replace(/-/g, ''),
-      modelo: payload.modelo,
-      marca: payload.marca,
-      renavam: payload.renavam || '',
-      anoFabricacao: anoData.fabricacao,
-      anoModelo: anoData.modelo,
-      quilometragem: parseInt(payload.quilometragem) || 0,
-      quilometragemNaCompra: parseInt(payload.quilometragemNaCompra) || 0,
-      dataCompra: convertDateToISO(payload.dataCompra),
-      cor: payload,
-      local: payload.local || '',
-      nome: payload.nome || '',
-      observacoes: payload.observacoes || '',
-    };
-
-    console.log('📤 Sending to backend:', backendPayload);
-
-    const response = await api.post('/veiculos', backendPayload);
+    const response = await api.post('/veiculos', payload);
 
     if (response.status === 201) {
       console.log('✅ Vehicle created successfully:', response.data);
@@ -83,36 +57,32 @@ export async function createVehicleFunction(payload: CreateVehicleInterface) {
   }
 }
 
-export async function getVehicleFunction(chassi: string) {
+export async function getVehicleFunction(id: string) {
   try {
-    console.log('🔍 Fetching vehicle by chassi:', chassi);
+    console.log('🔍 Fetching vehicle by id:', id);
 
-    const response = await api.get('/veiculos', {
-      params: {
-        filtros: JSON.stringify({ chassi }),
-      },
-    });
+    const response = await api.get(`/veiculos/${id}`);
 
     console.log('📊 Vehicle search response:', response.data);
 
-    if (!response.data.veiculos || response.data.veiculos.length === 0) {
+    if (!response) {
       throw new Error('Veículo não encontrado');
     }
 
-    const vehicle: VehicleData = response.data.veiculos[0];
+    const vehicle: VehicleData = response.data;
 
     return vehicle as SingleVehicleResponse;
   } catch (error) {
-    console.error('❌ Error fetching vehicle by chassi:', error);
+    console.error('❌ Error fetching vehicle by id:', error);
     throw error;
   }
 }
 
-export async function updateVehicleFunction(chassi: string, payload: UpdateVehicleInterface) {
+export async function updateVehicleFunction(id: string, payload: UpdateVehicleInterface) {
   try {
-    console.log('✏️ Updating vehicle:', chassi, payload);
+    console.log('✏️ Updating vehicle:', id, payload);
 
-    const response = await api.put(`/veiculos/${chassi}`, payload);
+    const response = await api.put(`/veiculos/${id}`, payload);
 
     if (response.status !== 200) {
       throw new Error('Erro ao atualizar veículo');
@@ -126,11 +96,11 @@ export async function updateVehicleFunction(chassi: string, payload: UpdateVehic
   }
 }
 
-export async function deleteVehicleFunction(chassi: string) {
+export async function deleteVehicleFunction(id: string) {
   try {
-    console.log('🗑️ Deleting vehicle:', chassi);
+    console.log('🗑️ Deleting vehicle:', id);
 
-    const response = await api.delete(`/veiculos/${chassi}`);
+    const response = await api.delete(`/veiculos/${id}`);
 
     if (response.status !== 200) {
       throw new Error('Erro ao deletar veículo');

@@ -14,6 +14,7 @@ import { EditVehicleModal } from './components/edit-vehicle-modal';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
 import { useCreateVehicleMutation, useDeleteVehicleMutation, useUpdateVehicleMutation, useVehiclesQuery } from '@/services/vehicle';
 import { CreateVehicleInterface, StatusVehicle, UpdateVehicleInterface, VehicleData } from '@/services/vehicle/types';
+import { toast } from 'sonner';
 
 export const Vehicles = () => {
   const navigate = useNavigate();
@@ -40,28 +41,34 @@ export const Vehicles = () => {
         return;
       }
 
-      updateVehicle({ chassi: vehicleToEdit.chassi, payload: data as UpdateVehicleInterface });
+      if (!vehicleToEdit.id) {
+        toast.error('Ocorreu um erro');
+        console.error('Error: Vehicle ID is required');
+        return;
+      }
+
+      updateVehicle({ id: vehicleToEdit.id.toString(), payload: data as UpdateVehicleInterface });
     }
   };
 
-  const handleOpenEditModal = (chassi: string) => {
-    const vehicle = vehicles?.veiculos.find((v) => v.chassi === chassi);
+  const handleOpenEditModal = (id: string) => {
+    const vehicle = vehicles?.veiculos.find((v) => v.id === id);
     if (vehicle) {
       setVehicleToEdit(vehicle);
       setShowEditModal(true);
     }
   };
 
-  const handleActions = (chassi: string) => {
-    navigate(`/veiculos/${chassi}`);
+  const handleActions = (id: string) => {
+    navigate(`/veiculos/${id}`);
   };
 
-  const handleDelete = (chassi: string) => {
-    deleteVehicle(chassi);
+  const handleDelete = (id: string) => {
+    deleteVehicle(id);
   };
 
   const handleAddVehicleSubmit = (data: VeiculoFormulario) => {
-    
+    console.log(`data before submiting: `, { data})
 
     const payload: CreateVehicleInterface = {
       chassi: data.chassi,
@@ -70,20 +77,21 @@ export const Vehicles = () => {
       marca: data.marca,
       modelo: data.modelo,
       nome: data.nome,
+      cor: data.cor,
       observacoes: data.observacoes,
       placa: data.placa,
       quilometragem: data.quilometragemAtual,
       quilometragemNaCompra: data.quilometragemCompra,
-      anoModelo: {
-        fabricacao: data.ano,
-        modelo: data.modelo,
-      },
+      ano: data.ano,
       renavam: "",
       status: data.status as StatusVehicle,
-      dataCadastro: "",
+      dataCadastro: data.dataCompra,
       dataAtualizacao: "",
       dataVenda: "",
+      file: data.arquivo,
     };
+
+    console.log(`payload before submiting: `, { payload})
 
     createVehicle(payload);
   };
@@ -202,7 +210,7 @@ export const Vehicles = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleActions(vehicle.chassi)}
+                    onClick={() => handleActions(vehicle.id)}
                     className="border-orange-300 text-orange-600 hover:bg-orange-50"
                   >
                     <FileText className="w-4 h-4" />
@@ -211,13 +219,13 @@ export const Vehicles = () => {
                     title="Tem certeza que você deseja excluir este veículo?"
                     description="Todos os dados salvos serão excluídos."
                     actionText="Excluir veículo"
-                    onConfirm={() => handleDelete(vehicle.chassi)}
+                    onConfirm={() => handleDelete(vehicle.id)}
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-green-600 border-green-300 hover:bg-green-50"
-                    onClick={() => handleOpenEditModal(vehicle.chassi)}
+                    onClick={() => handleOpenEditModal(vehicle.id)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>

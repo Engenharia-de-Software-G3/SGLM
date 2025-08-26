@@ -59,6 +59,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setErrors({});
+
     onSubmit({ ...formData, arquivo: selectedFile });
     onOpenChange(false);
     setFormData({
