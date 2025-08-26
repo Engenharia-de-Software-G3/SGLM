@@ -128,7 +128,8 @@ export const Rental = () => {
     const cleanCpf = rentalForm.cnpjcpf.replace(/\D/g, '');
 
     const formatDate = (dateString: string) => {
-      return dateString;
+      const [day, month, year] = dateString.split('/');
+      return `${year}-${month}-${day}`;
     };
 
     const valorNumerico = Number(rentalForm.valorLocacao);
