@@ -1,26 +1,26 @@
 import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { Layout } from '@/shared/components/layout';
+import { ReturnHeader } from '@/shared/components/return-header';
 import { RentalInfoCard } from './components/rental-info-card';
-import type { RentalInfoCardData } from './components/rental-info-card/@types';
+import { Toaster, toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { useGetLocacaoQuery } from '@/services/rental';
-import { toast } from 'sonner';
 import { useClientsQuery } from '@/services/client';
-import { ClientData } from '@/lib/generateContractPDF';
 import { useVehiclesQuery } from '@/services/vehicle';
-import { VehicleData } from '@/services/vehicle/types';
-import { LocacaoInterface } from '@/services/rental/types';
+import type { LocacaoInterface } from '@/services/rental/types';
+import type { ClientData } from '@/lib/generateContractPDF';
+import type { VehicleData } from '@/services/vehicle/types';
+import type { RentalInfoCardData } from './components/rental-info-card/@types';
 
 function toProfileData(
   locacao: LocacaoInterface,
   client: ClientData | null,
-  vehicle: VehicleData | null,
+  vehicle: VehicleData | null
 ): RentalInfoCardData {
   return {
     locatario: client?.nomeCompleto || '',
-    cnpjcpf: client?.cpf || client?.cnpj || '', // Added fallback to empty string
+    cnpjcpf: client?.cpf || client?.cnpj || '',
     telefone: client?.telefone || '',
     email: client?.email || '',
     placaVeiculo: locacao.placaVeiculo,
@@ -44,74 +44,74 @@ function toProfileData(
 }
 
 export const RentalProfile = () => {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: locacaoData, isLoading } = useGetLocacaoQuery(id!);
+  const { id } = useParams<{ id: string }>();
+
+  // Busca locação
+  const { data: locacaoData, isLoading, isError } = useGetLocacaoQuery(id!);
+
+  // Busca clientes e veículos
   const { data: clientsData } = useClientsQuery();
   const { data: vehiclesData } = useVehiclesQuery();
 
-  const client = useMemo(() => {
+  // Localiza o cliente
+  const client = useMemo<ClientData | null>(() => {
     if (!locacaoData || !clientsData) return null;
-    const cleanCpf = locacaoData.clienteId.replace(/\D/g, '');
-    return clientsData.clientes.find((c: ClientData) => c.cpf.replace(/\D/g, '') === cleanCpf);
+    const cleanCpf = locacaoData.clienteId;
+    return (
+      clientsData.clientes.find(
+        (c: ClientData) => c.cpf.replace(/\D/g, '') === cleanCpf
+      ) || null
+    );
   }, [locacaoData, clientsData]);
 
-  const vehicle = useMemo(() => {
+  // Localiza o veículo
+  const vehicle = useMemo<VehicleData | null>(() => {
     if (!locacaoData || !vehiclesData?.veiculos) return null;
-    const cleanPlaca = locacaoData.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    return vehiclesData.veiculos.find(
-      (v: VehicleData) => v.placa.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanPlaca,
+    const cleanPlaca = locacaoData.placaVeiculo.toUpperCase();
+    return (
+      vehiclesData.veiculos.find(
+        (v: VehicleData) => v.placa.toUpperCase() === cleanPlaca
+      ) || null
     );
   }, [locacaoData, vehiclesData]);
 
+  // Monta dados para o RentalInfoCard
   const rentalData = useMemo(() => {
-    if (!locacaoData || !client || !vehicle) return null;
+    if (!locacaoData) return null;
     return toProfileData(locacaoData, client, vehicle);
   }, [locacaoData, client, vehicle]);
 
-  const handleBack = () => {
-    navigate('/locacoes');
-  };
-
   if (isLoading) {
     return (
-      <Layout title="Carregando..." subtitle="Aguarde enquanto carregamos os dados">
-        <div className="flex-1 overflow-auto p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">Carregando dados da locação...</div>
-          </div>
+      <Layout showHeader={false}>
+        <ReturnHeader title="Detalhes da Locação" onBack={() => navigate('/locacoes')} />
+        <Toaster />
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="animate-spin text-gray-500" />
         </div>
       </Layout>
     );
   }
 
-  if (!rentalData) {
-    toast('Erro ao carregar dados da locação');
+  if (isError || !rentalData) {
+    toast('Locação não encontrada ou erro na requisição');
     return (
-      <Layout title={`Locação #${id}`} subtitle="Detalhes completos da locação">
-        <div className="flex-1 overflow-auto p-6">
-          <div className="mb-6">
-            <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Voltar para locações
-            </Button>
-          </div>
-          <div className="text-red-600">Não foi possível carregar os dados da locação.</div>
+      <Layout showHeader={false}>
+        <ReturnHeader title="Detalhes da Locação" onBack={() => navigate('/locacoes')} />
+        <Toaster />
+        <div className="text-red-600 p-6">
+          Não foi possível carregar os dados da locação.
         </div>
       </Layout>
     );
   }
 
   return (
-    <Layout title={`Locação #${id}`} subtitle="Detalhes completos da locação">
-      <div className="flex-1 overflow-auto p-6">
-        <div className="mb-6">
-          <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar para locações
-          </Button>
-        </div>
-
+    <Layout showHeader={false}>
+      <ReturnHeader title={`Locação #${id}`} onBack={() => navigate('/locacoes')} />
+      <Toaster />
+      <div className="p-6">
         <RentalInfoCard data={rentalData} setData={() => {}} />
       </div>
     </Layout>

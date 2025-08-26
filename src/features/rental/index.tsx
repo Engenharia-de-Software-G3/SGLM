@@ -370,7 +370,7 @@ export const Rental = () => {
     setFormModalOpen(true);
   };
 
-  function handleViewRental(id: string | number) {
+  function handleViewRental(id: string) {
     navigate(`/locacoes/${id}`);
   }
 
