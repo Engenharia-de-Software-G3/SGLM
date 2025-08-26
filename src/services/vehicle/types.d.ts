@@ -1,14 +1,11 @@
 export interface VehicleData {
-  id?: number | string;
+  id: string;
   chassi: string;
   placa: string;
   modelo: string;
   marca: string;
   renavam: string;
-  anoModelo: {
-    fabricacao: string;
-    modelo: string;
-  };
+  ano: string;
   cor: string;
   quilometragem: string;
   quilometragemNaCompra: string;
@@ -22,9 +19,12 @@ export interface VehicleData {
   dataAtualizacao: string;
 }
 
-export type CreateVehicleInterface = VehicleData;
+export interface CreateVehicleInterface extends Omit<VehicleData, 'id'> {
+  file?: File | null;
+};
 
-export type UpdateVehicleInterface = Partial<VehicleData>;
+// Remove o id, chassi e placa para update
+export type UpdateVehicleInterface = Partial<Omit<VehicleData, 'id' | 'chassi' | 'placa'>>;
 
 export type SingleVehicleResponse = VehicleData;
 

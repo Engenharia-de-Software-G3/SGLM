@@ -44,13 +44,14 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
+    console.log({vehicle})
     if (vehicle) {
       setFormData({
         marca: vehicle.marca || '',
         modelo: vehicle.modelo || '',
         placa: vehicle.placa || '',
-        ano: vehicle.anoModelo.fabricacao?.toString() || '',
-        cor: 'nao implementado',
+        ano: vehicle.ano || '',
+        cor: vehicle.cor,
         chassi: vehicle.chassi || '',
         quilometragemAtual: vehicle.quilometragem?.toString() || '',
         quilometragemCompra: vehicle.quilometragemNaCompra?.toString() || '',
@@ -99,8 +100,8 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         marca: vehicle.marca || '',
         modelo: vehicle.modelo || '',
         placa: vehicle.placa || '',
-        ano: vehicle.anoModelo.fabricacao?.toString() || '',
-        cor: 'nao implementado',
+        ano: vehicle.ano || '',
+        cor: vehicle.cor,
         chassi: vehicle.chassi || '',
         quilometragemAtual: vehicle.quilometragem?.toString() || '',
         quilometragemCompra: vehicle.quilometragemNaCompra?.toString() || '',

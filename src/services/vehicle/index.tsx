@@ -21,8 +21,8 @@ export function useCreateVehicleMutation() {
 
 export function useUpdateVehicleMutation() {
   return useMutation({
-    mutationFn: ({ chassi, payload }: { chassi: string; payload: UpdateVehicleInterface }) =>
-      updateVehicleFunction(chassi, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateVehicleInterface }) =>
+      updateVehicleFunction(id, payload),
   });
 }
 
