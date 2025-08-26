@@ -202,7 +202,7 @@ export const Vehicles = () => {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.placa}</td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <Badge className={'bg-gray-100 text-gray-800'}>
-                  {/* {vehicle.status || 'Desconhecido'} */}
+                  {vehicle.status}
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

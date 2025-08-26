@@ -8,24 +8,25 @@ import type { RentalInfoCardData } from './components/rental-info-card/@types';
 import { useGetLocacaoQuery } from '@/services/rental';
 import { toast } from 'sonner';
 import { useClientsQuery } from '@/services/client';
-import { LocacaoData, ClientData } from '@/lib/generateContractPDF';
+import { ClientData } from '@/lib/generateContractPDF';
 import { useVehiclesQuery } from '@/services/vehicle';
 import { VehicleData } from '@/services/vehicle/types';
+import { LocacaoInterface } from '@/services/rental/types';
 
 function toProfileData(
-  locacao: LocacaoData,
+  locacao: LocacaoInterface,
   client: ClientData | null,
   vehicle: VehicleData | null,
 ): RentalInfoCardData {
   return {
-    locatario: client?.nomeCompleto || locacao.nomeLocatario || '',
+    locatario: client?.nomeCompleto || '',
     cnpjcpf: client?.cpf || client?.cnpj || '', // Added fallback to empty string
     telefone: client?.telefone || '',
     email: client?.email || '',
     placaVeiculo: locacao.placaVeiculo,
     marca: vehicle?.marca || '',
     modelo: vehicle?.modelo || '',
-    ano: vehicle?.anoModelo ? `${vehicle.anoModelo.fabricacao}/${vehicle.anoModelo.modelo}` : '',
+    ano: vehicle?.ano || '',
     cor: vehicle?.cor || '',
     chassi: vehicle?.chassi || '',
     inicio: locacao.dataInicio,

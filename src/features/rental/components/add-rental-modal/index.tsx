@@ -24,7 +24,6 @@ export const AddRentalModal = ({
   } = useForm<AddRentalFormData>({
     resolver: zodResolver(addRentalSchema),
     defaultValues: {
-      locatario: '',
       cnpjcpf: '',
       inicio: '',
       fim: '',
@@ -37,17 +36,16 @@ export const AddRentalModal = ({
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
 
   const handleFormSubmit = handleSubmit(async (data: AddRentalFormData) => {
-    try {
-      console.log('Dados do formulário:', data);
-      await onSubmit(data);
-      reset();
-      onOpenChange(false);
-      toast('Locação salva com sucesso');
-    } catch (error) {
-      console.error('Erro ao salvar locação:', error);
-      toast('Erro ao salvar locação');
-    }
-  });
+  try {
+    await onSubmit(data);
+    reset();
+    onOpenChange(false);
+    toast('Locação salva com sucesso');
+  } catch (error) {
+    console.error('Erro ao salvar locação:', error);
+    toast('Erro ao salvar locação');
+  }
+});
 
   const handleCancel = () => {
     reset();
@@ -90,15 +88,7 @@ export const AddRentalModal = ({
         </div>
 
         <form onSubmit={handleFormSubmit} className="space-y-4">
-          <FormInput
-            label="Locatário"
-            placeholder="Digite o nome do locatário"
-            id="locatario"
-            control={control}
-            name="locatario"
-            error={errors.locatario?.message}
-            required
-          />
+          
           <MaskedFormInput
             label={clientType === 'fisica' ? 'CPF' : 'CNPJ'}
             id="cnpjcpf"

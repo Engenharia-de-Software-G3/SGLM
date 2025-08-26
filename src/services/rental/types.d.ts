@@ -1,7 +1,6 @@
 export interface LocacaoInterface {
   id: string;
   clienteId: string;
-  nomeLocatario: string;
   placaVeiculo: string;
   dataInicio: string;
   dataFim: string;
@@ -18,8 +17,7 @@ export interface ListManyLocacoes {
 }
 
 export interface CreateLocacaoInterface {
-  clienteId: string;
-  nomeLocatario: string;
+  cpfLocatario: string;
   placaVeiculo: string;
   dataInicio: string;
   dataFim: string;
@@ -28,8 +26,7 @@ export interface CreateLocacaoInterface {
 }
 
 export interface UpdateLocacaoInterface {
-  clienteId?: string;
-  nomeLocatario?: string;
+  cpfLocatario?: string;
   placaVeiculo?: string;
   dataInicio?: string;
   dataFim?: string;

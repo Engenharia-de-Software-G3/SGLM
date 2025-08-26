@@ -116,7 +116,18 @@ export async function deleteVehicleFunction(id: string) {
 
 export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
   try {
+    // VALIDAÇÃO CRÍTICA - evita busca com placa vazia
+    if (!placa || placa.trim() === '') {
+      throw new Error('Placa não fornecida');
+    }
+
     const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
+    
+    // Verifique novamente após a limpeza
+    if (cleanPlaca === '') {
+      throw new Error('Placa inválida');
+    }
+
     const response = await api.get('/veiculos', {
       params: {
         filtros: JSON.stringify({ placa: cleanPlaca }),
@@ -128,10 +139,9 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
       throw new Error('Veículo não encontrado');
     }
 
-    const vehicle: VehicleData = data.veiculos[0];
-    return vehicle as SingleVehicleResponse;
+    return data.veiculos[0];
   } catch (error) {
     console.error('Erro ao buscar veículo por placa:', error);
-    throw new Error('Erro ao buscar veículo por placa');
+    throw error; // Mantenha o erro original
   }
 }

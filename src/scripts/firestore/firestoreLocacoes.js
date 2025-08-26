@@ -5,42 +5,30 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * Cadastra uma nova locação
  * @param {Object} locacaoData - Dados da locação
- * @param {string} locacaoData.clienteId - CPF do cliente (formato: 'XXX.XXX.XXX-XX')
- * @param {string} locacaoData.nomeLocatario - Nome do locatário
+ * @param {string} locacaoData.cpfLocatario - CPF do cliente (formato: 'XXX.XXX.XXX-XX')
  * @param {string} locacaoData.placaVeiculo - Placa do veículo (formato: 'XXXX-XXXX')
  * @param {string} locacaoData.dataInicio - Data de início (formato: 'DD/MM/YYYY')
  * @param {string} locacaoData.dataFim - Data de término (formato: 'DD/MM/YYYY')
  * @param {number} locacaoData.valor - Valor da locação em reais
- * @param {String} locacaoData.periodicidadePagamento - Periocidade do pagamento (mensal, semanal, quinzenal ou diaria)
  * @returns {Promise<{success: boolean, id?: string, error?: string}>}
  */
 export const criarLocacao = async (locacaoData) => {
   try {
     console.log('Iniciando criação de locação com dados:', locacaoData);
-    const { clienteId, nomeLocatario, placaVeiculo, dataInicio, dataFim, valor, periodicidadePagamento } = locacaoData;
+    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor} = locacaoData;
 
     // 1. Validar cliente e verificar se o nome corresponde ao CPF
-    console.log('Buscando cliente com CPF:', clienteId);
-    const clienteRef = db.collection('clientes').doc(clienteId);
+    console.log('Buscando cliente com CPF:', cpfLocatario);
+    const clienteRef = db.collection('clientes').doc(cpfLocatario);
     const clienteDoc = await clienteRef.get();
 
     if (!clienteDoc.exists) {
-      console.log('Cliente não encontrado para CPF:', clienteId);
+      console.log('Cliente não encontrado para CPF:', cpfLocatario);
       throw new Error('CPF inválido');
     }
 
     const clienteData = clienteDoc.data();
     console.log('Cliente encontrado:', clienteData);
-    
-    // Verificar se o nome fornecido corresponde ao nome cadastrado
-    console.log('Comparando nomes:', {
-      nomeCadastrado: clienteData.nomeCompleto.toLowerCase(),
-      nomeFornecido: nomeLocatario.toLowerCase()
-    });
-    
-    if (clienteData.nomeCompleto.toLowerCase() !== nomeLocatario.toLowerCase()) {
-      throw new Error('Nome não corresponde ao CPF informado');
-    }
 
     // 2. Validar veículo
     const placaFormatada = placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
@@ -80,13 +68,10 @@ export const criarLocacao = async (locacaoData) => {
 
     // 3. Converter datas
     const parseDate = (dateStr) => {
-      // Se vier em YYYY-MM-DD, já dá para converter direto
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) {
-        throw new Error('Formato de data inválido.');
-      }
-      return date;
-    };
+      const parseDate = (dateStr) => {
+      const [day, month, year] = dateStr.split('/');
+      return new Date(`${year}-${month}-${day}`)
+    }};
 
     // 4. Criar ID da locação
     const id = uuidv4();
@@ -97,14 +82,12 @@ export const criarLocacao = async (locacaoData) => {
       .doc(id)
       .set({
         id,
-        clienteId: clienteId,
-        nomeLocatario: nomeLocatario,
+        cpfLocatario: cpfLocatario,
         veiculoId: veiculoDoc.id,
         placaVeiculo: placaFormatada,
         dataInicio: parseDate(dataInicio).toISOString(),
         dataFim: parseDate(dataFim).toISOString(),
         valor: Number(valor),
-        periodicidadePagamento: periodicidadePagamento,
         status: 'ativa',
         dataCadastro: new Date().toISOString(),
         dataAtualizacao: new Date().toISOString(),

@@ -70,20 +70,43 @@ export async function deleteClientFunction(id: number) {
 
 export async function getClientByCpf(cpf: string): Promise<SingleClientResponse> {
   try {
+    if (!cpf || cpf.trim() === '') throw new Error('CPF não fornecido');
+    
     const cleanCpf = cpf.replace(/\D/g, '');
+    if (cleanCpf === '') throw new Error('CPF inválido');
+
     const response = await api.get('/clientes', {
       params: {
         filtros: JSON.stringify({ cpf: cleanCpf }),
       },
     });
+    
     const clientes = response.data.clientes as ClientData[];
+
+    console.log('CPF buscado:', cleanCpf);
+    console.log('Número de clientes retornados:', response.data.clientes.length);
+    console.log('Todos os clientes:', response.data.clientes);
+    
     if (clientes.length === 0) {
       throw new Error('Cliente não encontrado');
     }
-    return clientes[0];
+    
+
+    const clienteEncontrado = clientes.find(cliente => {
+      const clienteCpfClean = cliente.cpf.replace(/\D/g, '');
+      return clienteCpfClean === cleanCpf;
+    });
+    
+    if (!clienteEncontrado) {
+      throw new Error('Cliente não encontrado');
+    }
+    
+    console.log('Cliente encontrado:', clienteEncontrado.nomeCompleto);
+    return clienteEncontrado;
+    
   } catch (error) {
     console.error('Erro ao buscar cliente por CPF:', error);
-    throw new Error('Erro ao buscar cliente por CPF');
+    throw error;
   }
 }
 

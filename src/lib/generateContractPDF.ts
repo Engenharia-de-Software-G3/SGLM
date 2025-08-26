@@ -21,7 +21,6 @@ export interface ClientData {
 export interface LocacaoData {
   id: string;
   clienteId: string;
-  nomeLocatario: string;
   placaVeiculo: string;
   dataInicio: string;
   dataFim: string;
@@ -302,8 +301,8 @@ export function generateContractPDF(
     .replace(/\[Chassi do Veículo\]/g, vehicle.chassi || 'Não informado')
     .replace(
       /\[Ano do Veículo\]/g,
-      vehicle.anoModelo
-        ? `${vehicle.anoModelo.fabricacao}/${vehicle.anoModelo.modelo}`
+      vehicle.ano
+        ? `${vehicle.ano}`
         : 'Não informado',
     )
     .replace(/\[Quilometragem Atual do Veículo\]/g, vehicle.quilometragem || '0')

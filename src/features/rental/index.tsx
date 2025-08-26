@@ -75,33 +75,52 @@ export const Rental = () => {
     }
   }, []);
 
-  const rentals: DisplayRentalData[] = useMemo(() => {
-    const source = Array.isArray(locacoesData?.locacoes) ? locacoesData!.locacoes : [];
-    return source.map((locacao: LocacaoData) => {
-      let locatarioNome = locacao.nomeLocatario;
+  const [rentals, setRentals] = useState<DisplayRentalData[]>([]);
 
-      if (!locatarioNome && locacao.clienteId) {
-        const cleanCpf = locacao.clienteId.replace(/\D/g, '');
-        const client = clientsData?.clientes?.find((client: ClientData) => {
-          const cleanClientCpf = client.cpf.replace(/\D/g, '');
-          return cleanClientCpf === cleanCpf;
-        });
+  useEffect(() => {
+    async function loadRentals() {
+      const source = Array.isArray(locacoesData?.locacoes) ? locacoesData.locacoes : [];
 
-        if (client) {
-          locatarioNome = client.nomeCompleto;
-        } else {
-          locatarioNome = locacao.clienteId;
-        }
-      }
+      const rentalsWithDetails = await Promise.all(
+        source.map(async (locacao: LocacaoData) => {
 
-      return {
-        id: locacao.id,
-        locatario: locatarioNome || locacao.clienteId || '',
-        placa: locacao.placaVeiculo,
-        cpf: locacao.clienteId,
-      };
-    });
-  }, [locacoesData, clientsData]);
+          let client;
+          let vehicle;
+
+          console.log(locacao.clienteId);
+          console.log(locacao.placaVeiculo);
+
+          try {
+            client = await getClientByCpf(locacao.clienteId);
+            console.log('Cliente encontrado:', client?.nomeCompleto);
+          } catch (error) {
+            console.error('Erro ao buscar cliente:', error);
+            client = null;
+          }
+          try {
+            vehicle = await getVehicleByPlaca(locacao.placaVeiculo);
+            console.log('Veículo encontrado:', vehicle?.placa);
+          } catch (error) {
+            console.error('Erro ao buscar veículo:', error);
+            vehicle = null;
+          }
+
+          return {
+            id: locacao.id,
+            locatario: client?.nomeCompleto || `Cliente ${locacao.clienteId}` || "N/A",
+            placa: vehicle?.placa || locacao.placaVeiculo || "N/A",
+            cpf: locacao.clienteId || "",
+          };
+        })
+      );
+
+      setRentals(rentalsWithDetails);
+    }
+
+    if (locacoesData?.locacoes) {
+      loadRentals();
+    }
+  }, [locacoesData]);
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
@@ -110,8 +129,8 @@ export const Rental = () => {
 
     return rentals.filter(
       (rental) =>
-        rental.locatario.toLowerCase().includes(lowerSearch) ||
-        rental.placa.toLowerCase().includes(lowerSearch),
+          (rental.locatario || "").toLowerCase().includes(lowerSearch) ||
+          (rental.placa || "").toLowerCase().includes(lowerSearch),
     );
   }, [rentals, search]);
 
@@ -126,21 +145,21 @@ export const Rental = () => {
 
     const cleanPlaca = rentalForm.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     const cleanCpf = rentalForm.cnpjcpf.replace(/\D/g, '');
-
     const formatDate = (dateString: string) => {
       const [day, month, year] = dateString.split('/');
-      return `${year}-${month}-${day}`;
+      const d = new Date(Number(year), Number(month) - 1, Number(day));
+      return d.toISOString().split('T')[0]; // "YYYY-MM-DD"
     };
+
 
     const valorNumerico = Number(rentalForm.valorLocacao);
     console.log('submitRental - valor convertido para número:', valorNumerico);
 
     const payload = {
-      clienteId: cleanCpf,
-      nomeLocatario: rentalForm.locatario,
+      cpfLocatario: cleanCpf,
       placaVeiculo: cleanPlaca,
-      dataInicio: formatDate(rentalForm.inicio),
-      dataFim: formatDate(rentalForm.fim),
+      dataInicio: rentalForm.inicio,
+      dataFim: rentalForm.fim,
       valor: valorNumerico,
       periodicidadePagamento: rentalForm.periodicidadePagamento,
     };
@@ -160,7 +179,7 @@ export const Rental = () => {
       const contractData: ContractData = {
         id: result.id,
         client: {
-          nomeCompleto: client?.nomeCompleto || result.nomeLocatario || 'Não informado',
+          nomeCompleto: client?.nomeCompleto || 'Não informado',
           cpf: cleanCpf,
           cnpj: client?.cnpj || '',
           rg: client?.rg || 'Não informado',
@@ -178,7 +197,7 @@ export const Rental = () => {
           modelo: vehicle?.modelo || 'Não informado',
           marca: vehicle?.marca || 'Não informado',
           renavam: vehicle?.renavam || 'Não informado',
-          anoModelo: vehicle?.anoModelo || { fabricacao: 'Não informado', modelo: 'Não informado' },
+          ano: vehicle?.ano || 'Não informado',
           cor: vehicle?.cor || 'Não informado',
           quilometragem: vehicle?.quilometragem || '0',
           quilometragemNaCompra: vehicle?.quilometragemNaCompra || '0',
@@ -194,7 +213,6 @@ export const Rental = () => {
         locacao: {
           id: result.id,
           clienteId: cleanCpf,
-          nomeLocatario: result.nomeLocatario || client?.nomeCompleto || 'Não informado',
           placaVeiculo: cleanPlaca,
           dataInicio: payload.dataInicio,
           dataFim: payload.dataFim,
@@ -276,7 +294,7 @@ export const Rental = () => {
       const contractData: ContractData = {
         id,
         client: {
-          nomeCompleto: client?.nomeCompleto || locacao.nomeLocatario || 'Não informado',
+          nomeCompleto: client?.nomeCompleto || 'Não informado',
           cpf: locacao.clienteId,
           cnpj: client?.cnpj || '',
           rg: client?.rg || 'Não informado',
@@ -288,13 +306,13 @@ export const Rental = () => {
           profissao: client?.profissao || 'Autônomo',
         },
         vehicle: {
-          id: vehicle?.id,
+          id: vehicle?.id || 'Não informado',
           chassi: vehicle?.chassi || 'Não informado',
           placa: cleanPlaca,
           modelo: vehicle?.modelo || 'Não informado',
           marca: vehicle?.marca || 'Não informado',
           renavam: vehicle?.renavam || 'Não informado',
-          anoModelo: vehicle?.anoModelo || { fabricacao: 'Não informado', modelo: 'Não informado' },
+          ano: vehicle?.ano ||  'Não informado',
           cor: vehicle?.cor || 'Não informado',
           quilometragem: vehicle?.quilometragem || '0',
           quilometragemNaCompra: vehicle?.quilometragemNaCompra || '0',
@@ -310,7 +328,6 @@ export const Rental = () => {
         locacao: {
           id: locacao.id,
           clienteId: locacao.clienteId,
-          nomeLocatario: locacao.nomeLocatario || client?.nomeCompleto || 'Não informado',
           placaVeiculo: locacao.placaVeiculo,
           dataInicio: locacao.dataInicio,
           dataFim: locacao.dataFim,
@@ -356,6 +373,23 @@ export const Rental = () => {
   function handleViewRental(id: string | number) {
     navigate(`/locacoes/${id}`);
   }
+
+  const formatCpfCnpj = (value: string): string => {
+  if (!value || typeof value !== 'string') return value || '';
+  
+  const cleanValue = value.replace(/\D/g, '');
+  
+  switch (cleanValue.length) {
+    case 11: // CPF
+      return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    
+    case 14: // CNPJ
+      return cleanValue.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    
+    default:
+      return value; // Retorna original se não for CPF/CNPJ válido
+  }
+};
 
   return (
     <Layout title="Gerenciamento de locações" subtitle="Veja todas as locações">
@@ -416,7 +450,9 @@ export const Rental = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {rental.placa}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{rental.cpf}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {formatCpfCnpj(rental.cpf)}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
                     <Button

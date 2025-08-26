@@ -11,7 +11,6 @@ function parseDDMMYYYY(dateStr: string): Date {
 }
 
 export const addRentalSchema = z.object({
-  locatario: requiredString,
   cnpjcpf: requiredString.refine((value: string) => {
     const cleanValue = value.replace(/\D/g, '');
     return cleanValue.length === 11 || cleanValue.length === 14;
