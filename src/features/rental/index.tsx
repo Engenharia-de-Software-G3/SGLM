@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { DeleteModal } from '@/shared/components/delete-modal';
-import { ExternalLinkIcon, FileText, Plus } from 'lucide-react';
+import { ExternalLinkIcon, FileText, Plus, Download } from 'lucide-react';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
@@ -26,7 +26,6 @@ import {
 } from '@/lib/generateContractPDF';
 import { getClientByCpf } from '@/services/client/functions';
 import { getVehicleByPlaca } from '@/services/vehicle/functions';
-import { api } from '@/lib/axios';
 
 interface DisplayRentalData {
   id: string;
@@ -40,6 +39,7 @@ export const Rental = () => {
   const [isTypeModalOpen, setTypeModalOpen] = useState(false);
   const [isFormModalOpen, setFormModalOpen] = useState(false);
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
+  const [loadingContractId, setLoadingContractId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const {
@@ -233,18 +233,45 @@ export const Rental = () => {
 
   const handleViewContract = async (id: string) => {
     try {
+      setLoadingContractId(id);
+      console.log('Gerando contrato para locação ID:', id);
+
+      // 1. Buscar dados da locação
       const locacoes = locacoesData?.locacoes || [];
       const locacao = locacoes.find((l: LocacaoData) => l.id === id);
       if (!locacao) {
         throw new Error('Locação não encontrada');
       }
 
+      console.log('Dados da locação encontrada:', locacao);
+
+      // 2. Buscar dados do cliente
       const cleanCpf = locacao.clienteId.replace(/\D/g, '');
-      const client = await getClientByCpf(cleanCpf);
+      console.log('Buscando cliente com CPF:', cleanCpf);
 
+      let client;
+      try {
+        client = await getClientByCpf(cleanCpf);
+        console.log('Cliente encontrado:', client);
+      } catch (error) {
+        console.warn('Erro ao buscar cliente:', error);
+        // Continua sem o cliente se não encontrar
+      }
+
+      // 3. Buscar dados do veículo
       const cleanPlaca = locacao.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      const vehicle = await getVehicleByPlaca(cleanPlaca);
+      console.log('Buscando veículo com placa:', cleanPlaca);
 
+      let vehicle;
+      try {
+        vehicle = await getVehicleByPlaca(cleanPlaca);
+        console.log('Veículo encontrado:', vehicle);
+      } catch (error) {
+        console.warn('Erro ao buscar veículo:', error);
+        // Continua sem o veículo se não encontrar
+      }
+
+      // 4. Preparar dados para o contrato
       const contractData: ContractData = {
         id,
         client: {
@@ -275,7 +302,7 @@ export const Rental = () => {
           local: vehicle?.local || 'Não informado',
           nome: vehicle?.nome || 'Não informado',
           observacoes: vehicle?.observacoes || 'Não informado',
-          status: vehicle?.status || 'ativo',
+          status: vehicle?.status || 'disponivel',
           dataCadastro: vehicle?.dataCadastro || 'Não informado',
           dataAtualizacao: vehicle?.dataAtualizacao || 'Não informado',
         },
@@ -294,15 +321,23 @@ export const Rental = () => {
         },
       };
 
-      const response = await api.post('/api/locacoes/pdf', contractData, {
-        responseType: 'blob',
-      });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      window.open(url);
+      console.log('Dados preparados para contrato:', contractData);
+
+      // 5. Gerar PDF usando a função existente
+      generateContractPDF(contractData, 'download');
+
+      toast.success('Download do contrato iniciado!');
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      toast.error('Erro ao gerar contrato: ' + errorMessage);
+      console.error('Erro ao gerar contrato:', error);
+
+      let errorMessage = 'Erro desconhecido';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error(`Erro ao gerar contrato: ${errorMessage}`);
+    } finally {
+      setLoadingContractId(null);
     }
   };
 
@@ -402,9 +437,19 @@ export const Rental = () => {
                       size="sm"
                       className="text-green-600 border-green-300 hover:bg-green-50"
                       onClick={() => handleViewContract(rental.id)}
+                      disabled={loadingContractId === rental.id}
                     >
-                      <FileText className="h-4 w-4 mr-1" />
-                      Ver contrato
+                      {loadingContractId === rental.id ? (
+                        <>
+                          <Download className="h-4 w-4 mr-1 animate-spin" />
+                          Gerando...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4 mr-1" />
+                          Ver contrato
+                        </>
+                      )}
                     </Button>
                     <Button
                       variant="outline"
