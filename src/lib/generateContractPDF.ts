@@ -25,7 +25,7 @@ export interface LocacaoData {
   dataInicio: string;
   dataFim: string;
   valor: number | string;
-  periodicidadePagamento: string;
+  periocidadePagamento: string;
   status?: 'ativa' | 'finalizada' | 'cancelada';
   dataCadastro?: string;
   dataAtualizacao?: string;
@@ -310,7 +310,7 @@ export function generateContractPDF(
     .replace(/\[Data Atual\]/g, new Date().toLocaleDateString('pt-BR'))
     .replace(/\[Valor Locacao\]/g, valorLocacao)
     .replace(/\[Valor Extenso\]/g, numeroExtenso(valorNumerico) + ' reais')
-    .replace(/\[Periodicidade\]/g, periodMap[locacao.periodicidadePagamento] || 'semanalmente');
+    .replace(/\[Periodicidade\]/g, periodMap[locacao.periocidadePagamento] || 'semanalmente');
 
   const docDefinition: TDocumentDefinitions = {
     pageMargins: [40, 60, 40, 60],

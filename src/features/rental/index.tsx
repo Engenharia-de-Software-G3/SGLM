@@ -161,8 +161,8 @@ export const Rental = () => {
       dataInicio: rentalForm.inicio,
       dataFim: rentalForm.fim,
       valor: valorNumerico,
-      periodicidadePagamento: rentalForm.periodicidadePagamento,
-      //metodoPagamento: rentalForm.metodoPagamento;
+      periocidadePagamento: rentalForm.periocidadePagamento,
+      metodoPagamento: rentalForm.metodoPagamento
     };
 
     console.log('submitRental - payload final:', payload);
@@ -218,7 +218,7 @@ export const Rental = () => {
           dataInicio: payload.dataInicio,
           dataFim: payload.dataFim,
           valor: payload.valor,
-          periodicidadePagamento: payload.periodicidadePagamento || 'Mensal',
+          periocidadePagamento: payload.periocidadePagamento || 'Mensal',
           status: result.status || 'ativa',
           dataCadastro: result.dataCadastro || new Date().toISOString(),
           dataAtualizacao: result.dataAtualizacao || new Date().toISOString(),
@@ -333,7 +333,7 @@ export const Rental = () => {
           dataInicio: locacao.dataInicio,
           dataFim: locacao.dataFim,
           valor: locacao.valor,
-          periodicidadePagamento: locacao.periodicidadePagamento || 'Mensal',
+          periocidadePagamento: locacao.periocidadePagamento || 'Mensal',
           status: locacao.status || 'ativa',
           dataCadastro: locacao.dataCadastro || new Date().toISOString(),
           dataAtualizacao: locacao.dataAtualizacao || new Date().toISOString(),

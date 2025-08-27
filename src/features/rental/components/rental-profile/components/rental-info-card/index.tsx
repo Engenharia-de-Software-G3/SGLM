@@ -19,8 +19,7 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
   useEffect(() => {
     const value = localStorage.getItem('isReadOnly');
-    const newIsReadOnly = value === 'true';
-    setIsReadOnly(newIsReadOnly);
+    setIsReadOnly(value === 'true');
   }, []);
 
   const submit = () => {
@@ -33,7 +32,7 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
   };
 
   return (
-    <Card className="p-6 mb-6">
+    <Card className="p-6 mb-6 max-h-[80vh] overflow-y-auto">
       {/* Dados do Locatário */}
       <div className="flex items-center mb-4">
         <p className="text-xl font-semibold">Dados do Locatário</p>
@@ -42,31 +41,22 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
       <div className="grid grid-cols-1 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
-          <Input
-            placeholder="Insira o nome completo do locatário"
-            value={data.locatario || ''}
-            readOnly={true}
-          />
+          <Input value={data.locatario || ''} readOnly />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">CPF/CNPJ</label>
-          <MaskedInput type="cpf" value={data.cnpjcpf || ''} readOnly={true} />
+          <MaskedInput type="cpf" value={data.cnpjcpf || ''} readOnly />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-          <MaskedInput type="phone" value={data.telefone || ''} readOnly={true} />
+          <MaskedInput type="phone" value={data.telefone || ''} readOnly />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-          <Input
-            type="email"
-            placeholder="Ex: nome@gmail.com"
-            value={data.email || ''}
-            readOnly={true}
-          />
+          <Input type="email" value={data.email || ''} readOnly />
         </div>
       </div>
 
@@ -77,35 +67,23 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Placa do Veículo</label>
-          <Input placeholder="Ex: ABC1234" value={data.placaVeiculo || ''} readOnly={true} />
+          <label className="block text-sm font-medium text-gray-700 mb-2">Placa</label>
+          <Input value={data.placaVeiculo || ''} readOnly />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Chassi</label>
-          <Input
-            placeholder="Insira o número do chassi"
-            value={data.chassi || ''}
-            readOnly={true}
-          />
+          <Input value={data.chassi || ''} readOnly />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Marca</label>
-          <Input placeholder="Ex: Toyota" value={data.marca || ''} readOnly={true} />
+          <Input value={data.marca || ''} readOnly />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Modelo</label>
-          <Input placeholder="Ex: Corolla" value={data.modelo || ''} readOnly={true} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Ano</label>
-          <Input type="number" placeholder="Ex: 2023" value={data.ano || ''} readOnly={true} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cor</label>
-          <Input placeholder="Ex: Prata" value={data.cor || ''} readOnly={true} />
+          <Input value={data.modelo || ''} readOnly />
         </div>
       </div>
 
@@ -117,45 +95,40 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Data de Início</label>
-          <div className="relative">
-            <MaskedInput type="date" value={data.inicio || ''} readOnly={true} />
-            <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </div>
+          <MaskedInput type="date" value={data.inicio || ''} readOnly />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Data de Fim</label>
-          <div className="relative">
-            <MaskedInput type="date" value={data.fim || ''} readOnly={true} />
-            <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </div>
+          <MaskedInput type="date" value={data.fim || ''} readOnly />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Valor da Locação</label>
-          <Input
-            type="text"
-            placeholder="R$ 0,00"
-            value={data.valorLocacao || ''}
-            readOnly={true}
-          />
+           <label className="block text-sm font-medium text-gray-700 mb-2">
+              Valor da Locação
+            </label>
+            <Input
+              value={
+                data.valorLocacao
+                  ? new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(Number(data.valorLocacao))
+                  : ''
+              }
+              readOnly
+            />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Intervalo de Pagamento
           </label>
-          <Select value={data.intervaloPagamento} disabled>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="diario">Diário</SelectItem>
-              <SelectItem value="semanal">Semanal</SelectItem>
-              <SelectItem value="quinzenal">Quinzenal</SelectItem>
-              <SelectItem value="mensal">Mensal</SelectItem>
-            </SelectContent>
-          </Select>
+          <p className="p-2 border rounded bg-gray-50">{data.intervaloPagamento || '-'}</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+          <Input value={data.formaPagamento || ''} readOnly />
         </div>
       </div>
 
@@ -163,13 +136,6 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
         <FileText className="h-4 w-4 mr-2" />
         Exportar Contrato
       </Button>
-
-      {!isReadOnly && (
-        <Button onClick={submit} className="bg-blue-600 hover:bg-blue-700 mt-6">
-          <Check className="h-4 w-4 mr-2" />
-          Salvar alterações
-        </Button>
-      )}
     </Card>
   );
 };

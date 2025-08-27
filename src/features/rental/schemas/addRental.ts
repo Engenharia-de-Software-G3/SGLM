@@ -30,7 +30,7 @@ export const addRentalSchema = z.object({
     message: 'Campo obrigatório',
   }),
 
-  periodicidadePagamento: z.string().refine((val) => val !== '', {
+  periocidadePagamento: z.string().refine((val) => val !== '', {
     message: 'Campo obrigatório',
   }),
 }).refine(

@@ -10,6 +10,8 @@ import { FormSelect } from '@/shared/components/form-select';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useState } from 'react';
+import { getClientByCpf } from '@/services/client/functions';
+import { getVehicleByPlaca } from '@/services/vehicle/functions';
 
 export const AddRentalModal = ({
   open,
@@ -29,8 +31,8 @@ export const AddRentalModal = ({
       fim: '',
       placaVeiculo: '',
       valorLocacao: 0,
-      periodicidadePagamento: '',
-      //metodoPagamento: '',
+      periocidadePagamento: '',
+      metodoPagamento: '',
     },
   });
 
@@ -145,11 +147,11 @@ export const AddRentalModal = ({
 
           <div className="col-span-2">
             <FormSelect
-              name="periodicidadePagamento"
+              name="periocidadePagamento"
               control={control}
-              label="Periodicidade do pagamento"
+              label="Periocidade do pagamento"
               required
-              error={errors.periodicidadePagamento?.message}
+              error={errors.periocidadePagamento?.message}
               options={[
                 { value: 'Diária', label: 'Diária' },
                 { value: 'Semanal', label: 'Semanal' },
@@ -171,6 +173,7 @@ export const AddRentalModal = ({
                 { value: 'Dinheiro', label: 'Dinheiro' },
                 { value: 'Débito', label: 'Débito' },
                 { value: 'Crédito', label: 'Crédito' },
+                { value: 'Boleto', label: 'Boleto' },
               ]}
             />
           </div>

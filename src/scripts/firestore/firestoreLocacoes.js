@@ -1,5 +1,5 @@
 // rent.js
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -14,64 +14,40 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export const criarLocacao = async (locacaoData) => {
   try {
-    console.log('Iniciando criação de locação com dados:', locacaoData);
-    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor} = locacaoData;
+    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor, periocidadePagamento, metodoPagamento } = locacaoData;
 
-    // 1. Validar cliente e verificar se o nome corresponde ao CPF
-    console.log('Buscando cliente com CPF:', cpfLocatario);
-    const clienteRef = db.collection('clientes').doc(cpfLocatario);
+    // 1. Validar cliente
+    const clienteRef = db.collection('clientes').doc(cpfLocatorio);
     const clienteDoc = await clienteRef.get();
 
     if (!clienteDoc.exists) {
-      console.log('Cliente não encontrado para CPF:', cpfLocatario);
-      throw new Error('CPF inválido');
+      throw new Error('Cliente não encontrado');
     }
 
-    const clienteData = clienteDoc.data();
-    console.log('Cliente encontrado:', clienteData);
-
     // 2. Validar veículo
-    const placaFormatada = placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    console.log('Buscando veículo com placa formatada:', placaFormatada);
-    
+    const placaFormatada = placaVeiculo.replace(/-/g, '');
     const veiculosSnapshot = await db
       .collection('veiculos')
       .where('placa', '==', placaFormatada)
       .limit(1)
       .get();
 
-    const todosVeiculos = await db.collection('veiculos').get();
-    todosVeiculos.docs.forEach(doc => {
-        const veiculo = doc.data();
-        console.log(`- ID: ${doc.id}, Placa: "${veiculo.placa}", Status: ${veiculo.status}`);
-    });
-
     if (veiculosSnapshot.empty) {
-      // Para debug: listar todas as placas cadastradas
-      const todosVeiculos = await db.collection('veiculos').get();
-      console.log('Veículos cadastrados no sistema:');
-      todosVeiculos.docs.forEach(doc => {
-        const veiculo = doc.data();
-        console.log(`- ID: ${doc.id}, Placa: "${veiculo.placa}", Status: ${veiculo.status}`);
-      });
       throw new Error('Veículo não encontrado');
     }
 
     const veiculoDoc = veiculosSnapshot.docs[0];
     const veiculoData = veiculoDoc.data();
 
-    console.log(`Status do veículo no banco: "${veiculoData.status}"`);
-
-    if (!veiculoData.status || veiculoData.status.trim().toLowerCase() !== 'disponivel') {
+    if (veiculoData.status !== 'disponivel') {
       throw new Error('Veículo não está disponível para locação');
     }
 
     // 3. Converter datas
     const parseDate = (dateStr) => {
-      const parseDate = (dateStr) => {
       const [day, month, year] = dateStr.split('/');
-      return new Date(`${year}-${month}-${day}`)
-    }};
+      return new Date(`${year}-${month}-${day}`);
+    };
 
     // 4. Criar ID da locação
     const id = uuidv4();
@@ -82,12 +58,14 @@ export const criarLocacao = async (locacaoData) => {
       .doc(id)
       .set({
         id,
-        cpfLocatario: cpfLocatario,
+        clienteId: cpfLocatario,
         veiculoId: veiculoDoc.id,
         placaVeiculo: placaFormatada,
         dataInicio: parseDate(dataInicio).toISOString(),
         dataFim: parseDate(dataFim).toISOString(),
         valor: Number(valor),
+        periocidadePagamento: periocidadePagamento,
+        metodoPagamento: metodoPagamento,
         status: 'ativa',
         dataCadastro: new Date().toISOString(),
         dataAtualizacao: new Date().toISOString(),
@@ -123,15 +101,12 @@ export const listarLocacoes = async ({ limite = 10, ultimoDoc = null }) => {
     }
 
     const snapshot = await query.get();
-    const locacoes = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        dataInicio: data.dataInicio ? new Date(data.dataInicio).toLocaleDateString('pt-BR') : '',
-        dataFim: data.dataFim ? new Date(data.dataFim).toLocaleDateString('pt-BR') : '',
-      };
-    });
+    const locacoes = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      dataInicio: formatDate(doc.data().dataInicio),
+      dataFim: formatDate(doc.data().dataFim),
+    }));
 
     return {
       locacoes,
@@ -140,6 +115,30 @@ export const listarLocacoes = async ({ limite = 10, ultimoDoc = null }) => {
   } catch (error) {
     console.error('Erro ao listar locações:', error);
     throw error;
+  }
+};
+
+/**
+ * Retorna uma locação existente
+ * @param {string} id - ID da locação
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const buscaLocacao = async (idLocacao) => {
+  try {
+    const snapshot = await db.collection('locacoes').where('id', '==', idLocacao).limit(1).get();
+
+    if (snapshot.empty) {
+      throw new Error('Locação não encontrada');
+    }
+
+    const locacaoRef = snapshot.docs[0].ref;
+    const locacaoDoc = await locacaoRef.get();
+    const locacaoData = locacaoDoc.data();
+
+    return { success: true, locacao:locacaoData };
+  } catch (error) {
+    console.error('Erro ao localizar locação:', error);
+    return { success: false, error: error.message };
   }
 };
 

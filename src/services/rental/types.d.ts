@@ -5,8 +5,8 @@ export interface LocacaoInterface {
   dataInicio: string;
   dataFim: string;
   valor: number | string; // Allow string for backend response, converted to number
-  periodicidadePagamento: string;
- // metodoPagamento: string;
+  periocidadePagamento: string;
+ metodoPagamento: string;
   status?: 'ativa' | 'finalizada' | 'cancelada';
   dataCadastro?: string;
   dataAtualizacao?: string;
@@ -23,8 +23,8 @@ export interface CreateLocacaoInterface {
   dataInicio: string;
   dataFim: string;
   valor: number;
-  periodicidadePagamento: string;
-  //metodoPagamento: string;
+  periocidadePagamento: string;
+  metodoPagamento: string;
 }
 
 export interface UpdateLocacaoInterface {
@@ -33,7 +33,7 @@ export interface UpdateLocacaoInterface {
   dataInicio?: string;
   dataFim?: string;
   valor?: number;
-  periodicidadePagamento?: string;
-  //metodoPagamento: string;
+  periocidadePagamento?: string;
+  metodoPagamento: string;
   status?: 'ativa' | 'finalizada' | 'cancelada';
 }

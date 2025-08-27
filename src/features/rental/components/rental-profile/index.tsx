@@ -5,7 +5,7 @@ import { ReturnHeader } from '@/shared/components/return-header';
 import { RentalInfoCard } from './components/rental-info-card';
 import { Toaster, toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { useGetLocacaoQuery } from '@/services/rental';
+import { useLocacoesQuery } from '@/services/rental';
 import { useClientsQuery } from '@/services/client';
 import { useVehiclesQuery } from '@/services/vehicle';
 import type { LocacaoInterface } from '@/services/rental/types';
@@ -32,14 +32,13 @@ function toProfileData(
     inicio: locacao.dataInicio,
     fim: locacao.dataFim,
     valorLocacao: String(locacao.valor) || '',
-    intervaloPagamento: locacao.periodicidadePagamento || 'Mensal',
-    observacoes: '',
-    formaPagamento: ''//locacao.metodoPagamento || 'Pix',
-    ,statusPagamento: '',
+    intervaloPagamento: locacao.periocidadePagamento || 'Mensal',
+    formaPagamento: locacao.metodoPagamento || 'Pix',
+    statusPagamento: '',
     localEntrega: '',
     localDevolucao: '',
-    quilometragemInicial: vehicle?.quilometragem || '',
-    quilometragemFinal: '',
+    quilometragemInicial: vehicle?.quilometragemNaCompra || '',
+    quilometragemFinal: vehicle?.quilometragem,
   };
 }
 
@@ -47,40 +46,53 @@ export const RentalProfile = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  // Busca locação
-  const { data: locacaoData, isLoading, isError } = useGetLocacaoQuery(id!);
+  // Busca todas as locações
+  const { data: locacoesData, isLoading, isError } = useLocacoesQuery();
+  console.log('Locacoes carregadas:', locacoesData);
+
+  // Localiza a locação pelo ID
+  const locacao = useMemo(() => {
+    if (!locacoesData?.locacoes || !id) return null;
+    const found = locacoesData.locacoes.find(l => l.id === id) || null;
+    console.log('Locação encontrada:', found);
+    return found;
+  }, [locacoesData, id]);
 
   // Busca clientes e veículos
   const { data: clientsData } = useClientsQuery();
+  console.log('Clientes carregados:', clientsData);
+
   const { data: vehiclesData } = useVehiclesQuery();
+  console.log('Veículos carregados:', vehiclesData);
 
   // Localiza o cliente
   const client = useMemo<ClientData | null>(() => {
-    if (!locacaoData || !clientsData) return null;
-    const cleanCpf = locacaoData.clienteId;
-    return (
-      clientsData.clientes.find(
-        (c: ClientData) => c.cpf.replace(/\D/g, '') === cleanCpf
-      ) || null
-    );
-  }, [locacaoData, clientsData]);
+    if (!locacao || !clientsData?.clientes) return null;
+    const foundClient = clientsData.clientes.find(
+      c => c.cpf.replace(/\D/g, '') === locacao.clienteId
+    ) || null;
+    console.log('Cliente encontrado:', foundClient);
+    return foundClient;
+  }, [locacao, clientsData]);
 
   // Localiza o veículo
   const vehicle = useMemo<VehicleData | null>(() => {
-    if (!locacaoData || !vehiclesData?.veiculos) return null;
-    const cleanPlaca = locacaoData.placaVeiculo.toUpperCase();
-    return (
-      vehiclesData.veiculos.find(
-        (v: VehicleData) => v.placa.toUpperCase() === cleanPlaca
-      ) || null
-    );
-  }, [locacaoData, vehiclesData]);
+    if (!locacao || !vehiclesData?.veiculos) return null;
+    const placa = locacao.placaVeiculo?.toUpperCase() || '';
+    const foundVehicle = vehiclesData.veiculos.find(
+      v => v.placa?.toUpperCase() === placa
+    ) || null;
+    console.log('Veículo encontrado:', foundVehicle);
+    return foundVehicle;
+  }, [locacao, vehiclesData]);
 
   // Monta dados para o RentalInfoCard
-  const rentalData = useMemo(() => {
-    if (!locacaoData) return null;
-    return toProfileData(locacaoData, client, vehicle);
-  }, [locacaoData, client, vehicle]);
+  const rentalData = useMemo<RentalInfoCardData | null>(() => {
+    if (!locacao) return null;
+    const data = toProfileData(locacao, client, vehicle);
+    console.log('Dados do RentalInfoCard:', data);
+    return data;
+  }, [locacao, client, vehicle]);
 
   if (isLoading) {
     return (
@@ -109,7 +121,7 @@ export const RentalProfile = () => {
 
   return (
     <Layout showHeader={false}>
-      <ReturnHeader title={`Locação #${id}`} onBack={() => navigate('/locacoes')} />
+      <ReturnHeader title={`Locação`} onBack={() => navigate('/locacoes')} />
       <Toaster />
       <div className="p-6">
         <RentalInfoCard data={rentalData} setData={() => {}} />
