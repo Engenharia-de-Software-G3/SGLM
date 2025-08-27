@@ -1,18 +1,8 @@
 import { Card } from '@/components/ui/card';
 import { Users, Car, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Layout } from '@/shared/components/layout';
-import { ReturnHeader } from '@/shared/components/return-header';
-import { Toaster, toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { useLocacoesQuery } from '@/services/rental';
+import { useNavigate } from 'react-router-dom';
 import { useClientsQuery } from '@/services/client';
 import { useVehiclesQuery } from '@/services/vehicle';
-import type { LocacaoInterface } from '@/services/rental/types';
-import type { ClientData } from '@/lib/generateContractPDF';
-import type { VehicleData } from '@/services/vehicle/types';
-
 
 export const StatsCards = () => {
 
