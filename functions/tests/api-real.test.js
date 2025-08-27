@@ -1,6 +1,6 @@
 const request = require('supertest');
 
-const API_BASE_URL = 'https://api-3dr7n3lena-uc.a.run.app';
+const API_BASE_URL = 'http://127.0.0.1:5001/slmg-es/us-central1/api';
 
 describe('API Real - Testes de Integração', () => {
   
