@@ -13,10 +13,11 @@ import {
   listarVeiculos,
   atualizarPlaca,
   registrarVenda,
-  buscarPorChassi, // Import this to help with DELETE and general updates
+  buscarPorChassi, buscaVeiculo, // Import this to help with DELETE and general updates
 } from './scripts/firestore/firestoreVeiculos.js';
 
-import { db } from './firebaseConfig.js'; // Import db for direct Firestore operations if needed
+import { db } from './firebaseConfig.js';
+import {buscarClientePorCPF} from "./scripts/firestore/firestoreClientes.js"; // Import db for direct Firestore operations if needed
 
 /**
  * Rota POST para criar um novo veículo.
@@ -123,6 +124,43 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
+router.get('/:idVeiculo', async (req, res) => {
+  try {
+    const { idVeiculo } = req.params;
+
+    // Validação básica do CPF
+    if (!idVeiculo || idVeiculo.trim().length === 0) {
+      return res.status(400).json({
+        error: 'id do Veículo é obrigatório',
+        message: 'Informe um id do Veículo válido para busca.'
+      });
+    }
+
+    const resultado = await buscaVeiculo(idVeiculo);
+
+    if (resultado.success) {
+      res.status(200).json({
+        success: true,
+        veiculo: resultado.veiculo
+      });
+    } else {
+      const statusCode = resultado.error === 'Veículo não encontrado.' ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        error: resultado.error
+      });
+    }
+  } catch (error) {
+    console.error('Erro inesperado na rota GET /veiculos/:idVeiculo:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor.',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
 
 /**
  * Rota PUT para atualizar um veículo.

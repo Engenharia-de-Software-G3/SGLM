@@ -67,6 +67,31 @@ export const criarVeiculo = async (veiculoData) => {
 };
 
 /**
+ * Busca um  veículo pelo id
+ */
+export const buscaVeiculo = async (idVeiculo) => {
+  try {
+    // 1. Buscar veículo por id (campo único)
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
+
+    if (snapshot.empty) {
+      throw new Error('Veículo não encontrado.');
+    }
+
+    // 2. Localiza ID do veiculo
+    const veiculoRef = snapshot.docs[0].ref;
+    const veiculoDoc = await veiculoRef.get();
+    const veiculoData = veiculoDoc.data();
+
+    return { success: true,  veiculo:veiculoData};
+  } catch (error) {
+    console.error('Erro ao localizar id:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+
+/**
  * Atualiza a placa de um veículo (via chassi)
  */
 export const atualizarPlaca = async (chassi, novaPlaca) => {

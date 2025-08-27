@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export const criarLocacao = async (locacaoData) => {
   try {
-    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor } = locacaoData;
+    const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor, periocidadePagamento, metodoPagamento } = locacaoData;
 
     // 1. Validar cliente
     const clienteRef = db.collection('clientes').doc(cpfLocatario);
@@ -64,6 +64,8 @@ export const criarLocacao = async (locacaoData) => {
         dataInicio: parseDate(dataInicio).toISOString(),
         dataFim: parseDate(dataFim).toISOString(),
         valor: Number(valor),
+        periocidadePagamento: periocidadePagamento,
+        metodoPagamento: metodoPagamento,
         status: 'ativa',
         dataCadastro: new Date().toISOString(),
         dataAtualizacao: new Date().toISOString(),
@@ -113,6 +115,30 @@ export const listarLocacoes = async ({ limite = 10, ultimoDoc = null }) => {
   } catch (error) {
     console.error('Erro ao listar locações:', error);
     throw error;
+  }
+};
+
+/**
+ * Retorna uma locação existente
+ * @param {string} id - ID da locação
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const buscaLocacao = async (idLocacao) => {
+  try {
+    const snapshot = await db.collection('locacoes').where('id', '==', idLocacao).limit(1).get();
+
+    if (snapshot.empty) {
+      throw new Error('Locação não encontrada');
+    }
+
+    const locacaoRef = snapshot.docs[0].ref;
+    const locacaoDoc = await locacaoRef.get();
+    const locacaoData = locacaoDoc.data();
+
+    return { success: true, locacao:locacaoData };
+  } catch (error) {
+    console.error('Erro ao localizar locação:', error);
+    return { success: false, error: error.message };
   }
 };
 
