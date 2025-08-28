@@ -73,7 +73,7 @@ export function useVehiclesQuery(params?: GetVehiclesParams) {
   }
   let { status, page, search } = params;
 
-  if (status === 'all' || status === '' || !status) {
+  if (!status) {
     status = undefined;
   }
 
@@ -84,8 +84,6 @@ export function useVehiclesQuery(params?: GetVehiclesParams) {
   if (page === 0 || !page) {
     page = undefined;
   }
-
-  status = status?.toLocaleLowerCase();
 
   return useQuery({
     queryKey: ['vehicles', status, page, search],

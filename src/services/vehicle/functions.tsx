@@ -105,9 +105,11 @@ export async function getVehicleFunction(id: string) {
 
     const vehicle: VehicleData = {...response.data.veiculo, dataCompra: response.data.veiculo.dataCompra.split('T')[0]};
 
-    console.log(vehicle.dataCompra)
     vehicle.dataCompra = vehicle.dataCompra.split('T')[0];
-    console.log(vehicle.dataCompra)
+    vehicle.ano = response.data.veiculo.anoModelo.fabricacao + '/' + response.data.veiculo.anoModelo.modelo;
+
+    console.log(vehicle.ano)
+
     return vehicle as SingleVehicleResponse;
   } catch (error) {
     console.error('❌ Error fetching vehicle by id:', error);
