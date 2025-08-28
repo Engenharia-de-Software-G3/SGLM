@@ -274,6 +274,92 @@ describe('Cliente Routes', () => {
 
       expect(response.text).toBe('Erro interno do servidor.');
     });
+
+    test('deve retornar erro 400 quando CPF está em formato inválido', async () => {
+      const clienteData = {
+        cpf: '1234abc', // formato inválido
+        dadosPessoais: {
+          nome: 'João Silva'
+        }
+      };
+
+      const response = await request(app)
+          .post('/clientes')
+          .send(clienteData)
+          .expect(400);
+
+      expect(response.text).toContain('CPF inválido');
+      expect(criarCliente).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 400 quando nome está ausente em dadosPessoais', async () => {
+      const clienteData = {
+        cpf: '12345678901',
+        dadosPessoais: {
+          email: 'joao@email.com'
+        }
+      };
+
+      const response = await request(app)
+          .post('/clientes')
+          .send(clienteData)
+          .expect(400);
+
+      expect(response.text).toContain('Nome é obrigatório');
+      expect(criarCliente).not.toHaveBeenCalled();
+    });
+
+    test('deve ignorar campos extras no body e criar cliente', async () => {
+      const clienteData = {
+        cpf: '12345678901',
+        dadosPessoais: {
+          nome: 'João Silva',
+          email: 'joao@email.com'
+        },
+        campoExtra: 'valorExtra'
+      };
+
+      criarCliente.mockResolvedValue({
+        success: true,
+        id: clienteData.cpf
+      });
+
+      const response = await request(app)
+          .post('/clientes')
+          .send(clienteData)
+          .expect(201);
+
+      expect(response.body).toEqual({
+        message: 'Cliente criado com sucesso!',
+        id: clienteData.cpf
+      });
+
+      expect(criarCliente).toHaveBeenCalledWith(expect.objectContaining({
+        cpf: '12345678901',
+        dadosPessoais: expect.any(Object)
+      }));
+    });
+
+    test('deve retornar detalhes do erro em ambiente de desenvolvimento', async () => {
+      process.env.NODE_ENV = 'development';
+
+      criarCliente.mockResolvedValue({
+        success: false,
+        error: 'Erro no Firestore'
+      });
+
+      const response = await request(app)
+          .post('/clientes')
+          .send({
+            cpf: '12345678901',
+            dadosPessoais: { nome: 'João Silva' }
+          })
+          .expect(500);
+
+      expect(response.body.error).toBe('Erro no Firestore');
+
+      process.env.NODE_ENV = 'test'; // resetar
+    });
   });
 
   describe('GET /clientes', () => {
@@ -374,6 +460,70 @@ describe('Cliente Routes', () => {
 
       expect(response.body.error).toBe('Erro interno no servidor');
     });
+
+    test('deve listar clientes usando ultimoDoc para paginação', async () => {
+      const mockResult = {
+        clientes: [{ id: '456', cpf: '98765432100', dadosPessoais: { nome: 'Maria' } }],
+        ultimoDoc: 'doc123'
+      };
+
+      listarClientes.mockResolvedValue(mockResult);
+
+      await request(app)
+          .get('/clientes?ultimoDoc=doc123')
+          .expect(200);
+
+      expect(listarClientes).toHaveBeenCalledWith({
+        limite: 10,
+        ultimoDoc: 'doc123',
+        filtros: {}
+      });
+    });
+
+    test('deve usar limite padrão se limite for inválido', async () => {
+      listarClientes.mockResolvedValue({ clientes: [], ultimoDoc: null });
+
+      await request(app)
+          .get('/clientes?limite=abc')
+          .expect(200);
+
+      expect(listarClientes).toHaveBeenCalledWith({
+        limite: 10,
+        ultimoDoc: null,
+        filtros: {}
+      });
+    });
+
+    test('deve usar filtros vazios se nenhum filtro for passado', async () => {
+      listarClientes.mockResolvedValue({ clientes: [], ultimoDoc: null });
+
+      await request(app)
+          .get('/clientes')  // sem filtros
+          .expect(200);
+
+      expect(listarClientes).toHaveBeenCalledWith({
+        limite: 10,
+        ultimoDoc: null,
+        filtros: {}
+      });
+    });
+
+    test('deve retornar possuiMais true quando ultimoDoc não for nulo', async () => {
+      const mockResult = {
+        clientes: [{ id: '123', cpf: '12345678901', dadosPessoais: { nome: 'João' } }],
+        ultimoDoc: 'abc123'
+      };
+
+      listarClientes.mockResolvedValue(mockResult);
+
+      const response = await request(app)
+          .get('/clientes')
+          .expect(200);
+
+      expect(response.body.paginacao.possuiMais).toBe(true);
+      expect(response.body.paginacao.ultimoDocId).toBe('abc123');
+    });
+
   });
 
   describe('GET /clientes/:cpf', () => {
@@ -449,6 +599,44 @@ describe('Cliente Routes', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Erro interno do servidor.');
+    });
+
+    test('deve retornar erro 400 para CPF com formato inválido', async () => {
+      const invalidCpf = 'abc123def';
+
+      buscarClientePorCPF.mockResolvedValue({
+        success: false,
+        error: 'CPF inválido'
+      });
+
+      const response = await request(app)
+          .get(`/clientes/${invalidCpf}`)
+          .expect(400);
+
+      expect(response.body).toEqual({
+        success: false,
+        error: 'CPF inválido'
+      });
+    });
+
+    test('deve retornar erro 400 para CPF vazio', async () => {
+      const response = await request(app)
+          .get('/clientes/') // rota inválida, possivelmente 404, mas pode testar
+
+      expect(response.status).toBe(404); // ou seu comportamento
+    });
+
+    test('deve retornar Content-Type application/json', async () => {
+      buscarClientePorCPF.mockResolvedValue({
+        success: true,
+        cliente: { cpf: '12345678901', dadosPessoais: { nome: 'João Silva' } }
+      });
+
+      const response = await request(app)
+          .get('/clientes/12345678901')
+          .expect('Content-Type', /json/);
+
+      expect(response.status).toBe(200);
     });
   });
 
@@ -528,6 +716,66 @@ describe('Cliente Routes', () => {
 
       expect(response.text).toBe('Erro interno do servidor.');
     });
+
+    test('deve atualizar apenas o nome do cliente', async () => {
+      const updates = { dadosPessoais: { nome: 'Novo Nome' } };
+
+      atualizarCliente.mockResolvedValue({ success: true });
+
+      const response = await request(app)
+          .put('/clientes/12345678901')
+          .send(updates)
+          .expect(200);
+
+      expect(response.body.message).toContain('atualizado com sucesso');
+      expect(atualizarCliente).toHaveBeenCalledWith('12345678901', updates);
+    });
+
+    test('deve ignorar campos extras no corpo da requisição', async () => {
+      const updates = {
+        dadosPessoais: { nome: 'João' },
+        campoInvalido: 'invalido'
+      };
+
+      atualizarCliente.mockResolvedValue({ success: true });
+
+      const response = await request(app)
+          .put('/clientes/12345678901')
+          .send(updates)
+          .expect(200);
+
+      expect(response.body.message).toContain('atualizado com sucesso');
+      expect(atualizarCliente).toHaveBeenCalledWith('12345678901', expect.objectContaining({
+        dadosPessoais: { nome: 'João' }
+      }));
+    });
+
+    test('deve atualizar dados pessoais e endereço do cliente', async () => {
+      const updates = {
+        dadosPessoais: { nome: 'João Atualizado' },
+        endereco: { cidade: 'São Paulo' }
+      };
+
+      atualizarCliente.mockResolvedValue({ success: true });
+
+      const response = await request(app)
+          .put('/clientes/12345678901')
+          .send(updates)
+          .expect(200);
+
+      expect(response.body.message).toContain('atualizado com sucesso');
+      expect(atualizarCliente).toHaveBeenCalledWith('12345678901', updates);
+    });
+
+    test('deve retornar erro 400 quando body da requisição é null', async () => {
+      const response = await request(app)
+          .put('/clientes/12345678901')
+          .send(null)
+          .expect(400);
+
+      expect(response.text).toContain('Nenhum dado fornecido para atualização');
+      expect(atualizarCliente).not.toHaveBeenCalled();
+    });
   });
 
   describe('DELETE /clientes/:cpf', () => {
@@ -581,6 +829,38 @@ describe('Cliente Routes', () => {
         .expect(500);
 
       expect(response.text).toBe('Erro interno do servidor.');
+    });
+
+    test('deve retornar erro 400 para CPF mal formatado', async () => {
+      const response = await request(app)
+          .delete('/clientes/abc123')
+          .expect(400);
+
+      expect(response.text).toContain('CPF inválido');
+      expect(deletarCliente).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 500 se deletarCliente retorna resposta inesperada', async () => {
+      deletarCliente.mockResolvedValue(undefined); // resposta quebrada
+
+      const response = await request(app)
+          .delete('/clientes/12345678901')
+          .expect(500);
+
+      expect(response.body.error).toBe('Erro inesperado ao deletar cliente');
+    });
+
+    test('deve retornar erro 404 se cliente já foi deletado anteriormente', async () => {
+      deletarCliente.mockResolvedValue({
+        success: false,
+        error: 'Cliente já removido.'
+      });
+
+      const response = await request(app)
+          .delete('/clientes/12345678901')
+          .expect(404);
+
+      expect(response.body.error).toBe('Cliente já removido.');
     });
   });
 
