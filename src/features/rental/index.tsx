@@ -79,37 +79,38 @@ export const Rental = () => {
 
   useEffect(() => {
     async function loadRentals() {
-      const source = Array.isArray(locacoesData?.locacoes) ? locacoesData.locacoes : [];
+      if (!locacoesData?.locacoes) {
+        setRentals([]);
+        return;
+      }
 
       const rentalsWithDetails = await Promise.all(
-        source.map(async (locacao: LocacaoData) => {
+        locacoesData.locacoes.map(async (locacao: LocacaoData) => {
+          let client: ClientData | null = null;
+          let vehicle = null;
 
-          let client;
-          let vehicle;
-
-          console.log(locacao.clienteId);
-          console.log(locacao.placaVeiculo);
+          console.log('Cliente ID:', locacao.clienteId);
+          console.log('Placa do veículo:', locacao.placaVeiculo);
 
           try {
             client = await getClientByCpf(locacao.clienteId);
             console.log('Cliente encontrado:', client?.nomeCompleto);
           } catch (error) {
             console.error('Erro ao buscar cliente:', error);
-            client = null;
           }
+
           try {
             vehicle = await getVehicleByPlaca(locacao.placaVeiculo);
             console.log('Veículo encontrado:', vehicle?.placa);
           } catch (error) {
             console.error('Erro ao buscar veículo:', error);
-            vehicle = null;
           }
 
           return {
             id: locacao.id,
-            locatario: client?.nomeCompleto || `Cliente ${locacao.clienteId}` || "N/A",
-            placa: vehicle?.placa || locacao.placaVeiculo || "N/A",
-            cpf: locacao.clienteId || "",
+            locatario: client?.nomeCompleto || `Cliente ${locacao.clienteId}` || 'N/A',
+            placa: vehicle?.placa || locacao.placaVeiculo || 'N/A',
+            cpf: locacao.clienteId || '',
           };
         })
       );
@@ -117,9 +118,7 @@ export const Rental = () => {
       setRentals(rentalsWithDetails);
     }
 
-    if (locacoesData?.locacoes) {
-      loadRentals();
-    }
+    loadRentals();
   }, [locacoesData]);
 
   const filteredRentals = useMemo(() => {
@@ -489,13 +488,7 @@ export const Rental = () => {
                         </>
                       )}
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                    >
-                      <ExternalLinkIcon className="h-4 w-4" />
-                    </Button>
+                    
                   </div>
                 </td>
               </tr>
