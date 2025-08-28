@@ -63,10 +63,18 @@ export function useGetVehicleActivitiesQuery(chassi: string) {
     enabled: !!chassi,
   });
 }
-export function useVehiclesQuery() {
+export function useVehiclesQuery(status?: string) {
+
+  console.log('🔍 Querying by status:', status);
+  if (status === 'all' || status === '') {
+    status = undefined;
+  }
+
+  status = status?.toLocaleLowerCase();
+
   return useQuery({
-    queryKey: ['vehicles'],
-    queryFn: getVehiclesFunction,
+    queryKey: ['vehicles', status],
+    queryFn: () => getVehiclesFunction(status),
     retry: 3,
     retryDelay: 1000,
   });

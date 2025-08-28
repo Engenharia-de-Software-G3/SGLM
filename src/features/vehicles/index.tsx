@@ -18,17 +18,17 @@ import { toast } from 'sonner';
 
 export const Vehicles = () => {
   const navigate = useNavigate();
-  const { data: vehicles } = useVehiclesQuery();
-
+  
   const { mutate: createVehicle } = useCreateVehicleMutation();
   const { mutate: deleteVehicle } = useDeleteVehicleMutation();
   const { mutate: updateVehicle } = useUpdateVehicleMutation();
-
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState<VehicleData | null>(null);
+  const { data: vehicles } = useVehiclesQuery(statusFilter);
 
   useEffect(() => {
     console.log(vehicles);

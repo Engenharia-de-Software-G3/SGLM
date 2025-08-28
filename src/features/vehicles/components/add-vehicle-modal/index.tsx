@@ -57,6 +57,8 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
   };
 
   const handleSubmit = (e: FormEvent) => {
+    console.log('🔍 Submitting form:', formData);
+
     e.preventDefault();
     setErrors({});
 

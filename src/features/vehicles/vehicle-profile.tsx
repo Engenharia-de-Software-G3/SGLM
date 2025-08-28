@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Loader2 } from 'lucide-react';
@@ -26,10 +26,6 @@ export const VehicleProfile = () => {
     data: activities = [], // Valor padrão para evitar undefined
     isLoading: isLoadingActivities,
   } = useGetVehicleActivitiesQuery(chassi || '');
-
-  useEffect(() => {
-    console.log({vehicle,activities})
-  }, [vehicle, activities])
 
   const filterByVehicle = () => {
     if (vehicle?.placa) {
@@ -85,6 +81,7 @@ export const VehicleProfile = () => {
         </div>
 
         <div className="p-6">
+          { vehicle && (
           <VehicleInfoCard
             marca={vehicle.marca}
             modelo={vehicle.modelo}
@@ -92,8 +89,9 @@ export const VehicleProfile = () => {
             ano={vehicle.ano}
             cor={vehicle.cor}
             status={vehicle.status}
-            quilometragemAtual={vehicle.quilometragem || '0'}
-          />
+            quilometragemAtual={vehicle.quilometragem}
+            />
+          )}
 
           <VehicleRecentActivitiesCard
             activities={activities}

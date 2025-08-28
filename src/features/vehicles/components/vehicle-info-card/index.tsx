@@ -12,7 +12,7 @@ interface VehicleInfoCardProps {
   quilometragemAtual: string;
 }
 
-export const VehicleInfoCard = ({
+export function VehicleInfoCard({
   marca,
   modelo,
   placa,
@@ -20,7 +20,7 @@ export const VehicleInfoCard = ({
   cor,
   status,
   quilometragemAtual,
-}: VehicleInfoCardProps) => {
+}: VehicleInfoCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'disponivel':
