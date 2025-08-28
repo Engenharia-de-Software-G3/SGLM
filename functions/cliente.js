@@ -47,6 +47,11 @@ router.post('/', async (req, res) => {
         .send('Dados do cliente incompletos (CPF e dadosPessoais são obrigatórios).');
     }
 
+    // Validação do formato do CPF
+    if (!/^\d{11}$/.test(clienteData.cpf)) {
+      return res.status(400).send('CPF inválido');
+    }
+
     // Chame a função do Firestore para criar o cliente
     const resultado = await criarCliente(clienteData);
 
@@ -145,6 +150,11 @@ router.get('/:cpf', async (req, res) => {
       });
     }
 
+    // Validação do formato do CPF
+    if (!/^\d{11}$/.test(clienteData.cpf)) {
+      return res.status(400).send('CPF inválido');
+    }
+
     const resultado = await buscarClientePorCPF(cpf);
 
     if (resultado.success) {
@@ -193,6 +203,11 @@ router.put('/:cpf', async (req, res) => {
       return res.status(400).send('Nenhum dado fornecido para atualização.');
     }
 
+    // Validação do formato do CPF
+    if (!/^\d{11}$/.test(clienteData.cpf)) {
+      return res.status(400).send('CPF inválido');
+    }
+
     // TODO: Adicionar validação mais robusta dos dados de entrada (formato de CPF, campos específicos, etc.)
     // Considerar usar um esquema de validação (ex: Joi, Yup).
 
@@ -227,6 +242,12 @@ router.put('/:cpf', async (req, res) => {
 router.delete('/:cpf', async (req, res) => {
   try {
     const { cpf } = req.params;
+
+    // Validação do formato do CPF
+    if (!/^\d{11}$/.test(clienteData.cpf)) {
+      return res.status(400).send('CPF inválido');
+    }
+
 
     const resultado = await deletarCliente(cpf);
 
