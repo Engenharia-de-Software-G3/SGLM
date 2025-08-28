@@ -19,6 +19,12 @@ export interface VehicleData {
   dataAtualizacao: string;
 }
 
+export interface GetVehiclesParams {
+  status?: string;
+  page?: number;
+  search?: string;
+}
+
 export interface CreateVehicleInterface extends Omit<VehicleData, 'id'> {
   file?: File | null;
 };

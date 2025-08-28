@@ -28,11 +28,14 @@ export const Vehicles = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState<VehicleData | null>(null);
-  const { data: vehicles } = useVehiclesQuery(statusFilter);
+
+  const { data: vehicles } = useVehiclesQuery({status: statusFilter, search: searchTerm, page: 1});
+
+
 
   useEffect(() => {
-    console.log(vehicles);
-  }, [vehicles]);
+    console.log(searchTerm);
+  }, [searchTerm]);
 
   const handleEditSave = (data: VeiculoFormulario) => {
     if (vehicleToEdit) {
