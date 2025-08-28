@@ -13,7 +13,7 @@ import {
   listarVeiculos,
   atualizarPlaca,
   registrarVenda,
-  buscarPorChassi, buscaVeiculo, // Import this to help with DELETE and general updates
+  buscarPorId, buscaVeiculo, // Import this to help with DELETE and general updates
 } from './scripts/firestore/firestoreVeiculos.js';
 
 import { db } from './firebaseConfig.js';
@@ -68,13 +68,13 @@ router.post('/', async (req, res) => {
  * @param {object} req - Objeto de requisição do Express.
  * @param {string} [req.query.limite=10] - Número de itens por página
  * @param {string} [req.query.ultimoDocId] - ID do último documento para paginação
- * @param {string} [req.query.filtros] - JSON stringificado com filtros (placa, status, marca)
+ * @param {string} [req.query.status] - JSON stringificado com filtro pelo status
  * @param {object} res - Objeto de resposta do Express.
  * @returns {Promise<void>}
  */
 router.get('/', async (req, res) => {
   try {
-    const { limite, ultimoDocId, filtros = '{}' } = req.query;
+    const { limite, ultimoDocId, status } = req.query;
 
     // Converter e validar parâmetros
     const limiteNum = limite ? Math.min(parseInt(limite) || 10, 100) : 10; // Default 10, max 100
@@ -83,12 +83,8 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'Value for "limite" is not a valid integer.' });
     }
 
-    let filtrosParsed;
-    try {
-      filtrosParsed = JSON.parse(filtros);
-    } catch {
-      filtrosParsed = {};
-    }
+    const filtrosParsed = {};
+    if (status) filtrosParsed.status = status;
 
     // Obter documento de referência para paginação
     let ultimoDoc = null;
@@ -164,14 +160,14 @@ router.get('/:idVeiculo', async (req, res) => {
 
 /**
  * Rota PUT para atualizar um veículo.
- * Espera o chassi do veículo no parâmetro da rota.
+ * Espera o id do veículo no parâmetro da rota.
  * Espera os dados a serem atualizados no corpo da requisição em formato JSON.
  * Pode atualizar placa, quilometragem, status (venda), etc.
- * @name PUT /:chassi
+ * @name PUT /:id
  * @function
  * @memberof module:veiculo
  * @param {object} req - Objeto de requisição do Express.
- * @param {string} req.params.chassi - Chassi do veículo a ser atualizado.
+ * @param {string} req.params.idVeiculo - id do veículo a ser atualizado.
  * @param {object} req.body - Objeto com os campos a serem atualizados.
  * @param {string} [req.body.placa] - Nova placa do veículo.
  * @param {number} [req.body.quilometragem] - Nova quilometragem do veículo.
@@ -179,17 +175,17 @@ router.get('/:idVeiculo', async (req, res) => {
  * @param {object} res - Objeto de resposta do Express.
  * @returns {Promise<void>}
  */
-router.put('/:chassi', async (req, res) => {
+router.put('/:idVeiculo', async (req, res) => {
   try {
-    const chassi = req.params.chassi;
+    const idVeiculo = req.params.idVeiculo;
     const updates = req.body;
 
-    if (!chassi || !updates || Object.keys(updates).length === 0) {
-      return res.status(400).send('Chassi e/ou dados de atualização ausentes.');
+    if (!idVeiculo || !updates || Object.keys(updates).length === 0) {
+      return res.status(400).send('idVeiculo e/ou dados de atualização ausentes.');
     }
 
     // Check if vehicle exists first
-    const veiculo = await buscarPorChassi(chassi);
+    const veiculo = await buscarPorId(idVeiculo);
     if (!veiculo) {
       return res.status(404).send('Veículo não encontrado.');
     }
@@ -198,7 +194,7 @@ router.put('/:chassi', async (req, res) => {
 
     // Handle specific updates using existing functions
     if (updates.placa !== undefined) {
-      resultado = await atualizarPlaca(chassi, updates.placa);
+      resultado = await atualizarPlaca(idVeiculo, updates.placa);
       if (!resultado.success) throw new Error(resultado.error);
     }
 
@@ -206,13 +202,13 @@ router.put('/:chassi', async (req, res) => {
       if (isNaN(parseInt(updates.quilometragem))) {
         return res.status(400).send('Quilometragem deve ser um número válido.');
       }
-      resultado = await atualizarQuilometragemVeiculo(chassi, parseInt(updates.quilometragem));
+      resultado = await atualizarQuilometragemVeiculo(idVeiculo, parseInt(updates.quilometragem));
       if (!resultado.success) throw new Error(resultado.error);
     }
 
     if (updates.dataVenda !== undefined) {
       // You might want more date validation here
-      resultado = await registrarVenda(chassi, updates.dataVenda);
+      resultado = await registrarVenda(idVeiculo, updates.dataVenda);
       if (!resultado.success) throw new Error(resultado.error);
     }
 
@@ -236,32 +232,32 @@ router.put('/:chassi', async (req, res) => {
 
     res.status(200).send({ message: 'Veículo atualizado com sucesso!' });
   } catch (error) {
-    console.error(`Erro na rota PUT /veiculos/${req.params.chassi}:`, error);
+    console.error(`Erro na rota PUT /veiculos/${req.params.idVeiculo}:`, error);
     res.status(500).send({ message: 'Erro ao atualizar veículo', error: error.message });
   }
 });
 
 /**
  * Rota DELETE para deletar um veículo.
- * Espera o chassi do veículo no parâmetro da rota.
- * @name DELETE /:chassi
+ * Espera o id do veículo no parâmetro da rota.
+ * @name DELETE /:idVeiculo
  * @function
  * @memberof module:veiculo
  * @param {object} req - Objeto de requisição do Express.
- * @param {string} req.params.chassi - Chassi do veículo a ser deletado.
+ * @param {string} req.params.idVeiculo - id do veículo a ser deletado.
  * @param {object} res - Objeto de resposta do Express.
  * @returns {Promise<void>}
  */
-router.delete('/:chassi', async (req, res) => {
+router.delete('/:idVeiculo', async (req, res) => {
   try {
-    const chassi = req.params.chassi;
+    const idVeiculo = req.params.idVeiculo;
 
-    if (!chassi) {
-      return res.status(400).send('Chassi do veículo ausente.');
+    if (!idVeiculo) {
+      return res.status(400).send('Id do veículo ausente.');
     }
 
-    // Find the vehicle document by chassi to get its ID
-    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+    // Find the vehicle document by id to get its ID
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
     if (snapshot.empty) {
       return res.status(404).send('Veículo não encontrado.');
@@ -274,7 +270,7 @@ router.delete('/:chassi', async (req, res) => {
 
     res.status(200).send({ message: 'Veículo deletado com sucesso!' });
   } catch (error) {
-    console.error(`Erro na rota DELETE /veiculos/${req.params.chassi}:`, error);
+    console.error(`Erro na rota DELETE /veiculos/${req.params.idVeiculo}:`, error);
     res.status(500).send({ message: 'Erro ao deletar veículo', error: error.message });
   }
 });

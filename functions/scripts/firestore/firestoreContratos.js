@@ -1,17 +1,17 @@
 import { db } from '../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 import { buscarClientePorCPF } from './firestoreClientes.js'; // Importa a função de busca de cliente
-import { buscarPorChassi } from './firestoreVeiculos.js'; // Importa a função de busca de veículo
+import { buscarPorId } from './firestoreVeiculos.js'; // Importa a função de busca de veículo
 
 /**
  * Cria um novo contrato jurídico no Firestore.
  * @param {Object} dadosContrato - Objeto contendo os dados do contrato.
  * @param {string} dadosContrato.cpfCliente - CPF do cliente.
- * @param {string} dadosContrato.chassiVeiculo - Chassi do veículo.
+ * @param {string} dadosContrato.idVeiculo - Id do veículo.
  * @param {Object} dadosContrato.termosContrato - Termos do contrato (valor, prazo, obrigações, etc.).
  * @returns {Promise<{success: boolean, id?: string, error?: string}>}
  */
-export const criarContratoJuridico = async ({ cpfCliente, chassiVeiculo, termosContrato }) => {
+export const criarContratoJuridico = async ({ cpfCliente, idVeiculo, termosContrato }) => {
   try {
     // 1. Buscar os dados completos do cliente e do veículo
     const clienteResult = await buscarClientePorCPF(cpfCliente);
@@ -20,7 +20,7 @@ export const criarContratoJuridico = async ({ cpfCliente, chassiVeiculo, termosC
     }
     const cliente = clienteResult.cliente;
 
-    const veiculo = await buscarPorChassi(chassiVeiculo);
+    const veiculo = await buscarPorId(idVeiculo);
     if (!veiculo) {
       return { success: false, error: 'Veículo não encontrado.' };
     }

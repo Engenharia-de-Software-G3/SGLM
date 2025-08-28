@@ -35,11 +35,12 @@ export const criarVeiculo = async (veiculoData) => {
 
         // Dados técnicos (do Figma)
         modelo: veiculoData.modelo,
+        cor: veiculoData.cor,
         marca: veiculoData.marca,
         renavam: veiculoData.renavam,
         anoModelo: {
-          fabricacao: parseInt(veiculoData.anoFabricacao),
-          modelo: parseInt(veiculoData.anoModelo),
+          fabricacao: veiculoData.anoModelo.fabricacao,
+          modelo: veiculoData.anoModelo.modelo,
         },
 
         // Histórico
@@ -92,12 +93,12 @@ export const buscaVeiculo = async (idVeiculo) => {
 
 
 /**
- * Atualiza a placa de um veículo (via chassi)
+ * Atualiza a placa de um veículo (via id)
  */
-export const atualizarPlaca = async (chassi, novaPlaca) => {
+export const atualizarPlaca = async (idVeiculo, novaPlaca) => {
   try {
-    // 1. Buscar veículo por chassi (campo único)
-    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+    // 1. Buscar veículo por id (campo único)
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
     if (snapshot.empty) {
       throw new Error('Veículo não encontrado.');
@@ -120,9 +121,9 @@ export const atualizarPlaca = async (chassi, novaPlaca) => {
 /**
  * Registra venda de veículo (atualiza status e dataVenda)
  */
-export const registrarVenda = async (chassi, dataVenda) => {
+export const registrarVenda = async (idVeiculo, dataVenda) => {
   try {
-    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
     if (snapshot.empty) throw new Error('Veículo não encontrado.');
 
@@ -140,10 +141,10 @@ export const registrarVenda = async (chassi, dataVenda) => {
 };
 
 /**
- * Busca veículo por chassi (campo único)
+ * Busca veículo por id (campo único)
  */
-export const buscarPorChassi = async (chassi) => {
-  const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+export const buscarPorId = async (idVeiculo) => {
+  const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
   return snapshot.empty ? null : snapshot.docs[0].data();
 };
@@ -153,7 +154,11 @@ export const buscarPorChassi = async (chassi) => {
  */
 export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   try {
-    let query = db.collection('veiculos').orderBy('placa').limit(limite);
+    let query = db.collection('veiculos').limit(limite);
+
+    if (!filtros.status && !filtros.placa && !filtros.marca) {
+      query = query.orderBy('placa');
+    }
 
     // Aplicar filtros
     if (filtros.placa) {
@@ -212,15 +217,15 @@ export const listarQuilometragemVeiculo = async (chassi) => {
 };
 
 /**
- * Atualizar a quilometragem do veículo pelo chassi
- * @param {string} chassi - Chassi do veículo
+ * Atualizar a quilometragem do veículo pelo idhassi
+ * @param {string} idVeiculo - Id do veículo
  * @param {number} quilometragem - Nova quilometragem do veículo
  * @returns {Promise<{success: boolean, error?: string}>}
  * @throws {Error} Em caso de erro no Firestore
  */
-export const atualizarQuilometragemVeiculo = async (chassi, quilometragem) => {
+export const atualizarQuilometragemVeiculo = async (idVeiculo, quilometragem) => {
   try {
-    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
     if (snapshot.empty) {
       return { success: false, error: 'Veículo não encontrado.' };

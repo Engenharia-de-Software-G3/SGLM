@@ -651,7 +651,7 @@ describe('Integração Real - Cobertura de Código', () => {
       
       expect(firestoreVeiculos.criarVeiculo).toBeDefined();
       expect(firestoreVeiculos.listarVeiculos).toBeDefined();
-      expect(firestoreVeiculos.buscarPorChassi).toBeDefined();
+      expect(firestoreVeiculos.buscarPorId).toBeDefined();
       expect(firestoreVeiculos.atualizarPlaca).toBeDefined();
       expect(firestoreVeiculos.registrarVenda).toBeDefined();
     });

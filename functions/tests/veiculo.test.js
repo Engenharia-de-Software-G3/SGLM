@@ -8,7 +8,7 @@ jest.mock('../scripts/firestore/firestoreVeiculos.js', () => ({
   atualizarQuilometragemVeiculo: jest.fn(),
   atualizarPlaca: jest.fn(),
   registrarVenda: jest.fn(),
-  buscarPorChassi: jest.fn(),
+  buscarPorId: jest.fn(),
 }));
 
 // Mock do firebaseConfig
@@ -34,7 +34,7 @@ const {
   atualizarQuilometragemVeiculo,
   atualizarPlaca,
   registrarVenda,
-  buscarPorChassi,
+  buscarPorId,
 } = require('../scripts/firestore/firestoreVeiculos.js');
 
 const { db } = require('../firebaseConfig.js');
@@ -117,16 +117,16 @@ describe('Veículos Routes', () => {
     });
     
     // Mock da rota PUT
-    mockRouter.put('/:chassi', async (req, res) => {
+    mockRouter.put('/:idVeiculo', async (req, res) => {
       try {
-        const { chassi } = req.params;
+        const { idVeiculo } = req.params;
         const updates = req.body;
         
-        if (!chassi || !updates || Object.keys(updates).length === 0) {
-          return res.status(400).send('Chassi e/ou dados de atualização ausentes.');
+        if (!idVeiculo || !updates || Object.keys(updates).length === 0) {
+          return res.status(400).send('Id do veículo e/ou dados de atualização ausentes.');
         }
         
-        const veiculoExistente = await buscarPorChassi(chassi);
+        const veiculoExistente = await buscarPorId(idVeiculo);
         if (!veiculoExistente) {
           return res.status(404).send('Veículo não encontrado.');
         }
@@ -139,7 +139,7 @@ describe('Veículos Routes', () => {
         let ultimoErro = null;
         
         if (updates.placa) {
-          const resultado = await atualizarPlaca(chassi, updates.placa);
+          const resultado = await atualizarPlaca(idVeiculo, updates.placa);
           if (!resultado.success) {
             sucessoGeral = false;
             ultimoErro = resultado.error;
@@ -147,7 +147,7 @@ describe('Veículos Routes', () => {
         }
         
         if (updates.quilometragem) {
-          const resultado = await atualizarQuilometragemVeiculo(chassi, parseInt(updates.quilometragem));
+          const resultado = await atualizarQuilometragemVeiculo(idVeiculo, parseInt(updates.quilometragem));
           if (!resultado.success) {
             sucessoGeral = false;
             ultimoErro = resultado.error;
@@ -155,7 +155,7 @@ describe('Veículos Routes', () => {
         }
         
         if (updates.dataVenda) {
-          const resultado = await registrarVenda(chassi, updates.dataVenda);
+          const resultado = await registrarVenda(idVeiculo, updates.dataVenda);
           if (!resultado.success) {
             sucessoGeral = false;
             ultimoErro = resultado.error;
@@ -173,11 +173,11 @@ describe('Veículos Routes', () => {
     });
     
     // Mock da rota DELETE
-    mockRouter.delete('/:chassi', async (req, res) => {
+    mockRouter.delete('/:idVeiculo', async (req, res) => {
       try {
-        const { chassi } = req.params;
+        const { idVeiculo } = req.params;
         
-        const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+        const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
         
         if (snapshot.empty) {
           return res.status(404).send('Veículo não encontrado.');
@@ -486,16 +486,16 @@ describe('Veículos Routes', () => {
     });
   });
 
-  describe('PUT /veiculos/:chassi', () => {
+  describe('PUT /veiculos/:idVeiculo', () => {
     test('deve atualizar placa com sucesso', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const updates = { placa: 'XYZ-9876' };
 
-      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      buscarPorId.mockResolvedValue({ id: 'veiculo123', idVeiculo });
       atualizarPlaca.mockResolvedValue({ success: true });
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(200);
 
@@ -503,19 +503,19 @@ describe('Veículos Routes', () => {
         message: 'Veículo atualizado com sucesso!'
       });
 
-      expect(buscarPorChassi).toHaveBeenCalledWith(chassi);
-      expect(atualizarPlaca).toHaveBeenCalledWith(chassi, updates.placa);
+      expect(buscarPorId).toHaveBeenCalledWith(idVeiculo);
+      expect(atualizarPlaca).toHaveBeenCalledWith(idVeiculo, updates.placa);
     });
 
     test('deve atualizar quilometragem com sucesso', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const updates = { quilometragem: 50000 };
 
-      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      buscarPorId.mockResolvedValue({ id: 'veiculo123', idVeiculo });
       atualizarQuilometragemVeiculo.mockResolvedValue({ success: true });
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(200);
 
@@ -523,18 +523,18 @@ describe('Veículos Routes', () => {
         message: 'Veículo atualizado com sucesso!'
       });
 
-      expect(atualizarQuilometragemVeiculo).toHaveBeenCalledWith(chassi, 50000);
+      expect(atualizarQuilometragemVeiculo).toHaveBeenCalledWith(idVeiculo, 50000);
     });
 
     test('deve registrar venda com sucesso', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const updates = { dataVenda: '2024-01-15' };
 
-      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      buscarPorId.mockResolvedValue({ id: 'veiculo123', idVeiculo });
       registrarVenda.mockResolvedValue({ success: true });
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(200);
 
@@ -542,7 +542,7 @@ describe('Veículos Routes', () => {
         message: 'Veículo atualizado com sucesso!'
       });
 
-      expect(registrarVenda).toHaveBeenCalledWith(chassi, updates.dataVenda);
+      expect(registrarVenda).toHaveBeenCalledWith(idVeiculo, updates.dataVenda);
     });
 
     test('deve retornar erro 400 quando chassi está ausente', async () => {
@@ -553,25 +553,25 @@ describe('Veículos Routes', () => {
     });
 
     test('deve retornar erro 400 quando não há dados para atualizar', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send({})
         .expect(400);
 
-      expect(response.text).toContain('Chassi e/ou dados de atualização ausentes');
-      expect(buscarPorChassi).not.toHaveBeenCalled();
+      expect(response.text).toContain('Id do veículo e/ou dados de atualização ausentes');
+      expect(buscarPorId).not.toHaveBeenCalled();
     });
 
     test('deve retornar erro 404 quando veículo não é encontrado', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo1123';
       const updates = { placa: 'XYZ-9876' };
 
-      buscarPorChassi.mockResolvedValue(null);
+      buscarPorId.mockResolvedValue(null);
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(404);
 
@@ -579,13 +579,13 @@ describe('Veículos Routes', () => {
     });
 
     test('deve retornar erro 400 para quilometragem inválida', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const updates = { quilometragem: 'abc' };
 
-      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      buscarPorId.mockResolvedValue({ id: 'veiculo123', idVeiculo });
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(400);
 
@@ -593,14 +593,14 @@ describe('Veículos Routes', () => {
     });
 
     test('deve retornar erro 500 quando função de atualização falha', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const updates = { placa: 'XYZ-9876' };
 
-      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      buscarPorId.mockResolvedValue({ id: 'veiculo123', idVeiculo });
       atualizarPlaca.mockResolvedValue({ success: false, error: 'Erro no Firestore' });
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(500);
 
@@ -608,34 +608,34 @@ describe('Veículos Routes', () => {
     });
 
     test('deve processar múltiplas atualizações', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const updates = {
         placa: 'XYZ-9876',
         quilometragem: 60000
       };
 
-      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      buscarPorId.mockResolvedValue({ id: 'veiculo123', idVeiculo });
       atualizarPlaca.mockResolvedValue({ success: true });
       atualizarQuilometragemVeiculo.mockResolvedValue({ success: true });
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(200);
 
       expect(response.body.message).toBe('Veículo atualizado com sucesso!');
-      expect(atualizarPlaca).toHaveBeenCalledWith(chassi, updates.placa);
-      expect(atualizarQuilometragemVeiculo).toHaveBeenCalledWith(chassi, 60000);
+      expect(atualizarPlaca).toHaveBeenCalledWith(idVeiculo, updates.placa);
+      expect(atualizarQuilometragemVeiculo).toHaveBeenCalledWith(idVeiculo, 60000);
     });
 
     test('deve capturar erros inesperados', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const updates = { placa: 'XYZ-9876' };
 
-      buscarPorChassi.mockRejectedValue(new Error('Erro inesperado'));
+      buscarPorId.mockRejectedValue(new Error('Erro inesperado'));
 
       const response = await request(app)
-        .put(`/veiculos/${chassi}`)
+        .put(`/veiculos/${idVeiculo}`)
         .send(updates)
         .expect(500);
 
@@ -643,9 +643,9 @@ describe('Veículos Routes', () => {
     });
   });
 
-  describe('DELETE /veiculos/:chassi', () => {
+  describe('DELETE /veiculos/:idVeiculo', () => {
     test('deve deletar veículo com sucesso', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const mockSnapshot = {
         empty: false,
         docs: [{
@@ -664,7 +664,7 @@ describe('Veículos Routes', () => {
       });
 
       const response = await request(app)
-        .delete(`/veiculos/${chassi}`)
+        .delete(`/veiculos/${idVeiculo}`)
         .expect(200);
 
       expect(response.body).toEqual({
@@ -674,14 +674,14 @@ describe('Veículos Routes', () => {
       expect(mockSnapshot.docs[0].ref.delete).toHaveBeenCalled();
     });
 
-    test('deve retornar erro 400 quando chassi está ausente', async () => {
+    test('deve retornar erro 400 quando id está ausente', async () => {
       await request(app)
         .delete('/veiculos/')
         .expect(404); // Express retorna 404 para rota sem parâmetro
     });
 
     test('deve retornar erro 404 quando veículo não é encontrado', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
       const mockSnapshot = {
         empty: true,
         docs: []
@@ -696,14 +696,14 @@ describe('Veículos Routes', () => {
       });
 
       const response = await request(app)
-        .delete(`/veiculos/${chassi}`)
+        .delete(`/veiculos/${idVeiculo}`)
         .expect(404);
 
       expect(response.text).toBe('Veículo não encontrado.');
     });
 
     test('deve capturar erros inesperados', async () => {
-      const chassi = '1HGBH41JXMN109186';
+      const idVeiculo = 'veiculo123';
 
       db.collection.mockReturnValue({
         where: jest.fn(() => ({
@@ -714,7 +714,7 @@ describe('Veículos Routes', () => {
       });
 
       const response = await request(app)
-        .delete(`/veiculos/${chassi}`)
+        .delete(`/veiculos/${idVeiculo}`)
         .expect(500);
 
       expect(response.body.message).toBe('Erro ao deletar veículo');
