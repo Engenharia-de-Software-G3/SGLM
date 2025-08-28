@@ -99,17 +99,10 @@ export const Rental = () => {
             console.error('Erro ao buscar cliente:', error);
           }
 
-          try {
-            vehicle = await getVehicleByPlaca(locacao.placaVeiculo);
-            console.log('Veículo encontrado:', vehicle?.placa);
-          } catch (error) {
-            console.error('Erro ao buscar veículo:', error);
-          }
-
           return {
             id: locacao.id,
             locatario: client?.nomeCompleto || `Cliente ${locacao.clienteId}` || 'N/A',
-            placa: vehicle?.placa || locacao.placaVeiculo || 'N/A',
+            placa: locacao.placaVeiculo || 'N/A',
             cpf: locacao.clienteId || '',
           };
         })
