@@ -27,7 +27,9 @@ export async function getVehiclesFunction({status, page, search}: GetVehiclesPar
 
     const response = await api.get('/veiculos', {
       params: {
-        filtros: JSON.stringify({status, page,  search}),
+        status: status ? status : undefined,
+        page: page ? page : undefined,
+        search: search ? search : undefined,
       },
     });
 
