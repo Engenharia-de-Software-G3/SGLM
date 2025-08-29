@@ -47,7 +47,7 @@ export const criarVeiculo = async (veiculoData) => {
         quilometragem: parseInt(veiculoData.quilometragem),
         quilometragemNaCompra: parseInt(veiculoData.quilometragemNaCompra || '0'),
         dataCompra: new Date(veiculoData.dataCompra).toISOString(),
-        dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
+        //dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
 
         // Localização
         local: veiculoData.local,
@@ -87,6 +87,42 @@ export const buscaVeiculo = async (idVeiculo) => {
     return { success: true,  veiculo:veiculoData};
   } catch (error) {
     console.error('Erro ao localizar id:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Atualiza um veículo no Firestore.
+ * @param {string} idVeiculo - ID do veículo
+ * @param {Object} updates - Campos a serem atualizados
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const atualizarVeiculo = async (idVeiculo, updates) => {
+  try {
+    if (!idVeiculo || !updates || Object.keys(updates).length === 0) {
+      return { success: false, error: 'ID do veículo ou dados de atualização ausentes.' };
+    }
+
+    // Clonar o objeto para não alterar o original
+    const updateData = { ...updates };
+
+    // Transformações de tipos
+    if (updateData.placa) updateData.placa = updateData.placa.replace(/-/g, '');
+    if (updateData.quilometragem) updateData.quilometragem = parseInt(updateData.quilometragem);
+    if (updateData.quilometragemNaCompra) updateData.quilometragemNaCompra = parseInt(updateData.quilometragemNaCompra);
+    if (updateData.anoModelo?.fabricacao) updateData.anoModelo.fabricacao = parseInt(updateData.anoModelo.fabricacao);
+    if (updateData.anoModelo?.modelo) updateData.anoModelo.modelo = parseInt(updateData.anoModelo.modelo);
+    if (updateData.dataCompra) updateData.dataCompra = new Date(updateData.dataCompra).toISOString();
+
+
+    await db.collection('veiculos').doc(idVeiculo).update({
+      ...updateData,
+      dataAtualizacao: new Date().toISOString(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error(`Erro ao atualizar veículo ${idVeiculo}:`, error);
     return { success: false, error: error.message };
   }
 };
@@ -156,7 +192,7 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
   try {
     let query = db.collection('veiculos').limit(limite);
 
-    if (!filtros.status && !filtros.placa && !filtros.marca) {
+    if (!filtros.status && !filtros.placa && !filtros.marca && !filtros.modelo) {
       query = query.orderBy('placa');
     }
 
@@ -171,6 +207,10 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
 
     if (filtros.marca) {
       query = query.where('marca', '==', filtros.marca);
+    }
+
+    if (filtros.modelo) {
+      query = query.where('modelo', '==', filtros.modelo);
     }
 
     // Paginação

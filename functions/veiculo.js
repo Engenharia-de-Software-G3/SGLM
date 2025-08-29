@@ -13,7 +13,8 @@ import {
   listarVeiculos,
   atualizarPlaca,
   registrarVenda,
-  buscarPorId, buscaVeiculo, // Import this to help with DELETE and general updates
+  buscarPorId, buscaVeiculo,
+  atualizarVeiculo,// Import this to help with DELETE and general updates
 } from './scripts/firestore/firestoreVeiculos.js';
 
 import { db } from './firebaseConfig.js';
@@ -68,13 +69,13 @@ router.post('/', async (req, res) => {
  * @param {object} req - Objeto de requisição do Express.
  * @param {string} [req.query.limite=10] - Número de itens por página
  * @param {string} [req.query.ultimoDocId] - ID do último documento para paginação
- * @param {string} [req.query.status] - JSON stringificado com filtro pelo status
+ * @param {string} [req.query.filtrosQuery] - Parâmetro para realizar filtragem via query params
  * @param {object} res - Objeto de resposta do Express.
  * @returns {Promise<void>}
  */
 router.get('/', async (req, res) => {
   try {
-    const { limite, ultimoDocId, status } = req.query;
+    const { limite, ultimoDocId, ...filtrosQuery } = req.query;
 
     // Converter e validar parâmetros
     const limiteNum = limite ? Math.min(parseInt(limite) || 10, 100) : 10; // Default 10, max 100
@@ -84,7 +85,9 @@ router.get('/', async (req, res) => {
     }
 
     const filtrosParsed = {};
-    if (status) filtrosParsed.status = status;
+    Object.keys(filtrosQuery).forEach((key) => {
+      if (filtrosQuery[key]) filtrosParsed[key] = filtrosQuery[key];
+    });
 
     // Obter documento de referência para paginação
     let ultimoDoc = null;
@@ -189,7 +192,8 @@ router.put('/:idVeiculo', async (req, res) => {
     if (!veiculo) {
       return res.status(404).send('Veículo não encontrado.');
     }
-
+/*
+*
     let resultado;
 
     // Handle specific updates using existing functions
@@ -211,7 +215,10 @@ router.put('/:idVeiculo', async (req, res) => {
       resultado = await registrarVenda(idVeiculo, updates.dataVenda);
       if (!resultado.success) throw new Error(resultado.error);
     }
+*/
+    const updateData = { ...updates };
 
+    const resultado = await atualizarVeiculo(idVeiculo, updateData);
     // Handle other potential direct updates if needed (e.g., local, nome, observacoes)
     // If there are other fields you want to allow updating directly on the main document,
     // you would add logic here to call a generic update function or update directly.
@@ -224,11 +231,11 @@ router.put('/:idVeiculo', async (req, res) => {
     // }
 
     // If no specific update function was called, assume a generic success if vehicle was found
-    if (resultado === undefined) {
-      return res
-        .status(200)
-        .send({ message: 'Veículo encontrado, mas nenhum campo atualizável fornecido.' });
-    }
+   // if (resultado === undefined) {
+    //  return res
+     //   .status(200)
+      //  .send({ message: 'Veículo encontrado, mas nenhum campo atualizável fornecido.' });
+    //}
 
     res.status(200).send({ message: 'Veículo atualizado com sucesso!' });
   } catch (error) {
