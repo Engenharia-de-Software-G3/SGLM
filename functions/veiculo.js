@@ -8,11 +8,8 @@ const router = express.Router();
 
 // Importando funções da Firestore para veículos
 import {
-  atualizarQuilometragemVeiculo,
   criarVeiculo,
   listarVeiculos,
-  atualizarPlaca,
-  registrarVenda,
   buscarPorId, buscaVeiculo,
   atualizarVeiculo,// Import this to help with DELETE and general updates
 } from './scripts/firestore/firestoreVeiculos.js';
@@ -192,50 +189,10 @@ router.put('/:idVeiculo', async (req, res) => {
     if (!veiculo) {
       return res.status(404).send('Veículo não encontrado.');
     }
-/*
-*
-    let resultado;
 
-    // Handle specific updates using existing functions
-    if (updates.placa !== undefined) {
-      resultado = await atualizarPlaca(idVeiculo, updates.placa);
-      if (!resultado.success) throw new Error(resultado.error);
-    }
-
-    if (updates.quilometragem !== undefined) {
-      if (isNaN(parseInt(updates.quilometragem))) {
-        return res.status(400).send('Quilometragem deve ser um número válido.');
-      }
-      resultado = await atualizarQuilometragemVeiculo(idVeiculo, parseInt(updates.quilometragem));
-      if (!resultado.success) throw new Error(resultado.error);
-    }
-
-    if (updates.dataVenda !== undefined) {
-      // You might want more date validation here
-      resultado = await registrarVenda(idVeiculo, updates.dataVenda);
-      if (!resultado.success) throw new Error(resultado.error);
-    }
-*/
     const updateData = { ...updates };
 
     const resultado = await atualizarVeiculo(idVeiculo, updateData);
-    // Handle other potential direct updates if needed (e.g., local, nome, observacoes)
-    // If there are other fields you want to allow updating directly on the main document,
-    // you would add logic here to call a generic update function or update directly.
-    // Example (assuming a generic update function exists or using batched writes):
-    // const directUpdates = {};
-    // if(updates.local !== undefined) directUpdates.local = updates.local;
-    // if(updates.nome !== undefined) directUpdates.nome = updates.nome;
-    // if(Object.keys(directUpdates).length > 0) {
-    //     await db.collection('veiculos').doc(veiculo.id).update(directUpdates);
-    // }
-
-    // If no specific update function was called, assume a generic success if vehicle was found
-   // if (resultado === undefined) {
-    //  return res
-     //   .status(200)
-      //  .send({ message: 'Veículo encontrado, mas nenhum campo atualizável fornecido.' });
-    //}
 
     res.status(200).send({ message: 'Veículo atualizado com sucesso!' });
   } catch (error) {

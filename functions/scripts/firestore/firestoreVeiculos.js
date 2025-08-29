@@ -127,55 +127,6 @@ export const atualizarVeiculo = async (idVeiculo, updates) => {
   }
 };
 
-
-/**
- * Atualiza a placa de um veículo (via id)
- */
-export const atualizarPlaca = async (idVeiculo, novaPlaca) => {
-  try {
-    // 1. Buscar veículo por id (campo único)
-    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
-
-    if (snapshot.empty) {
-      throw new Error('Veículo não encontrado.');
-    }
-
-    // 2. Atualizar apenas a placa (ID do documento permanece o mesmo)
-    const veiculoRef = snapshot.docs[0].ref;
-    await veiculoRef.update({
-      placa: novaPlaca.replace(/-/g, ''),
-      dataAtualizacao: new Date().toISOString(),
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error('Erro ao atualizar placa:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Registra venda de veículo (atualiza status e dataVenda)
- */
-export const registrarVenda = async (idVeiculo, dataVenda) => {
-  try {
-    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
-
-    if (snapshot.empty) throw new Error('Veículo não encontrado.');
-
-    await snapshot.docs[0].ref.update({
-      status: 'vendido',
-      dataVenda: new Date(dataVenda).toISOString(),
-      dataAtualizacao: new Date().toISOString(),
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error('Erro ao registrar venda:', error);
-    return { success: false, error: error.message };
-  }
-};
-
 /**
  * Busca veículo por id (campo único)
  */
@@ -234,53 +185,5 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
   } catch (error) {
     console.error('Erro ao listar veículos:', error);
     throw error;
-  }
-};
-
-/**
- * Listar quilometragem de um veículo específico
- * @param {string} chassi - Chassi do veículo
- * @returns {Promise<number|null>} - Retorna a quilometragem do veículo ou null se não encontrado
- * @throws {Error} Em caso de erro no Firestore
- */
-export const listarQuilometragemVeiculo = async (chassi) => {
-  try {
-    const veiculo = await buscarPorChassi(chassi);
-
-    if (!veiculo) return null;
-
-    return veiculo.quilometragem;
-  } catch (error) {
-    console.error('Erro ao buscar quilometragem:', error);
-    throw error;
-  }
-};
-
-/**
- * Atualizar a quilometragem do veículo pelo idhassi
- * @param {string} idVeiculo - Id do veículo
- * @param {number} quilometragem - Nova quilometragem do veículo
- * @returns {Promise<{success: boolean, error?: string}>}
- * @throws {Error} Em caso de erro no Firestore
- */
-export const atualizarQuilometragemVeiculo = async (idVeiculo, quilometragem) => {
-  try {
-    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
-
-    if (snapshot.empty) {
-      return { success: false, error: 'Veículo não encontrado.' };
-    }
-
-    const docId = snapshot.docs[0].id;
-
-    // Atualizar o campo quilometragem no documento encontrado
-    await db.collection('veiculos').doc(docId).update({ quilometragem });
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error('Erro ao atualizar quilometragem:', error);
-    return { success: false, error: error.message };
   }
 };
