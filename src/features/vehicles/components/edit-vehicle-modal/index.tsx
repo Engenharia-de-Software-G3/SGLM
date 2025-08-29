@@ -109,7 +109,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         local: vehicle.local || '',
         nome: vehicle.nome || '',
         observacoes: vehicle.observacoes || '',
-        status: vehicle.status as 'disponivel' | 'locado' | 'vendido',
+        status: vehicle.status,
       });
     }
     setErrors({});
@@ -256,9 +256,9 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                   onChange={handleInputChange}
                   className="w-full h-10 px-3 py-2 border border-input rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  <option value="disponivel">Disponível</option>
-                  <option value="locado">Locado</option>
-                  <option value="vendido">Vendido</option>
+                  <option value="disponivel" disabled>Disponível</option>
+                  <option value="locado" disabled>Locado</option>
+                  <option value="manutencao" disabled>Manutenção</option>
                 </select>
               </div>
             </div>

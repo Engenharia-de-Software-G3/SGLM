@@ -24,15 +24,12 @@ export const Vehicles = () => {
   const { mutate: updateVehicle } = useUpdateVehicleMutation();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusVehicle | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState<VehicleData | null>(null);
-  const { data: vehicles } = useVehiclesQuery(statusFilter);
 
-  useEffect(() => {
-    console.log(vehicles);
-  }, [vehicles]);
+  const { data: vehicles } = useVehiclesQuery({status: statusFilter, search: searchTerm, page: 1});
 
   const handleEditSave = (data: VeiculoFormulario) => {
     if (vehicleToEdit) {
@@ -53,6 +50,8 @@ export const Vehicles = () => {
 
   const handleOpenEditModal = (id: string) => {
     const vehicle = vehicles?.veiculos.find((v) => v.id === id);
+
+    console.log(`vehicle: searched`, { vehicle})
     if (vehicle) {
       setVehicleToEdit(vehicle);
       setShowEditModal(true);
@@ -127,44 +126,44 @@ export const Vehicles = () => {
           />
           <div className="flex gap-4 ml-4">
             <Button
-              onClick={() => setStatusFilter('')}
+              onClick={() => setStatusFilter(undefined)}
               className={`
                 bg-white text-gray-700 border border-gray-300
                 hover:bg-blue-100 hover:text-blue-700
-                ${statusFilter === '' ? 'bg-blue-100 text-blue-700 font-bold' : ''}
+                ${statusFilter === undefined ? 'bg-blue-100 text-blue-700 font-bold' : ''}
               `}
             >
               Todos
             </Button>
             <Button
-              onClick={() => setStatusFilter('Locado')}
+              onClick={() => setStatusFilter('disponivel')}
+              className={`
+                bg-white text-gray-700 border border-gray-300
+                hover:bg-green-100 hover:text-green-800
+                ${statusFilter === 'disponivel' ? 'bg-green-100 text-green-800 font-bold' : ''}
+              `}
+            >
+              Disponíveis
+            </Button>
+            <Button
+              onClick={() => setStatusFilter('locado')}
               className={`
                 bg-white text-gray-700 border border-gray-300
                 hover:bg-red-100 hover:text-red-800
-                ${statusFilter === 'Locado' ? 'bg-red-100 text-red-800 font-bold' : ''}
+                ${statusFilter === 'locado' ? 'bg-red-100 text-red-800 font-bold' : ''}
               `}
             >
               Locados
             </Button>
             <Button
-              onClick={() => setStatusFilter('Manutenção')}
+              onClick={() => setStatusFilter('manutencao')}
               className={`
                 bg-white text-gray-700 border border-gray-300
                 hover:bg-orange-100 hover:text-orange-800
-                ${statusFilter === 'Manutenção' ? 'bg-orange-100 text-orange-800 font-bold' : ''}
+                ${statusFilter === 'manutencao' ? 'bg-orange-100 text-orange-800 font-bold' : ''}
               `}
             >
               Manutenção
-            </Button>
-            <Button
-              onClick={() => setStatusFilter('Disponível')}
-              className={`
-                bg-white text-gray-700 border border-gray-300
-                hover:bg-green-100 hover:text-green-800
-                ${statusFilter === 'Disponível' ? 'bg-green-100 text-green-800 font-bold' : ''}
-              `}
-            >
-              Disponíveis
             </Button>
           </div>
 

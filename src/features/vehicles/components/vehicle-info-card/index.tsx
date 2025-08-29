@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Car } from 'lucide-react';
+import { StatusVehicle } from '@/services/vehicle/types';
 
 interface VehicleInfoCardProps {
   marca: string;
@@ -8,7 +9,7 @@ interface VehicleInfoCardProps {
   placa: string;
   ano: string;
   cor: string;
-  status: string;
+  status: StatusVehicle;
   quilometragemAtual: string;
 }
 
@@ -21,29 +22,30 @@ export function VehicleInfoCard({
   status,
   quilometragemAtual,
 }: VehicleInfoCardProps) {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: StatusVehicle) => {
+    console.log(`status: getStatusColor`, { status})
     switch (status) {
       case 'disponivel':
         return 'bg-green-100 text-green-800';
-      case 'vendido':
-        return 'bg-blue-100 text-blue-800';
       case 'locado':
+        return 'bg-red-100 text-red-800';
+      case 'manutencao':
         return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: StatusVehicle) => {
     switch (status) {
-      case 'vendido':
-        return 'Vendido';
       case 'disponivel':
         return 'Disponível';
       case 'locado':
         return 'Locado';
+      case 'manutencao':
+        return 'Manutenção';
       default:
-        return 'Desconhecido';
+        return 'Indefinido';
     }
   };
 

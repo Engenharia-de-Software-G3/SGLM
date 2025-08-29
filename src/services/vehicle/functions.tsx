@@ -5,20 +5,31 @@ import {
   ListManyVehicles,
   SingleVehicleResponse,
   UpdateVehicleInterface,
+  GetVehiclesParams,
 } from './types';
 
-function formatDate(dateString: string): string {
+function formatDateToServer(dateString: string): string {
   if (!dateString) return '';
   const [day, month, year] = dateString.split('/');
   return `${year}-${month}-${day}`;
 }
 
+function formatDateToClient(dateString: string): string {
+  if (!dateString) return '';
+  const [year, month, day] = dateString.split('T')[0].split('-');
+  return `${day}/${month}/${year}`;
+}
 
-export async function getVehiclesFunction(status?: string): Promise<ListManyVehicles> {
+export async function getVehiclesFunction({status, page, search}: GetVehiclesParams): Promise<ListManyVehicles> {
   try {
+
+    console.log('🔍 Querying by status:', status, 'page:', page, 'search:', search);
+
     const response = await api.get('/veiculos', {
       params: {
-        filtros: JSON.stringify({status}),
+        status: status ? status : undefined,
+        page: page ? page : undefined,
+        search: search ? search : undefined,
       },
     });
 
@@ -32,6 +43,10 @@ export async function getVehiclesFunction(status?: string): Promise<ListManyVehi
     data.veiculos.map((vehicle: any) => {
       try {
         vehicle.ano = vehicle.anoModelo.fabricacao + '/' + vehicle.anoModelo.modelo;
+        vehicle.dataCompra = formatDateToClient(vehicle.dataCompra);
+        vehicle.dataVenda = formatDateToClient(vehicle.dataVenda);
+        vehicle.dataAtualizacao = formatDateToClient(vehicle.dataAtualizacao);
+        vehicle.dataCadastro = formatDateToClient(vehicle.dataCadastro);
       } catch (error) {
         console.error('❌ Error formatting vehicle:', error);
       }
@@ -55,10 +70,10 @@ export async function createVehicleFunction(input: CreateVehicleInterface) {
       fabricacao: ano.split('/')[0],
       modelo: ano.split('/')[1],
     }, 
-    dataCadastro: formatDate(dataCadastro),
-    dataVenda: formatDate(dataVenda),
-    dataCompra: formatDate(dataCompra),
-    dataAtualizacao: formatDate(dataAtualizacao),
+    dataCadastro: formatDateToServer(dataCadastro),
+    dataVenda: formatDateToServer(dataVenda),
+    dataCompra: formatDateToServer(dataCompra),
+    dataAtualizacao: formatDateToServer(dataAtualizacao),
    };
 
     console.log('➕ Creating vehicle with payload:', payload);
@@ -90,9 +105,11 @@ export async function getVehicleFunction(id: string) {
 
     const vehicle: VehicleData = {...response.data.veiculo, dataCompra: response.data.veiculo.dataCompra.split('T')[0]};
 
-    console.log(vehicle.dataCompra)
     vehicle.dataCompra = vehicle.dataCompra.split('T')[0];
-    console.log(vehicle.dataCompra)
+    vehicle.ano = response.data.veiculo.anoModelo.fabricacao + '/' + response.data.veiculo.anoModelo.modelo;
+
+    console.log(vehicle.ano)
+
     return vehicle as SingleVehicleResponse;
   } catch (error) {
     console.error('❌ Error fetching vehicle by id:', error);

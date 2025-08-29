@@ -6,7 +6,7 @@ import {
   getVehiclesFunction,
   updateVehicleFunction,
 } from './functions';
-import { CreateVehicleInterface, StatusVehicle, UpdateVehicleInterface } from './types';
+import { CreateVehicleInterface, GetVehiclesParams, StatusVehicle, UpdateVehicleInterface } from './types';
 import { queryClient } from '@/lib/tanstack/query-client';
 
 export function useCreateVehicleMutation() {
@@ -63,18 +63,31 @@ export function useGetVehicleActivitiesQuery(chassi: string) {
     enabled: !!chassi,
   });
 }
-export function useVehiclesQuery(status?: string) {
+export function useVehiclesQuery(params?: GetVehiclesParams) {
+  if (!params) {
+    params = {
+      status: undefined,
+      page: undefined,
+      search: undefined,
+    };
+  }
+  let { status, page, search } = params;
 
-  console.log('🔍 Querying by status:', status);
-  if (status === 'all' || status === '') {
+  if (!status) {
     status = undefined;
   }
 
-  status = status?.toLocaleLowerCase();
+  if (search === '' || !search) {
+    search = undefined;
+  }
+
+  if (page === 0 || !page) {
+    page = undefined;
+  }
 
   return useQuery({
-    queryKey: ['vehicles', status],
-    queryFn: () => getVehiclesFunction(status),
+    queryKey: ['vehicles', status, page, search],
+    queryFn: () => getVehiclesFunction({status, page, search}),
     retry: 3,
     retryDelay: 1000,
   });

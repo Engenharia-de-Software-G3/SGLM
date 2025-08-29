@@ -19,6 +19,12 @@ export interface VehicleData {
   dataAtualizacao: string;
 }
 
+export interface GetVehiclesParams {
+  status?: StatusVehicle;
+  page?: number;
+  search?: string;
+}
+
 export interface CreateVehicleInterface extends Omit<VehicleData, 'id'> {
   file?: File | null;
 };
@@ -46,4 +52,4 @@ export interface VehicleActivity {
   description?: string; // Opcional, conforme usado no componente
 }
 
-export type StatusVehicle = 'disponivel' | 'locado' | 'vendido' | 'concluido';
+export type StatusVehicle = 'disponivel' | 'locado' | 'manutencao'
