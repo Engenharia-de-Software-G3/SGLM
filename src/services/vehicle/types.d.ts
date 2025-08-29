@@ -20,7 +20,7 @@ export interface VehicleData {
 }
 
 export interface GetVehiclesParams {
-  status?: string;
+  status?: StatusVehicle;
   page?: number;
   search?: string;
 }
@@ -52,4 +52,4 @@ export interface VehicleActivity {
   description?: string; // Opcional, conforme usado no componente
 }
 
-export type StatusVehicle = 'disponivel' | 'locado' | 'manutencao' | 'vendido' | 'concluido';
+export type StatusVehicle = 'disponivel' | 'locado' | 'manutencao'

@@ -165,16 +165,6 @@ export const Vehicles = () => {
             >
               Manutenção
             </Button>
-            <Button
-              onClick={() => setStatusFilter('vendido')}
-              className={`
-                bg-white text-gray-700 border border-gray-300
-                hover:bg-blue-100 hover:text-blue-800
-                ${statusFilter === 'vendido' ? 'bg-blue-100 text-blue-800 font-bold' : ''}
-              `}
-            >
-              Vendidos
-            </Button>
           </div>
 
           <ActionButton

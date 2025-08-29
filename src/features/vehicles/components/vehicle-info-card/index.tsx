@@ -29,8 +29,6 @@ export function VehicleInfoCard({
         return 'bg-green-100 text-green-800';
       case 'locado':
         return 'bg-red-100 text-red-800';
-      case 'vendido':
-        return 'bg-blue-100 text-blue-800';
       case 'manutencao':
         return 'bg-orange-100 text-orange-800';
       default:
@@ -40,14 +38,14 @@ export function VehicleInfoCard({
 
   const getStatusText = (status: StatusVehicle) => {
     switch (status) {
-      case 'vendido':
-        return 'Vendido';
       case 'disponivel':
         return 'Disponível';
       case 'locado':
         return 'Locado';
+      case 'manutencao':
+        return 'Manutenção';
       default:
-        return 'Desconhecido';
+        return 'Indefinido';
     }
   };
 
