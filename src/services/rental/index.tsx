@@ -22,6 +22,7 @@ export function useCreateLocacaoMutation(): UseMutationResult<LocacaoInterface, 
         mutationFn: createLocacaoFunction,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['locacoes'] });
+            queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         }
     });
 }
@@ -52,6 +53,7 @@ export function useDeleteLocacaoMutation(): UseMutationResult<void, Error, strin
         mutationFn: deleteLocacaoFunction,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['locacoes'] });
+            queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         }
     });
 }
