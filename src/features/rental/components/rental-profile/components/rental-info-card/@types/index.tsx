@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const rentalInfoCardSchema = z.object({
   // Dados do Locatário
+  id: z.string().min(1, 'ID da locação é obrigatório'),
+
   locatario: z.string().min(1, 'Nome do locatário é obrigatório'),
   cnpjcpf: z.string().min(1, 'CNPJ/CPF é obrigatório'),
   telefone: z.string().min(1, 'Telefone é obrigatório'),

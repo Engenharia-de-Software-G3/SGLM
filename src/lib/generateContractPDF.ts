@@ -130,7 +130,7 @@ CLÁUSULA 1ª – DO OBJETO DO CONTRATO
 
 1.1. Por meio deste contrato regula-se a locação do veículo:
 
-· Veículo de marca: [Marca do veículo], Modelo: [Modelo do Veículo], Placa: [Placa do Veículo], Renavam nº [Renavam do Veículo], Chassi: [Chassi do Veículo], Cor: [Cor do Veículo], Ano: [Ano do Veículo], Quilometragem: [Quilometragem Atual do Veículo].
+· Veículo de marca: [Marca do veículo], Modelo: [Modelo do Veículo], Placa: [Placa do Veículo], Renavam nº [Renavam do Veículo], Chassi: [Chassi do Veículo], Ano: [Ano do Veículo], Quilometragem: [Quilometragem Atual do Veículo].
 
 1.2. O veículo descrito acima será utilizado exclusivamente pelo LOCATÁRIO, não sendo permitido sub-rogar para terceiros os direitos por ele obtidos através do presente contrato, nem permitir que outra pessoa conduza o referido veículo sem a inequívoca e expressa autorização do LOCADOR, sob pena de rescisão contratual, multa de R$ 400,00 (quatrocentos reais) bem como responsabilização total por qualquer ato ou dano em relação ao veículo, inclusive os provenientes de caso fortuito ou força maior.  
 

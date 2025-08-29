@@ -1,4 +1,4 @@
-import { Calendar, Check, FileText } from 'lucide-react';
+import { Calendar, Check, FileText, Download } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { rentalInfoCardSchema, type RentalInfoCardProps } from './@types';
@@ -13,14 +13,89 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { generateContractPDF, ContractData } from '@/lib/generateContractPDF';
 
 export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isLoadingContract, setIsLoadingContract] = useState(false);
 
   useEffect(() => {
     const value = localStorage.getItem('isReadOnly');
     setIsReadOnly(value === 'true');
   }, []);
+
+  // Função para exportar contrato, replicando handleViewContract de Rental
+  const handleExportContract = async () => {
+    setIsLoadingContract(true);
+    try {
+      console.log('Gerando contrato com dados:', data);
+
+      // Montar ContractData com base nos dados disponíveis
+      const contractData: ContractData = {
+        id: data.id || 'N/A', // Usar id de RentalInfoCardData
+        client: {
+          nomeCompleto: data.locatario || 'Não informado',
+          cpf: data.cnpjcpf || 'Não informado',
+          cnpj: data.cnpjcpf.length > 11 ? data.cnpjcpf : '',
+          rg: 'Não informado',
+          email: data.email || 'Não informado',
+          telefone: data.telefone || 'Não informado',
+          endereco: 'Não informado',
+          nacionalidade: 'Brasileiro',
+          estadoCivil: 'Solteiro',
+          profissao: 'Autônomo',
+        },
+        vehicle: {
+          id: 'N/A',
+          chassi: data.chassi || 'Não informado',
+          placa: data.placaVeiculo || 'Não informado',
+          modelo: data.modelo || 'Não informado',
+          marca: data.marca || 'Não informado',
+          renavam: 'Não informado',
+          ano: data.ano || 'Não informado',
+          cor: data.cor || 'Não informado',
+          quilometragem: data.quilometragemInicial || '0',
+          quilometragemNaCompra: '0',
+          dataCompra: 'Não informado',
+          dataVenda: 'Não informado',
+          local: 'Não informado',
+          nome: 'Não informado',
+          observacoes: data.observacoes || 'Não informado',
+          status: 'disponivel',
+          dataCadastro: 'Não informado',
+          dataAtualizacao: 'Não informado',
+        },
+        locacao: {
+          id: data.id || 'N/A',
+          clienteId: data.cnpjcpf || 'Não informado',
+          placaVeiculo: data.placaVeiculo || 'Não informado',
+          dataInicio: data.inicio || 'Não informado',
+          dataFim: data.fim || 'Não informado',
+          valor: Number(data.valorLocacao) || 0,
+          periocidadePagamento: data.intervaloPagamento || 'Mensal', // Adicionado
+          status: 'ativa',
+          dataCadastro: new Date().toISOString(),
+          dataAtualizacao: new Date().toISOString(),
+        },
+      };
+
+      console.log('Dados preparados para contrato:', contractData);
+
+      // Gerar PDF
+      generateContractPDF(contractData, 'download');
+
+      toast.success('Download do contrato iniciado!');
+    } catch (error: unknown) {
+      console.error('Erro ao gerar contrato:', error);
+      let errorMessage = 'Erro desconhecido';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast.error(`Erro ao gerar contrato: ${errorMessage}`);
+    } finally {
+      setIsLoadingContract(false);
+    }
+  };
 
   const submit = () => {
     const parsed = rentalInfoCardSchema.safeParse(data);
@@ -105,20 +180,20 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-           <label className="block text-sm font-medium text-gray-700 mb-2">
-              Valor da Locação
-            </label>
-            <Input
-              value={
-                data.valorLocacao
-                  ? new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(Number(data.valorLocacao))
-                  : ''
-              }
-              readOnly
-            />
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Valor da Locação
+          </label>
+          <Input
+            value={
+              data.valorLocacao
+                ? new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(Number(data.valorLocacao))
+                : ''
+            }
+            readOnly
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -127,14 +202,29 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
           <p className="p-2 border rounded bg-gray-50">{data.intervaloPagamento || '-'}</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Forma de Pagamento
+          </label>
           <Input value={data.formaPagamento || ''} readOnly />
         </div>
       </div>
 
-      <Button className="bg-lime-600 hover:bg-lime-700 mt-6">
-        <FileText className="h-4 w-4 mr-2" />
-        Exportar Contrato
+      <Button
+        className="bg-lime-600 hover:bg-lime-700 mt-6"
+        onClick={handleExportContract}
+        disabled={isLoadingContract}
+      >
+        {isLoadingContract ? (
+          <>
+            <Download className="h-4 w-4 mr-2 animate-spin" />
+            Gerando...
+          </>
+        ) : (
+          <>
+            <FileText className="h-4 w-4 mr-2" />
+            Exportar Contrato
+          </>
+        )}
       </Button>
     </Card>
   );

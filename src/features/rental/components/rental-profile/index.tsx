@@ -19,18 +19,19 @@ function toProfileData(
   vehicle: VehicleData | null
 ): RentalInfoCardData {
   return {
+    id: locacao.id || 'N/A', // Adicionado para contractData
     locatario: client?.nomeCompleto || '',
     cnpjcpf: client?.cpf || client?.cnpj || '',
     telefone: client?.telefone || '',
     email: client?.email || '',
-    placaVeiculo: locacao.placaVeiculo,
+    placaVeiculo: locacao.placaVeiculo || '',
     marca: vehicle?.marca || '',
     modelo: vehicle?.modelo || '',
     ano: vehicle?.ano || '',
     cor: vehicle?.cor || '',
     chassi: vehicle?.chassi || '',
-    inicio: locacao.dataInicio,
-    fim: locacao.dataFim,
+    inicio: locacao.dataInicio || '',
+    fim: locacao.dataFim || '',
     valorLocacao: String(locacao.valor) || '',
     intervaloPagamento: locacao.periocidadePagamento || 'Mensal',
     formaPagamento: locacao.metodoPagamento || 'Pix',
@@ -38,7 +39,7 @@ function toProfileData(
     localEntrega: '',
     localDevolucao: '',
     quilometragemInicial: vehicle?.quilometragemNaCompra || '',
-    quilometragemFinal: vehicle?.quilometragem,
+    quilometragemFinal: vehicle?.quilometragem || '',
   };
 }
 
@@ -69,7 +70,7 @@ export const RentalProfile = () => {
   const client = useMemo<ClientData | null>(() => {
     if (!locacao || !clientsData?.clientes) return null;
     const foundClient = clientsData.clientes.find(
-      c => c.cpf.replace(/\D/g, '') === locacao.clienteId
+      c => c.cpf?.replace(/\D/g, '') === locacao.clienteId?.replace(/\D/g, '')
     ) || null;
     console.log('Cliente encontrado:', foundClient);
     return foundClient;
@@ -121,7 +122,7 @@ export const RentalProfile = () => {
 
   return (
     <Layout showHeader={false}>
-      <ReturnHeader title={`Locação`} onBack={() => navigate('/locacoes')} />
+      <ReturnHeader title={`Locação #${id}`} onBack={() => navigate('/locacoes')} />
       <Toaster />
       <div className="p-6">
         <RentalInfoCard data={rentalData} setData={() => {}} />
