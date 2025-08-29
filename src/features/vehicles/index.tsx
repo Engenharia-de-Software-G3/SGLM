@@ -33,7 +33,7 @@ export const Vehicles = () => {
 
   const handleEditSave = (data: VeiculoFormulario) => {
     if (vehicleToEdit) {
-      if (!data.status || !['disponivel', 'locado', 'vendido'].includes(data.status)) {
+      if (!data.status || !['disponivel', 'alugado', 'vendido'].includes(data.status)) {
         console.error('Error: Invalid or missing status');
         return;
       }
@@ -146,11 +146,11 @@ export const Vehicles = () => {
               Disponíveis
             </Button>
             <Button
-              onClick={() => setStatusFilter('locado')}
+              onClick={() => setStatusFilter('alugado')}
               className={`
                 bg-white text-gray-700 border border-gray-300
                 hover:bg-red-100 hover:text-red-800
-                ${statusFilter === 'locado' ? 'bg-red-100 text-red-800 font-bold' : ''}
+                ${statusFilter === 'alugado' ? 'bg-red-100 text-red-800 font-bold' : ''}
               `}
             >
               Locados

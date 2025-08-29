@@ -52,4 +52,4 @@ export interface VehicleActivity {
   description?: string; // Opcional, conforme usado no componente
 }
 
-export type StatusVehicle = 'disponivel' | 'locado' | 'manutencao'
+export type StatusVehicle = 'disponivel' | 'alugado' | 'manutencao'
