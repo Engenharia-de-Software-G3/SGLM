@@ -195,6 +195,134 @@ describe('Locações Routes', () => {
       expect(criarLocacao).toHaveBeenCalledWith(locacaoCompleta);
       expect(response.body.success).toBe(true);
     });
+
+    test('deve retornar erro 400 quando clienteId está ausente', async () => {
+      const locacaoData = {
+        veiculoId: 'veiculo123',
+        dataInicio: '2024-01-01',
+        dataFim: '2024-01-05',
+        valorDiario: 100.00,
+        observacoes: 'Locação de teste'
+      };
+
+      const response = await request(app)
+          .post('/')
+          .send(locacaoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('clienteId é obrigatório');
+    });
+
+    test('deve retornar erro 400 quando veiculoId está ausente', async () => {
+      const locacaoData = {
+        clienteId: 'cliente123',
+        dataInicio: '2024-01-01',
+        dataFim: '2024-01-05',
+        valorDiario: 100.00,
+        observacoes: 'Locação de teste'
+      };
+
+      const response = await request(app)
+          .post('/')
+          .send(locacaoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('veiculoId é obrigatório');
+    });
+
+    test('deve retornar erro 400 quando dataInicio estiver em formato inválido', async () => {
+      const locacaoData = {
+        clienteId: 'cliente123',
+        veiculoId: 'veiculo123',
+        dataInicio: '01-01-2024', // Formato inválido
+        dataFim: '2024-01-05',
+        valorDiario: 100.00,
+        observacoes: 'Locação de teste'
+      };
+
+      const response = await request(app)
+          .post('/')
+          .send(locacaoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('dataInicio deve estar no formato ISO 8601');
+    });
+
+    test('deve retornar erro 400 quando valorDiario não for numérico', async () => {
+      const locacaoData = {
+        clienteId: 'cliente123',
+        veiculoId: 'veiculo123',
+        dataInicio: '2024-01-01',
+        dataFim: '2024-01-05',
+        valorDiario: '100.00', // Valor enviado como string
+        observacoes: 'Locação de teste'
+      };
+
+      const response = await request(app)
+          .post('/')
+          .send(locacaoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('valorDiario deve ser um número válido');
+    });
+
+    test('deve rejeitar locação com serviços adicionais inválidos', async () => {
+      const locacaoData = {
+        clienteId: 'cliente123',
+        veiculoId: 'veiculo123',
+        dataInicio: '2024-01-01',
+        dataFim: '2024-01-05',
+        valorDiario: 100.00,
+        servicosAdicionais: ['GPS', 12345], // Serviço inválido (número)
+        observacoes: 'Locação de teste'
+      };
+
+      const response = await request(app)
+          .post('/')
+          .send(locacaoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Serviços adicionais devem ser strings');
+    });
+
+    test('deve rejeitar locação com seguro com valor inválido', async () => {
+      const locacaoData = {
+        clienteId: 'cliente123',
+        veiculoId: 'veiculo123',
+        dataInicio: '2024-01-01',
+        dataFim: '2024-01-05',
+        valorDiario: 100.00,
+        seguro: { tipo: 'completo', valor: '50.00' }, // Valor de seguro como string
+        observacoes: 'Locação de teste'
+      };
+
+      const response = await request(app)
+          .post('/')
+          .send(locacaoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Seguro valor deve ser um número');
+    });
+
+    test('deve retornar erro 500 quando houver falha no banco de dados', async () => {
+      const locacaoData = {
+        clienteId: 'cliente123',
+        veiculoId: 'veiculo123',
+        dataInicio: '2024-01-01',
+        dataFim: '2024-01-05',
+        valorDiario: 100.00,
+        observacoes: 'Locação de teste'
+      };
+
+      criarLocacao.mockRejectedValue(new Error('Erro no banco de dados'));
+
+      const response = await request(app)
+          .post('/')
+          .send(locacaoData)
+          .expect(500);
+
+      expect(response.body.error).toBe('Erro interno do servidor');
+    });
   });
 
   describe('GET /', () => {
@@ -303,6 +431,104 @@ describe('Locações Routes', () => {
         error: 'Internal server error'
       });
     });
+
+    test('deve retornar uma lista vazia quando não houver locações', async () => {
+      const mockResult = {
+        locacoes: [],
+        ultimoDoc: null,
+        total: 0
+      };
+
+      listarLocacoes.mockResolvedValue(mockResult);
+
+      const response = await request(app)
+          .get('/')
+          .expect(200);
+
+      expect(response.body).toEqual(mockResult);
+      expect(listarLocacoes).toHaveBeenCalledWith({
+        limite: 10,
+        ultimoDoc: undefined
+      });
+    });
+
+    test('deve retornar erro 400 quando ultimoDoc for inválido', async () => {
+      const response = await request(app)
+          .get('/?ultimoDoc=invalidDocId')
+          .expect(400);
+
+      expect(response.body).toEqual({
+        error: 'Value for "ultimoDoc" is invalid or not found.'
+      });
+
+      expect(listarLocacoes).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar locações sem último documento', async () => {
+      const mockResult = {
+        locacoes: [
+          { id: 'loc1', clienteId: 'cliente1', veiculoId: 'veiculo1', status: 'ativa' }
+        ],
+        ultimoDoc: null,
+        total: 1
+      };
+
+      listarLocacoes.mockResolvedValue(mockResult);
+
+      const response = await request(app)
+          .get('/')
+          .expect(200);
+
+      expect(response.body).toEqual(mockResult);
+      expect(listarLocacoes).toHaveBeenCalledWith({
+        limite: 10,
+        ultimoDoc: undefined
+      });
+    });
+
+    test('deve restringir limite máximo', async () => {
+      const mockResult = {
+        locacoes: [],
+        ultimoDoc: null,
+        total: 0
+      };
+
+      const limiteMaximo = 100; // Exemplo de valor limite máximo definido
+
+      listarLocacoes.mockResolvedValue(mockResult);
+
+      await request(app)
+          .get('/?limite=1000') // Número acima do limite máximo
+          .expect(200);
+
+      // Limite não deve ultrapassar o valor máximo definido
+      expect(listarLocacoes).toHaveBeenCalledWith({
+        limite: limiteMaximo,
+        ultimoDoc: undefined
+      });
+    });
+
+    test('deve aplicar filtro de status', async () => {
+      const mockResult = {
+        locacoes: [
+          { id: 'loc1', clienteId: 'cliente1', veiculoId: 'veiculo1', status: 'ativa' }
+        ],
+        ultimoDoc: null,
+        total: 1
+      };
+
+      listarLocacoes.mockResolvedValue(mockResult);
+
+      await request(app)
+          .get('/?status=ativa')
+          .expect(200);
+
+      expect(listarLocacoes).toHaveBeenCalledWith({
+        limite: 10,
+        ultimoDoc: undefined,
+        status: 'ativa'
+      });
+    });
   });
 
   describe('PUT /:id', () => {
@@ -384,6 +610,88 @@ describe('Locações Routes', () => {
       expect(atualizarLocacao).toHaveBeenCalledWith('loc123', updateData);
       expect(response.body.success).toBe(true);
     });
+
+    test('deve retornar erro 400 quando não houver dados no corpo da requisição', async () => {
+      const response = await request(app)
+          .put('/loc123')
+          .send({}) // Enviando um corpo vazio
+          .expect(400);
+
+      expect(response.body).toEqual({
+        error: 'Dados de atualização são obrigatórios.'
+      });
+
+      expect(atualizarLocacao).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 404 quando a locação não for encontrada', async () => {
+      const updateData = { status: 'finalizada' };
+
+      atualizarLocacao.mockResolvedValue({
+        success: false,
+        error: 'Locação não encontrada'
+      });
+
+      const response = await request(app)
+          .put('/loc999') // ID não encontrado
+          .send(updateData)
+          .expect(404);
+
+      expect(response.body).toEqual({
+        error: 'Locação não encontrada'
+      });
+    });
+
+    test('deve retornar erro 400 quando o status for inválido', async () => {
+      const updateData = { status: 'invalido' };
+
+      const response = await request(app)
+          .put('/loc123')
+          .send(updateData)
+          .expect(400);
+
+      expect(response.body).toEqual({
+        error: 'Status inválido. Valores permitidos: "ativa", "finalizada", "cancelada".'
+      });
+
+      expect(atualizarLocacao).not.toHaveBeenCalled();
+    });
+
+    test('deve processar atualização com campo opcional', async () => {
+      const updateData = {
+        observacoes: 'Observação atualizada'
+      };
+
+      atualizarLocacao.mockResolvedValue({
+        success: true,
+        locacao: { id: 'loc123', observacoes: 'Observação atualizada' }
+      });
+
+      const response = await request(app)
+          .put('/loc123')
+          .send(updateData)
+          .expect(200);
+
+      expect(atualizarLocacao).toHaveBeenCalledWith('loc123', updateData);
+      expect(response.body.success).toBe(true);
+      expect(response.body.locacao.observacoes).toBe('Observação atualizada');
+    });
+
+    test('deve retornar erro 500 quando ocorrer uma falha no banco de dados', async () => {
+      const updateData = { status: 'finalizada' };
+
+      // Simular erro de banco de dados
+      atualizarLocacao.mockRejectedValue(new Error('Erro no banco de dados'));
+
+      const response = await request(app)
+          .put('/loc123')
+          .send(updateData)
+          .expect(500);
+
+      expect(response.body).toEqual({
+        error: 'Erro interno do servidor'
+      });
+    });
   });
 
   describe('DELETE /:id', () => {
@@ -447,6 +755,80 @@ describe('Locações Routes', () => {
       expect(excluirLocacao).toHaveBeenCalledWith(complexId);
       expect(response.body.success).toBe(true);
     });
+
+    test('deve retornar erro 404 quando a locação não for encontrada', async () => {
+      const locacaoId = 'loc999'; // ID que não existe
+
+      excluirLocacao.mockResolvedValue({
+        success: false,
+        error: 'Locação não encontrada ou já excluída'
+      });
+
+      const response = await request(app)
+          .delete(`/${locacaoId}`)
+          .expect(404); // Mudando para 404, pois a locação não foi encontrada
+
+      expect(response.body).toEqual({
+        error: 'Locação não encontrada ou já excluída'
+      });
+    });
+
+    test('deve retornar erro 400 quando o ID for malformado', async () => {
+      const invalidId = 'loc#123'; // ID malformado
+
+      const response = await request(app)
+          .delete(`/${invalidId}`)
+          .expect(400); // Esperando erro de validação de ID
+
+      expect(response.body).toEqual({
+        error: 'ID da locação inválido.'
+      });
+
+      expect(excluirLocacao).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 400 quando o ID não for fornecido', async () => {
+      const response = await request(app)
+          .delete('/')
+          .expect(400);
+
+      expect(response.body).toEqual({
+        error: 'ID da locação é obrigatório.'
+      });
+
+      expect(excluirLocacao).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 400 quando o tipo do ID for inválido', async () => {
+      const invalidId = 12345; // Número em vez de string
+
+      const response = await request(app)
+          .delete(`/${invalidId}`)
+          .expect(400);
+
+      expect(response.body).toEqual({
+        error: 'ID da locação deve ser uma string válida.'
+      });
+
+      expect(excluirLocacao).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 400 quando a locação já foi excluída', async () => {
+      const locacaoId = 'loc123';
+
+      excluirLocacao.mockResolvedValue({
+        success: false,
+        error: 'Locação não encontrada ou já excluída'
+      });
+
+      const response = await request(app)
+          .delete(`/${locacaoId}`)
+          .expect(400);
+
+      expect(response.body).toEqual({
+        error: 'Locação não encontrada ou já excluída'
+      });
+    });
   });
 
   describe('Middleware de validação', () => {
@@ -483,6 +865,65 @@ describe('Locações Routes', () => {
         .expect(201);
 
       expect(criarLocacao).toHaveBeenCalledWith(locacaoData);
+    });
+
+    test('deve rejeitar CORS de origens não permitidas', async () => {
+      const response = await request(app)
+          .get('/')
+          .set('Origin', 'http://malicious-site.com')
+          .expect(403); // Esperando um erro 403
+
+      expect(response.body).toEqual({
+        error: 'CORS não permitido para esta origem'
+      });
+    });
+
+    test('deve rejeitar JSON malformado', async () => {
+      const response = await request(app)
+          .post('/')
+          .send('{"clienteId": "cliente123", "veiculoId": "veiculo123"') // JSON malformado (falta fechar chave)
+          .set('Content-Type', 'application/json')
+          .expect(400);
+
+      expect(response.body).toEqual({
+        error: 'JSON malformado'
+      });
+    });
+
+    test('deve retornar erro 415 para Content-Type incorreto', async () => {
+      const response = await request(app)
+          .post('/')
+          .send({ clienteId: 'cliente123', veiculoId: 'veiculo123' })
+          .set('Content-Type', 'text/plain') // Cabeçalho Content-Type incorreto
+          .expect(415); // Erro de tipo de mídia não suportado
+
+      expect(response.body).toEqual({
+        error: 'Tipo de mídia não suportado'
+      });
+    });
+
+    test('deve rejeitar CORS para métodos não permitidos', async () => {
+      const response = await request(app)
+          .delete('/')
+          .set('Origin', 'http://localhost:3000') // Origem permitida
+          .expect(405); // Método não permitido
+
+      expect(response.body).toEqual({
+        error: 'Método não permitido'
+      });
+    });
+
+    test('deve processar cabeçalho Authorization corretamente', async () => {
+      const response = await request(app)
+          .post('/')
+          .set('Authorization', 'Bearer token123')
+          .send({ clienteId: 'cliente123', veiculoId: 'veiculo123' })
+          .expect(201); // Esperando que a requisição seja bem-sucedida
+
+      expect(response.body).toEqual({
+        success: true,
+        message: 'Locação criada com sucesso'
+      });
     });
   });
 });
