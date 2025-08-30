@@ -103,6 +103,16 @@ export const atualizarVeiculo = async (idVeiculo, updates) => {
       return { success: false, error: 'ID do veículo ou dados de atualização ausentes.' };
     }
 
+    // 1. Buscar veículo pelo campo 'id' (igual à função buscarPorId)
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
+
+    if (snapshot.empty) {
+      return { success: false, error: 'Veículo não encontrado.' };
+    }
+
+    // 2. Obter a referência do documento encontrado
+    const veiculoDocRef = snapshot.docs[0].ref;
+
     // Clonar o objeto para não alterar o original
     const updateData = { ...updates };
 
@@ -114,8 +124,8 @@ export const atualizarVeiculo = async (idVeiculo, updates) => {
     if (updateData.anoModelo?.modelo) updateData.anoModelo.modelo = parseInt(updateData.anoModelo.modelo);
     if (updateData.dataCompra) updateData.dataCompra = new Date(updateData.dataCompra).toISOString();
 
-
-    await db.collection('veiculos').doc(idVeiculo).update({
+    // 3. Atualizar usando a referência do documento correto
+    await veiculoDocRef.update({
       ...updateData,
       dataAtualizacao: new Date().toISOString(),
     });
