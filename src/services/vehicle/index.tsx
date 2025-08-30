@@ -23,6 +23,9 @@ export function useUpdateVehicleMutation() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateVehicleInterface }) =>
       updateVehicleFunction(id, payload),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      }
   });
 }
 

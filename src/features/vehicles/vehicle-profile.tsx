@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Loader2 } from 'lucide-react';
@@ -7,29 +7,68 @@ import { VehicleRecentActivitiesCard } from '../vehicles/components/vehicle-rece
 import { Layout } from '@/shared/components/layout';
 import { ReturnHeader } from '@/shared/components/return-header';
 import { VehicleActionDialog } from './components/vehicle-action-dialog';
-import { useGetVehicleQuery, useGetVehicleActivitiesQuery } from '@/services/vehicle';
+import { useGetVehicleQuery, useGetVehicleActivitiesQuery, useUpdateVehicleMutation } from '@/services/vehicle';
+import type { VeiculoFormulario } from '@/features/vehicles/types';
+import type { VehicleData } from '@/services/vehicle/types';
+import { toast } from 'sonner';
+import { queryClient } from '@/lib/tanstack/query-client';
 
 export const VehicleProfile = () => {
   const { chassi } = useParams<{ chassi: string }>();
   const navigate = useNavigate();
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const [vehicleToEdit, setVehicleToEdit] = useState<VehicleData | null>(null);
+  const [localVehicle, setLocalVehicle] = useState<VehicleData | null>(null);
+
+  const { mutate: updateVehicle } = useUpdateVehicleMutation();
 
   // Buscar dados do veículo
   const {
-    data: vehicle,
+    data: vehicleQuery,
     isLoading: isLoadingVehicle,
     error: vehicleError,
   } = useGetVehicleQuery(chassi || '');
 
+  // Atualizar estado local sempre que a query carregar
+  useEffect(() => {
+     if (vehicleQuery) setLocalVehicle(vehicleQuery);
+  }, [vehicleQuery]);
+
   // Buscar atividades do veículo
   const {
-    data: activities = [], // Valor padrão para evitar undefined
+    data: activities = [],
     isLoading: isLoadingActivities,
   } = useGetVehicleActivitiesQuery(chassi || '');
 
+  const handleOpenActionDialog = () => {
+    if (localVehicle) {
+      setVehicleToEdit(localVehicle);
+      setIsActionDialogOpen(true);
+    }
+  };
+
+  const handleEditSave = (data: Partial<VehicleData>) => {
+    if (!vehicleToEdit) return;
+
+    updateVehicle(
+      { id: vehicleToEdit.id, payload: data },
+      {
+        onSuccess: () => {
+          // Atualiza estado local sem recarregar
+          setLocalVehicle((prev) => (prev ? { ...prev, ...data } : prev));
+          toast.success('Quilometragem atualizada com sucesso!');
+          queryClient.invalidateQueries({ queryKey: ['vehicle'] });
+          setIsActionDialogOpen(false);
+          setVehicleToEdit(null);
+        },
+        onError: () => toast.error('Erro ao atualizar veículo'),
+      }
+    );
+  };
+
   const filterByVehicle = () => {
-    if (vehicle?.placa) {
-      localStorage.setItem('filterRentalsByVehicle', JSON.stringify(vehicle.placa));
+    if (localVehicle?.placa) {
+      localStorage.setItem('filterRentalsByVehicle', JSON.stringify(localVehicle.placa));
       navigate('/locacoes');
     }
   };
@@ -45,9 +84,9 @@ export const VehicleProfile = () => {
     );
   }
 
-  if (vehicleError || !vehicle) {
+  if (vehicleError || !localVehicle) {
     console.error('❌ Vehicle error:', vehicleError);
-    console.error('❌ Chassi used:', chassi);
+    console.error('❌ Chassi usado:', chassi);
 
     return (
       <Layout>
@@ -68,11 +107,11 @@ export const VehicleProfile = () => {
       <ReturnHeader title="Perfil do Veículo" onBack={() => navigate('/veiculos')} />
 
       <div className="flex-1 overflow-auto p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4"></div>
+        <div className="flex items-center justify-between mb-4">
+          <div></div>
           <Button
             variant="outline"
-            onClick={() => setIsActionDialogOpen(true)}
+            onClick={handleOpenActionDialog}
             className="flex items-center gap-2"
           >
             <MoreHorizontal className="w-4 h-4" />
@@ -80,22 +119,22 @@ export const VehicleProfile = () => {
           </Button>
         </div>
 
-        <div className="p-6">
-          { vehicle && (
-          <VehicleInfoCard
-            marca={vehicle.marca}
-            modelo={vehicle.modelo}
-            placa={vehicle.placa}
-            ano={vehicle.ano}
-            cor={vehicle.cor}
-            status={vehicle.status}
-            quilometragemAtual={vehicle.quilometragem}
+        <div className="p-6 space-y-6">
+          {localVehicle && (
+            <VehicleInfoCard
+              marca={localVehicle.marca}
+              modelo={localVehicle.modelo}
+              placa={localVehicle.placa}
+              ano={localVehicle.ano}
+              cor={localVehicle.cor}
+              status={localVehicle.status}
+              quilometragemAtual={localVehicle.quilometragem}
             />
           )}
 
           <VehicleRecentActivitiesCard
             activities={activities}
-            isLoading={isLoadingActivities} // Passando isLoading das atividades
+            isLoading={isLoadingActivities}
           />
         </div>
       </div>
@@ -103,7 +142,8 @@ export const VehicleProfile = () => {
       <VehicleActionDialog
         isOpen={isActionDialogOpen}
         onClose={() => setIsActionDialogOpen(false)}
-        vehicleId={chassi || ''}
+        onSave={handleEditSave}
+        vehicle={localVehicle}
         onFilterByVehicle={filterByVehicle}
       />
     </Layout>

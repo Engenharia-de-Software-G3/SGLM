@@ -1,62 +1,72 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { VehicleActionDialogProps } from './@types';
+import { toast } from 'sonner';
 
 export const VehicleActionDialog = ({
   isOpen,
   onClose,
-  vehicleId,
+  vehicle,
   onFilterByVehicle,
+  onSave
+
 }: VehicleActionDialogProps) => {
+  const [isEditingKm, setIsEditingKm] = useState(false);
+  const [newKm, setNewKm] = useState<string>('');
+
+
   const actions = [
     {
       label: 'Visualizar documento',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`Ação: Visualizar documento para veículo ${vehicleId}`),
+      onClick: () => console.log(`📄 Visualizar documento do veículo ${vehicle?.id}`),
     },
     {
       label: 'Histórico de Manutenções e Serviços',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () =>
-        console.log(`Ação: Histórico de Manutenções e Serviços para veículo ${vehicleId}`),
+      onClick: () => console.log(`🛠 Histórico de Manutenções do veículo ${vehicle?.id}`),
     },
     {
       label: 'Histórico de Locações',
       color: 'bg-blue-600 hover:bg-blue-700',
       onClick: () => {
-        console.log('🚀 Clicking Histórico de Locações for vehicleId:', vehicleId);
-        onFilterByVehicle();
+        console.log(`📜 Histórico de Locações do veículo ${vehicle?.id}`);
+        onFilterByVehicle && onFilterByVehicle();
       },
     },
     {
       label: 'Atualizar Quilometragem',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`Ação: Atualizar Quilometragem para veículo ${vehicleId}`),
+      onClick: () => {
+        console.log('✏️ Iniciando edição de quilometragem');
+        setIsEditingKm(true);
+      },
     },
     {
       label: 'Registro de Multas',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`Ação: Registro de Multas para veículo ${vehicleId}`),
+      onClick: () => console.log(`🚦 Registro de Multas do veículo ${vehicle?.id}`),
     },
     {
       label: 'Gerenciamento de Acessórios',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`Ação: Gerenciamento de Acessórios para veículo ${vehicleId}`),
+      onClick: () => console.log(`🔧 Gerenciamento de Acessórios do veículo ${vehicle?.id}`),
     },
     {
       label: 'Gerenciamento de Seguros',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`Ação: Gerenciamento de Seguros para veículo ${vehicleId}`),
+      onClick: () => console.log(`🛡 Gerenciamento de Seguros do veículo ${vehicle?.id}`),
     },
     {
       label: 'Periodicidade da Manutenção',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`Ação: Periodicidade da Manutenção para veículo ${vehicleId}`),
+      onClick: () => console.log(`📆 Periodicidade da Manutenção do veículo ${vehicle?.id}`),
     },
     {
       label: 'Vistorias',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`Ação: Vistorias para veículo ${vehicleId}`),
+      onClick: () => console.log(`🔍 Vistorias do veículo ${vehicle?.id}`),
     },
   ];
 
@@ -67,20 +77,95 @@ export const VehicleActionDialog = ({
           <DialogTitle className="sr-only">Ações do Veículo</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
-          {actions.map((action, index) => (
-            <Button
-              key={index}
-              className={`w-full text-white ${action.color}`}
+        {isEditingKm && vehicle ? (
+          <div className="space-y-4">
+            <p>
+              Quilometragem atual: <strong>{vehicle.quilometragem}</strong> km
+            </p>
+            <div>
+              <label className="block mb-1">Nova Quilometragem:</label>
+              <input
+                type="text"
+                value={newKm}
+                onChange={(e) => setNewKm(e.target.value)}
+                className="w-full border border-gray-300 rounded p-2"
+                placeholder={`Digite a nova quilometragem (maior que ${vehicle.quilometragem} km )`}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  console.log('❌ Cancelando edição de quilometragem');
+                  setIsEditingKm(false);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
               onClick={() => {
-                action.onClick();
-                onClose();
+
+                if (!vehicle) return;
+
+                // Remove caracteres não numéricos e transforma em número
+                const sanitizedKm = newKm.trim().replace(/\D/g, '');
+                const newKmNumber = Number(sanitizedKm);
+
+                if (!sanitizedKm || isNaN(newKmNumber)) {
+                  toast.error('Informe uma quilometragem válida');
+                  return;
+                }
+
+                if (newKmNumber <= Number(vehicle.quilometragem)) {
+                  toast.error(`A nova quilometragem deve ser maior ou igual à atual (${vehicle.quilometragem} km)`);
+                  return;
+                }
+
+                // Chama a função passada do parent
+                onSave?.({
+                  quilometragemAtual: sanitizedKm,
+                  marca: vehicle.marca,
+                  modelo: vehicle.modelo,
+                  placa: vehicle.placa,
+                  ano: vehicle.ano,
+                  cor: vehicle.cor,
+                  chassi: vehicle.chassi,
+                  quilometragemCompra: vehicle.quilometragemNaCompra,
+                  dataCompra: vehicle.dataCompra,
+                  local: vehicle.local,
+                  nome: vehicle.nome,
+                  observacoes: vehicle.observacoes,
+                  status: vehicle.status,
+                });
+
+                setIsEditingKm(false);
+                setNewKm('');
               }}
             >
-              {action.label}
+              Salvar
             </Button>
-          ))}
-        </div>
+
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {actions.map((action, index) => (
+              <Button
+                key={index}
+                className={`w-full text-white ${action.color}`}
+                onClick={() => {
+                  console.log('🖱 Clicou na ação:', action.label);
+                  action.onClick();
+                  if (action.label !== 'Atualizar Quilometragem') {
+                    onClose();
+                  }
+                }}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
