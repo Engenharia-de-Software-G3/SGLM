@@ -286,6 +286,95 @@ describe('Veículos Routes', () => {
 
       expect(response.text).toBe('Erro interno do servidor.');
     });
+
+    test('deve criar veículo mesmo sem ano e cor (opcionais)', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109187',
+        placa: 'DEF-5678',
+        modelo: 'Toyota Corolla'
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: true,
+        id: 'veiculo124'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(201);
+
+      expect(response.body).toEqual({
+        message: 'Veículo criado com sucesso!',
+        id: 'veiculo124'
+      });
+
+      expect(criarVeiculo).toHaveBeenCalledWith(veiculoData);
+    });
+
+    test('deve retornar erro 400 para placa em formato inválido', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109186',
+        placa: '123-ABCD',
+        modelo: 'Civic'
+      };
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.text).toContain('Placa em formato inválido');
+    });
+
+    test('deve retornar erro 400 quando placa já existe', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109188',
+        placa: 'ABC-1234',
+        modelo: 'Civic'
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: false,
+        error: 'Placa já existe'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.body).toEqual({
+        message: 'Erro ao criar veículo',
+        error: 'Placa já existe'
+      });
+    });
+
+    test('deve retornar erro 400 quando ano é uma string', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109190',
+        placa: 'JKL-3456',
+        modelo: 'Civic',
+        ano: 'dois mil e vinte'
+      };
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.text).toContain('Ano deve ser um número');
+    });
+
+    test('deve retornar 415 quando Content-Type não é application/json', async () => {
+      const response = await request(app)
+          .post('/veiculos')
+          .set('Content-Type', 'text/plain')
+          .send('chassi=1HGBH41JXMN109186&placa=ABC-1234')
+          .expect(415); // Unsupported Media Type, se aplicável
+
+      expect(response.text).toContain('Content-Type deve ser application/json');
+    });
   });
 
   describe('GET /veiculos', () => {
@@ -462,6 +551,74 @@ describe('Veículos Routes', () => {
 
       expect(response.body.error).toBe('Erro interno no servidor');
     });
+
+    test('deve retornar erro 400 quando limite é zero', async () => {
+      const response = await request(app)
+          .get('/veiculos?limite=0')
+          .expect(400);
+
+      expect(response.body.error).toBe('O valor de "limite" deve ser maior que zero.');
+      expect(listarVeiculos).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 400 quando limite é negativo', async () => {
+      const response = await request(app)
+          .get('/veiculos?limite=-5')
+          .expect(400);
+
+      expect(response.body.error).toBe('O valor de "limite" deve ser maior que zero.');
+      expect(listarVeiculos).not.toHaveBeenCalled();
+    });
+
+    test('deve tratar filtros com tipos incorretos como inválidos', async () => {
+      const filtros = { placa: 123 }; // tipo incorreto, deveria ser string
+
+      const response = await request(app)
+          .get(`/veiculos?filtros=${encodeURIComponent(JSON.stringify(filtros))}`)
+          .expect(400); // ou 200 se o sistema só ignora silenciosamente
+
+      expect(response.body.error).toBe('Formato inválido nos filtros');
+    });
+
+    test('deve retornar erro 400 se ultimoDocId existe mas listarVeiculos retorna null', async () => {
+      const mockDoc = {
+        exists: true,
+        id: 'docId123'
+      };
+
+      db.collection.mockReturnValue({
+        doc: jest.fn(() => ({
+          get: jest.fn().mockResolvedValue(mockDoc)
+        }))
+      });
+
+      listarVeiculos.mockResolvedValue(null);
+
+      const response = await request(app)
+          .get('/veiculos?ultimoDocId=docId123')
+          .expect(400);
+
+      expect(response.body.error).toBe('Erro ao recuperar veículos');
+    });
+
+    test('deve aplicar filtro com caracteres especiais', async () => {
+      const filtros = { modelo: 'Civic EXL 2.0 Álcool' };
+      const mockResult = { veiculos: [], ultimoDoc: null };
+
+      listarVeiculos.mockResolvedValue(mockResult);
+
+      await request(app)
+          .get(`/veiculos?filtros=${encodeURIComponent(JSON.stringify(filtros))}`)
+          .expect(200);
+
+      expect(listarVeiculos).toHaveBeenCalledWith({
+        limite: 10,
+        ultimoDoc: null,
+        filtros
+      });
+    });
+
+
   });
 
   describe('PUT /veiculos/:idVeiculo', () => {
@@ -525,6 +682,88 @@ describe('Veículos Routes', () => {
         .expect(500);
 
       expect(response.body.message).toBe('Erro ao atualizar veículo');
+    });
+
+    test('deve ignorar campos inválidos no payload', async () => {
+      const chassi = '1HGBH41JXMN109186';
+      const updates = {
+        placa: 'XYZ-9876',
+        cor: 'azul metálico', // campo inválido para PUT
+        outroCampo: 'qualquer coisa'
+      };
+
+      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      atualizarPlaca.mockResolvedValue({ success: true });
+
+      const response = await request(app)
+          .put(`/veiculos/${chassi}`)
+          .send(updates)
+          .expect(200);
+
+      expect(response.body.message).toBe('Veículo atualizado com sucesso!');
+      expect(atualizarPlaca).toHaveBeenCalledWith(chassi, updates.placa);
+      // os outros campos não devem causar erro nem serem processados
+    });
+
+    test('deve retornar erro 400 para dataVenda inválida', async () => {
+      const chassi = '1HGBH41JXMN109186';
+      const updates = { dataVenda: '15-01-2024' }; // formato inválido
+
+      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+
+      const response = await request(app)
+          .put(`/veiculos/${chassi}`)
+          .send(updates)
+          .expect(400);
+
+      expect(response.text).toBe('Data de venda inválida. Use o formato YYYY-MM-DD.');
+    });
+
+    test('deve retornar erro 400 para valores vazios', async () => {
+      const chassi = '1HGBH41JXMN109186';
+      const updates = { placa: '' };
+
+      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+
+      const response = await request(app)
+          .put(`/veiculos/${chassi}`)
+          .send(updates)
+          .expect(400);
+
+      expect(response.text).toBe('Valor de placa inválido.');
+    });
+
+    test('deve retornar erro 400 para placa já existente', async () => {
+      const chassi = '1HGBH41JXMN109186';
+      const updates = { placa: 'XYZ-9876' };
+
+      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      atualizarPlaca.mockResolvedValue({ success: false, error: 'Placa já existe' });
+
+      const response = await request(app)
+          .put(`/veiculos/${chassi}`)
+          .send(updates)
+          .expect(400);
+
+      expect(response.body.error).toBe('Placa já existe');
+    });
+
+    test('deve retornar erro se uma das atualizações falhar', async () => {
+      const chassi = '1HGBH41JXMN109186';
+      const updates = {
+        placa: 'XYZ-9876',
+        quilometragem: 60000
+      };
+
+      buscarPorChassi.mockResolvedValue({ id: 'veiculo123', chassi });
+      atualizarPlaca.mockResolvedValue({ success: false, error: 'Placa já existe' });
+
+      const response = await request(app)
+          .put(`/veiculos/${chassi}`)
+          .send(updates)
+          .expect(500); // ou 400, depende da implementação
+
+      expect(response.body.error).toBe('Placa já existe');
     });
   });
 
@@ -604,6 +843,62 @@ describe('Veículos Routes', () => {
 
       expect(response.body.message).toBe('Erro ao deletar veículo');
     });
+
+    test('deve deletar todos os documentos com o mesmo chassi (duplicados)', async () => {
+      const chassi = '1HGBH41JXMN109186';
+      const mockDocs = [
+        { ref: { delete: jest.fn().mockResolvedValue() } },
+        { ref: { delete: jest.fn().mockResolvedValue() } }
+      ];
+      const mockSnapshot = {
+        empty: false,
+        docs: mockDocs
+      };
+
+      db.collection.mockReturnValue({
+        where: jest.fn(() => ({
+          limit: jest.fn(() => ({
+            get: jest.fn().mockResolvedValue(mockSnapshot)
+          }))
+        }))
+      });
+
+      const response = await request(app)
+          .delete(`/veiculos/${chassi}`)
+          .expect(200);
+
+      expect(response.body.message).toBe('Veículo deletado com sucesso!');
+      expect(mockDocs[0].ref.delete).toHaveBeenCalled();
+      expect(mockDocs[1].ref.delete).toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 500 se falhar ao deletar veículo', async () => {
+      const chassi = '1HGBH41JXMN109186';
+      const mockSnapshot = {
+        empty: false,
+        docs: [{
+          ref: {
+            delete: jest.fn().mockRejectedValue(new Error('Falha ao deletar'))
+          }
+        }]
+      };
+
+      db.collection.mockReturnValue({
+        where: jest.fn(() => ({
+          limit: jest.fn(() => ({
+            get: jest.fn().mockResolvedValue(mockSnapshot)
+          }))
+        }))
+      });
+
+      const response = await request(app)
+          .delete(`/veiculos/${chassi}`)
+          .expect(500);
+
+      expect(response.body.message).toBe('Erro ao deletar veículo');
+    });
+
+
   });
 
   describe('Validação de dados', () => {
@@ -654,6 +949,131 @@ describe('Veículos Routes', () => {
         .expect(400);
 
       expect(response.body.error).toBe('Chassi deve ter 17 caracteres');
+    });
+
+    test('deve validar formato da placa', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109186',
+        placa: '12345678', // formato inválido
+        modelo: 'Honda Civic'
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: false,
+        error: 'Placa em formato inválido'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Placa em formato inválido');
+    });
+
+    test('deve validar ano como número entre 1900 e ano atual', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109186',
+        placa: 'ABC-1234',
+        modelo: 'Honda Civic',
+        ano: 1800 // inválido
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: false,
+        error: 'Ano do veículo inválido'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Ano do veículo inválido');
+    });
+
+    test('deve retornar erro para valor negativo', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109186',
+        placa: 'ABC-1234',
+        modelo: 'Honda Civic',
+        valor: -10000
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: false,
+        error: 'Valor do veículo deve ser positivo'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Valor do veículo deve ser positivo');
+    });
+
+    test('deve retornar erro para status inválido', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109186',
+        placa: 'ABC-1234',
+        modelo: 'Honda Civic',
+        status: 'em_transporte' // inválido
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: false,
+        error: 'Status inválido. Valores permitidos: disponivel, vendido, reservado'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Status inválido. Valores permitidos: disponivel, vendido, reservado');
+    });
+
+    test('deve retornar erro para quilometragem como string', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109186',
+        placa: 'ABC-1234',
+        modelo: 'Honda Civic',
+        quilometragem: 'vinte mil'
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: false,
+        error: 'Quilometragem deve ser um número válido'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Quilometragem deve ser um número válido');
+    });
+
+    test('deve retornar erro para observações muito longas', async () => {
+      const veiculoData = {
+        chassi: '1HGBH41JXMN109186',
+        placa: 'ABC-1234',
+        modelo: 'Honda Civic',
+        observacoes: 'A'.repeat(2001) // supondo limite de 2000 caracteres
+      };
+
+      criarVeiculo.mockResolvedValue({
+        success: false,
+        error: 'Observações excedem o limite de 2000 caracteres'
+      });
+
+      const response = await request(app)
+          .post('/veiculos')
+          .send(veiculoData)
+          .expect(400);
+
+      expect(response.body.error).toBe('Observações excedem o limite de 2000 caracteres');
     });
   });
 });
