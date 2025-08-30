@@ -6,6 +6,13 @@ import { Label } from '@/components/ui/label';
 import { CloudUpload } from 'lucide-react';
 import type { AddVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
+import z from 'zod';
+
+
+const placaSchema = z.string().regex(
+  /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/,
+  'Placa deve estar no formato Mercosul (ABC1D23) ou antigo (ABC1234)',
+)
 
 export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModalProps) => {
   const [formData, setFormData] = useState<VeiculoFormulario>({
@@ -24,7 +31,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     status: 'disponivel',
   });
  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleChange = (
@@ -55,12 +62,17 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
   };
-
+  
   const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
     console.log('🔍 Submitting form:', formData);
 
-    e.preventDefault();
-    setErrors({});
+    const isValidPlaca = placaSchema.safeParse(formData.placa);
+    if (!isValidPlaca.success) {
+      console.log('🔍 Error:', z.treeifyError(isValidPlaca.error).errors[0]);
+      setErrors(z.treeifyError(isValidPlaca.error).errors[0]);
+      return;
+    }
 
     onSubmit({ ...formData, arquivo: selectedFile });
     onOpenChange(false);
@@ -91,6 +103,8 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <span className="text-red-500 text-sm mb-2 block text-center">{errors}</span>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>

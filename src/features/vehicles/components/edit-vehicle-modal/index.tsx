@@ -160,6 +160,8 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                 id="placa" 
                 value={formData.placa} 
                 onChange={handleInputChange} 
+                className="bg-gray-200 cursor-not-allowed"
+                disabled={true}
               />
             </div>
             <div className="space-y-2">
@@ -254,7 +256,8 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                   id="status"
                   value={formData.status}
                   onChange={handleInputChange}
-                  className="w-full h-10 px-3 py-2 border border-input rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  disabled
+                  className="w-full h-10 px-3 py-2  rounded-md text-sm  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-gray-100 text-gray-400"
                 >
                   <option value="disponivel" disabled>Disponível</option>
                   <option value="alugado" disabled>Locado</option>
