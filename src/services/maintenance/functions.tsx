@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { CreateManutencaoRequest, Manutencao } from './types';
 
-const API_URL = `${import.meta.env.VITE_API_URL}manutencoes`;
+const API_URL = `${import.meta.env.VITE_API_URL}/manutencoes`;
 
 export async function createManutencao(payload: CreateManutencaoRequest): Promise<Manutencao> {
   const { data } = await axios.post<Manutencao>(API_URL, payload);
