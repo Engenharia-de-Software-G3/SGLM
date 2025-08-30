@@ -16,6 +16,19 @@ import { useCreateVehicleMutation, useDeleteVehicleMutation, useUpdateVehicleMut
 import { CreateVehicleInterface, StatusVehicle, UpdateVehicleInterface, VehicleData } from '@/services/vehicle/types';
 import { toast } from 'sonner';
 
+function getStatusProps(status: StatusVehicle) {
+  switch (status) {
+    case 'disponivel':
+      return { className: 'bg-green-100 text-green-800', text: 'Disponível' };
+    case 'alugado':
+      return { className: 'bg-red-100 text-red-800', text: 'Locado' };
+    case 'manutencao':
+      return { className: 'bg-orange-100 text-orange-800', text: 'Manutenção' };
+    default:
+      return { className: 'bg-gray-100 text-gray-800', text: 'Indefinido' };
+  }
+}
+
 export const Vehicles = () => {
   const navigate = useNavigate();
   
@@ -200,8 +213,8 @@ export const Vehicles = () => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.placa}</td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <Badge className={'bg-gray-100 text-gray-800'}>
-                  {vehicle.status}
+                <Badge className={getStatusProps(vehicle.status).className}>
+                  {getStatusProps(vehicle.status).text}
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Calendar } from 'lucide-react';
 import { getAddressByCep } from '@/api/cep';
@@ -6,6 +6,9 @@ import { MaskedInput } from '@/shared/components/masked-input';
 import type { StepOneProps } from './@types';
 
 export const StepOne = ({ data, setData }: StepOneProps) => {
+
+  const [isCnpj, setIsCnpj] = useState(false);
+
   useEffect(() => {
     const fetchAddress = async () => {
       if (data.cep?.length === 8) {
@@ -55,13 +58,27 @@ export const StepOne = ({ data, setData }: StepOneProps) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
-          <MaskedInput
-            type="cpf"
-            value={data.cpfcnpj || ''}
-            onAccept={(value) => setData((old) => ({ ...old, cpfcnpj: value }))}
-          />
+          {isCnpj ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">CNPJ <label className="text-blue-500 cursor-pointer" onClick={() => setIsCnpj(false)}>(CPF)</label></label>
+              <MaskedInput
+                type="cnpj"
+                value={data.cpfcnpj || ''}
+                onAccept={(value) => setData((old) => ({ ...old, cpfcnpj: value }))}
+                />
+              </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">CPF <label className="text-blue-500 cursor-pointer" onClick={() => setIsCnpj(true)}>(CNPJ)</label></label>
+              <MaskedInput
+                type="cpf"
+                value={data.cpfcnpj || ''}
+                onAccept={(value) => setData((old) => ({ ...old, cpfcnpj: value }))}
+                />
+              </div>
+            )}
         </div>
+          
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
           <MaskedInput

@@ -257,7 +257,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                   className="w-full h-10 px-3 py-2 border border-input rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <option value="disponivel" disabled>Disponível</option>
-                  <option value="locado" disabled>Locado</option>
+                  <option value="alugado" disabled>Locado</option>
                   <option value="manutencao" disabled>Manutenção</option>
                 </select>
               </div>

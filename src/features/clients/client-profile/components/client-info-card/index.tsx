@@ -126,13 +126,30 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
-          <MaskedInput
-            type="cpf"
-            value={flattenedData.cpf || ''}
-            onAccept={(value) => updateFlattenedData('cpf', value)}
-            readOnly={isReadOnly}
-          />
+          { flattenedData.cpf.length === 14 ? (
+            <div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
+            <MaskedInput
+              type="cpf"
+              value={flattenedData.cpf || ''}
+              onAccept={(value) => updateFlattenedData('cpf', value)}
+              readOnly={isReadOnly}
+              />
+            </div>
+          ) : (
+            <div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-2">CNPJ</label>
+            <MaskedInput
+              type="cnpj"
+              value={flattenedData.cpf || ''}
+              onAccept={(value) => updateFlattenedData('cpf', value)}
+              readOnly={isReadOnly}
+              />
+            </div>
+          )}
+          
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>

@@ -8,7 +8,7 @@ import {
   GetVehiclesParams,
 } from './types';
 
-function formatDateToServer(dateString: string): string {
+function formatDateToServer(dateString: string | undefined): string {
   if (!dateString) return '';
   const [day, month, year] = dateString.split('/');
   return `${year}-${month}-${day}`;
@@ -121,7 +121,20 @@ export async function updateVehicleFunction(id: string, payload: UpdateVehicleIn
   try {
     console.log('✏️ Updating vehicle:', id, payload);
 
-    const response = await api.put(`/veiculos/${id}`, payload);
+
+    const send = { 
+      renavam: payload.renavam || undefined,
+      cor: payload.cor || undefined,
+      quilometragem: payload.quilometragemAtual || undefined,
+      quilometragemNaCompra: payload.quilometragemCompra || undefined,
+      dataCompra: formatDateToServer(payload.dataCompra) || undefined,
+      local: payload.local || undefined,
+      nome: payload.nome || undefined,
+      observacoes: payload.observacoes || undefined,
+      status: payload.status || undefined,
+    }
+
+    const response = await api.put(`/veiculos/${id}`, send);
 
     if (response.status !== 200) {
       throw new Error('Erro ao atualizar veículo');

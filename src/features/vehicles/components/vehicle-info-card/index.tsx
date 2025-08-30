@@ -27,7 +27,7 @@ export function VehicleInfoCard({
     switch (status) {
       case 'disponivel':
         return 'bg-green-100 text-green-800';
-      case 'locado':
+      case 'alugado':
         return 'bg-red-100 text-red-800';
       case 'manutencao':
         return 'bg-orange-100 text-orange-800';
@@ -40,7 +40,7 @@ export function VehicleInfoCard({
     switch (status) {
       case 'disponivel':
         return 'Disponível';
-      case 'locado':
+      case 'alugado':
         return 'Locado';
       case 'manutencao':
         return 'Manutenção';
