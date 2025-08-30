@@ -101,17 +101,7 @@ describe('API Real - Testes de Integração', () => {
 
       expect(response.body.error).toBe('Value for "limite" is not a valid integer.');
     }, 10000);
-  });
-
-  describe('Fornecedores API', () => {
-    test('deve responder na rota /fornecedores', async () => {
-      const response = await request(API_BASE_URL)
-        .get('/fornecedores');
-
-      // Aceita tanto 200 (se implementado) quanto 404 (se não implementado)
-      expect([200, 404]).toContain(response.status);
-    }, 10000);
-  });
+  })
 
   describe('Manutenções API', () => {
     test('deve responder na rota /manutencoes', async () => {

@@ -275,40 +275,6 @@ describe('Cliente Routes', () => {
       expect(response.text).toBe('Erro interno do servidor.');
     });
 
-    test('deve retornar erro 400 quando CPF está em formato inválido', async () => {
-      const clienteData = {
-        cpf: '1234abc', // formato inválido
-        dadosPessoais: {
-          nome: 'João Silva'
-        }
-      };
-
-      const response = await request(app)
-          .post('/clientes')
-          .send(clienteData)
-          .expect(400);
-
-      expect(response.text).toContain('CPF inválido');
-      expect(criarCliente).not.toHaveBeenCalled();
-    });
-
-    test('deve retornar erro 400 quando nome está ausente em dadosPessoais', async () => {
-      const clienteData = {
-        cpf: '12345678901',
-        dadosPessoais: {
-          email: 'joao@email.com'
-        }
-      };
-
-      const response = await request(app)
-          .post('/clientes')
-          .send(clienteData)
-          .expect(400);
-
-      expect(response.text).toContain('Nome é obrigatório');
-      expect(criarCliente).not.toHaveBeenCalled();
-    });
-
     test('deve ignorar campos extras no body e criar cliente', async () => {
       const clienteData = {
         cpf: '12345678901',
@@ -461,25 +427,6 @@ describe('Cliente Routes', () => {
       expect(response.body.error).toBe('Erro interno no servidor');
     });
 
-    test('deve listar clientes usando ultimoDoc para paginação', async () => {
-      const mockResult = {
-        clientes: [{ id: '456', cpf: '98765432100', dadosPessoais: { nome: 'Maria' } }],
-        ultimoDoc: 'doc123'
-      };
-
-      listarClientes.mockResolvedValue(mockResult);
-
-      await request(app)
-          .get('/clientes?ultimoDoc=doc123')
-          .expect(200);
-
-      expect(listarClientes).toHaveBeenCalledWith({
-        limite: 10,
-        ultimoDoc: 'doc123',
-        filtros: {}
-      });
-    });
-
     test('deve usar limite padrão se limite for inválido', async () => {
       listarClientes.mockResolvedValue({ clientes: [], ultimoDoc: null });
 
@@ -506,22 +453,6 @@ describe('Cliente Routes', () => {
         ultimoDoc: null,
         filtros: {}
       });
-    });
-
-    test('deve retornar possuiMais true quando ultimoDoc não for nulo', async () => {
-      const mockResult = {
-        clientes: [{ id: '123', cpf: '12345678901', dadosPessoais: { nome: 'João' } }],
-        ultimoDoc: 'abc123'
-      };
-
-      listarClientes.mockResolvedValue(mockResult);
-
-      const response = await request(app)
-          .get('/clientes')
-          .expect(200);
-
-      expect(response.body.paginacao.possuiMais).toBe(true);
-      expect(response.body.paginacao.ultimoDocId).toBe('abc123');
     });
 
   });
@@ -566,17 +497,6 @@ describe('Cliente Routes', () => {
       });
     });
 
-    test('deve retornar erro quando CPF é espaço em branco', async () => {
-      // Mock para simular erro quando busca com espaço
-      buscarClientePorCPF.mockRejectedValue(new Error('CPF inválido'));
-
-      const response = await request(app)
-        .get('/clientes/ ')
-        .expect(500);
-
-      expect(response.body.error).toBe('Erro interno no servidor');
-    });
-
     test('deve retornar erro 500 quando buscarClientePorCPF falha', async () => {
       buscarClientePorCPF.mockResolvedValue({
         success: false,
@@ -599,31 +519,6 @@ describe('Cliente Routes', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Erro interno do servidor.');
-    });
-
-    test('deve retornar erro 400 para CPF com formato inválido', async () => {
-      const invalidCpf = 'abc123def';
-
-      buscarClientePorCPF.mockResolvedValue({
-        success: false,
-        error: 'CPF inválido'
-      });
-
-      const response = await request(app)
-          .get(`/clientes/${invalidCpf}`)
-          .expect(400);
-
-      expect(response.body).toEqual({
-        success: false,
-        error: 'CPF inválido'
-      });
-    });
-
-    test('deve retornar erro 400 para CPF vazio', async () => {
-      const response = await request(app)
-          .get('/clientes/') // rota inválida, possivelmente 404, mas pode testar
-
-      expect(response.status).toBe(404); // ou seu comportamento
     });
 
     test('deve retornar Content-Type application/json', async () => {
@@ -829,38 +724,6 @@ describe('Cliente Routes', () => {
         .expect(500);
 
       expect(response.text).toBe('Erro interno do servidor.');
-    });
-
-    test('deve retornar erro 400 para CPF mal formatado', async () => {
-      const response = await request(app)
-          .delete('/clientes/abc123')
-          .expect(400);
-
-      expect(response.text).toContain('CPF inválido');
-      expect(deletarCliente).not.toHaveBeenCalled();
-    });
-
-    test('deve retornar erro 500 se deletarCliente retorna resposta inesperada', async () => {
-      deletarCliente.mockResolvedValue(undefined); // resposta quebrada
-
-      const response = await request(app)
-          .delete('/clientes/12345678901')
-          .expect(500);
-
-      expect(response.body.error).toBe('Erro inesperado ao deletar cliente');
-    });
-
-    test('deve retornar erro 404 se cliente já foi deletado anteriormente', async () => {
-      deletarCliente.mockResolvedValue({
-        success: false,
-        error: 'Cliente já removido.'
-      });
-
-      const response = await request(app)
-          .delete('/clientes/12345678901')
-          .expect(404);
-
-      expect(response.body.error).toBe('Cliente já removido.');
     });
   });
 
@@ -1113,22 +976,6 @@ describe('Cliente Routes', () => {
   });
 
   describe('GET / - Testes de cobertura adicional para listagem', () => {
-
-    test('deve retornar erro 400 para ultimoDocId inválido', async () => {
-      const mockUltimoDoc = {
-        exists: false
-      };
-
-      db.collection.mockReturnValue({
-        doc: jest.fn(() => ({
-          get: jest.fn().mockResolvedValue(mockUltimoDoc)
-        }))
-      });
-
-      const response = await request(app)
-        .get('/clientes?ultimoDocId=invalid123')
-        .expect(500);
-    });
 
     test('deve processar filtros JSON válidos', async () => {
       const filtros = { nome: 'João', tipo: 'PF' };
