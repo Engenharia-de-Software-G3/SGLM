@@ -43,13 +43,14 @@ export async function getVehiclesFunction({
     const data = response.data;
 
     if (data && data.veiculos && Array.isArray(data.veiculos)) {
-      data.veiculos.map((vehicle: any) => {
+      data.veiculos.map((vehicle: Record<string, unknown>) => {
         try {
-          vehicle.ano = vehicle.anoModelo.fabricacao + '/' + vehicle.anoModelo.modelo;
-          vehicle.dataCompra = formatDateToClient(vehicle.dataCompra);
-          vehicle.dataVenda = formatDateToClient(vehicle.dataVenda);
-          vehicle.dataAtualizacao = formatDateToClient(vehicle.dataAtualizacao);
-          vehicle.dataCadastro = formatDateToClient(vehicle.dataCadastro);
+          const anoModelo = vehicle.anoModelo as { fabricacao: string; modelo: string };
+          vehicle.ano = anoModelo.fabricacao + '/' + anoModelo.modelo;
+          vehicle.dataCompra = formatDateToClient(vehicle.dataCompra as string);
+          vehicle.dataVenda = formatDateToClient(vehicle.dataVenda as string);
+          vehicle.dataAtualizacao = formatDateToClient(vehicle.dataAtualizacao as string);
+          vehicle.dataCadastro = formatDateToClient(vehicle.dataCadastro as string);
         } catch (error) {
           console.error('❌ Error formatting vehicle:', error);
         }
@@ -209,6 +210,6 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
     return data.veiculos[0];
   } catch (error) {
     console.error('Erro ao buscar veículo por placa:', error);
-    throw error; 
+    throw error;
   }
 }
