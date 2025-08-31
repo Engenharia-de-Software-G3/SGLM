@@ -10,6 +10,7 @@ export const VehicleActionDialog = ({
   onClose,
   vehicle,
   onFilterByVehicle,
+
 }: VehicleActionDialogProps) => {
   const [isEditingKm, setIsEditingKm] = useState(false);
   const [newKm, setNewKm] = useState<string>('');
@@ -103,48 +104,43 @@ export const VehicleActionDialog = ({
                 Cancelar
               </Button>
               <Button
-                onClick={() => {
-                  if (!vehicle) return;
-
-                  const sanitizedKm = newKm.trim().replace(/\D/g, '');
-                  const newKmNumber = Number(sanitizedKm);
-
-                  if (!sanitizedKm || isNaN(newKmNumber)) {
-                    toast.error('Informe uma quilometragem válida');
-                    return;
+              onClick={() => {
+                if (!vehicle) return;
+                
+                const sanitizedKm = newKm.trim().replace(/\D/g, '');
+                const newKmNumber = Number(sanitizedKm);
+                
+                if (!sanitizedKm || isNaN(newKmNumber)) {
+                  toast.error('Informe uma quilometragem válida');
+                  return;
+                }
+                
+                if (newKmNumber <= Number(vehicle.quilometragem)) {
+                  toast.error(`A nova quilometragem deve ser maior ou igual à atual (${vehicle.quilometragem} km)`);
+                  return;
+                }
+                
+                updateVehicle({ id: vehicle.id, payload: {
+                  quilometragem: sanitizedKm,
+                  marca: vehicle.marca,
+                  modelo: vehicle.modelo,
+                  ano: vehicle.ano,
+                  cor: vehicle.cor,
+                  quilometragemNaCompra: vehicle.quilometragemNaCompra,
+                  dataCompra: vehicle.dataCompra,
+                  local: vehicle.local,
+                  nome: vehicle.nome,
+                  observacoes: vehicle.observacoes,
                   }
+                });
 
-                  if (newKmNumber <= Number(vehicle.quilometragem)) {
-                    toast.error(
-                      `A nova quilometragem deve ser maior ou igual à atual (${vehicle.quilometragem} km)`,
-                    );
-                    return;
-                  }
+                setIsEditingKm(false);
+                setNewKm('');
+              }}
+            >
+              Salvar
+            </Button>
 
-                  updateVehicle({ id: vehicle.id, payload: { quilometragem: newKm } });
-                  // Chama a função passada do parent
-                  // onSave?.({
-                  //   quilometragemAtual: sanitizedKm,
-                  //   marca: vehicle.marca,
-                  //   modelo: vehicle.modelo,
-                  //   placa: vehicle.placa,
-                  //   ano: vehicle.ano,
-                  //   cor: vehicle.cor,
-                  //   chassi: vehicle.chassi,
-                  //   quilometragemCompra: vehicle.quilometragemNaCompra,
-                  //   dataCompra: vehicle.dataCompra,
-                  //   local: vehicle.local,
-                  //   nome: vehicle.nome,
-                  //   observacoes: vehicle.observacoes,
-                  //   status: vehicle.status,
-                  // });
-
-                  setIsEditingKm(false);
-                  setNewKm('');
-                }}
-              >
-                Salvar
-              </Button>
             </div>
           </div>
         ) : (
