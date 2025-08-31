@@ -145,17 +145,6 @@ export const Vehicles = () => {
 
   const filteredVehicles = useMemo(() => {
     if (!vehicles || !vehicles.veiculos) return [];
-
-    // return vehicles?.vehicles.filter((vehicle) => {
-    //   const term = searchTerm.toLowerCase();
-    //   const matchesSearch =
-    //     vehicle.placa.toLowerCase().includes(term) ||
-    //     vehicle.marca.toLowerCase().includes(term) ||
-    //     vehicle.modelo.toLowerCase().includes(term);
-    //   // const matchesStatus = statusFilter === ''
-    //   // return matchesSearch ;
-    //   return true;
-    // });
     return vehicles.veiculos;
   }, [vehicles]);
 

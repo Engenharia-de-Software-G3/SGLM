@@ -23,15 +23,14 @@ export const criarVistoria = async (vistoriaData) => {
       return { success: false, error: 'Dados da vistoria inválidos.' };
     }
 
-    // 1. Criar documento com estrutura completa
     await db
       .collection('vistorias')
       .doc(id)
       .set({
-        // Identificação
+
         id,
         chassi: chassiVeiculo,
-        placa: placaVeiculo.replace(/-/g, ''), // Formato sem hífen
+        placa: placaVeiculo.replace(/-/g, ''), 
         nomeEmpresa: nomeEmpresa,
         nomeFuncionario: nomeFuncionario,
         quilometragem: quilometragem,
@@ -64,7 +63,6 @@ export const listarVistoriasVeiculo = async ({ limite = 10, ultimoDoc = null, fi
       query = query.where('chassi', '==', chassi);
     }
 
-    // Paginação eficiente
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);
     }

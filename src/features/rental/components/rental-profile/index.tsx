@@ -19,7 +19,7 @@ function toProfileData(
   vehicle: VehicleData | null,
 ): RentalInfoCardData {
   return {
-    id: locacao.id || 'N/A', // Adicionado para contractData
+    id: locacao.id || 'N/A',
     locatario: client?.nomeCompleto || '',
     cnpjcpf: client?.cpf || client?.cnpj || '',
     telefone: client?.telefone || '',
@@ -47,11 +47,9 @@ export const RentalProfile = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  // Busca todas as locações
   const { data: locacoesData, isLoading, isError } = useLocacoesQuery();
   console.log('Locacoes carregadas:', locacoesData);
 
-  // Localiza a locação pelo ID
   const locacao = useMemo(() => {
     if (!locacoesData?.locacoes || !id) return null;
     const found = locacoesData.locacoes.find((l: { id: string }) => l.id === id) || null;
@@ -59,14 +57,12 @@ export const RentalProfile = () => {
     return found;
   }, [locacoesData, id]);
 
-  // Busca clientes e veículos
   const { data: clientsData } = useClientsQuery();
   console.log('Clientes carregados:', clientsData);
 
   const { data: vehiclesData } = useVehiclesQuery();
   console.log('Veículos carregados:', vehiclesData);
 
-  // Localiza o cliente
   const client = useMemo<ClientData | null>(() => {
     if (!locacao || !clientsData?.clientes) return null;
     const foundClient =
@@ -78,7 +74,6 @@ export const RentalProfile = () => {
     return foundClient;
   }, [locacao, clientsData]);
 
-  // Localiza o veículo
   const vehicle = useMemo<VehicleData | null>(() => {
     if (!locacao || !vehiclesData?.veiculos) return null;
     const placa = locacao.placaVeiculo?.toUpperCase() || '';
@@ -89,7 +84,6 @@ export const RentalProfile = () => {
     return foundVehicle;
   }, [locacao, vehiclesData]);
 
-  // Monta dados para o RentalInfoCard
   const rentalData = useMemo<RentalInfoCardData | null>(() => {
     if (!locacao) return null;
     const data = toProfileData(locacao, client, vehicle);

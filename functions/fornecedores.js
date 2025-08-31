@@ -1,12 +1,7 @@
-// functions/fornecedores.js
 import express from 'express';
 const router = express.Router();
 
-// TODO: Importe sua função do Firestore para criar fornecedores aqui
-// Certifique-se de que o arquivo firestoreFornecedores.js usa export const
-// para a sua função de criação.
-// Exemplo:
-import { criarFornecedor } from '../src/scripts/firestore/firestoreFornecedores.js'; // Ajuste o caminho se necessário
+import { criarFornecedor } from '../src/scripts/firestore/firestoreFornecedores.js';
 
 /**
  * Rota POST para criar um novo fornecedor.
@@ -27,12 +22,10 @@ router.post('/', async (req, res) => {
   try {
     const fornecedorData = req.body;
 
-    // TODO: Adicionar validação mais robusta (incluindo autenticação por middleware)
     /**
      * @todo Integrar middleware de autenticação e autorização.
      * Adicionar validação de CNPJ duplicado usando verificarDocumentoExistente antes de criar.
      */
-    // Validação básica (ex: CNPJ e razão social são obrigatórios)
     if (!fornecedorData || !fornecedorData.cnpj) {
       return res.status(400).send('Dados do fornecedor incompletos (CNPJ é obrigatório).');
     }
@@ -40,19 +33,15 @@ router.post('/', async (req, res) => {
     const resultado = await criarFornecedor(fornecedorData);
 
     if (resultado.success) {
-      // Assumindo que o ID retornado é o CNPJ
       res.status(201).send({ message: 'Fornecedor criado com sucesso!', id: fornecedorData.cnpj });
     } else {
       res.status(500).send({ message: 'Erro ao criar fornecedor', error: resultado.error });
     }
   } catch (error) {
-    // Captura erros inesperados durante o processamento da rota
     console.error('Erro inesperado na rota POST /fornecedores:', error);
     res.status(500).send('Erro interno do servidor.');
   }
 });
-
-// TODO: Implementar outras rotas para fornecedores (GET, PUT, DELETE)
 
 /**
  * Rota GET para listar fornecedores.

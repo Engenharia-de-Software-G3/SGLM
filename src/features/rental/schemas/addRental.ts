@@ -1,13 +1,10 @@
-// /home/user/Documentos/es/SGLM/src/features/rental/schemas/addRental.ts
 import { z } from 'zod';
 
-// Custom schema for required string fields
 export const requiredString = z.string().min(1, 'Campo Obrigatório');
 
-// Função para converter string DD/MM/YYYY em Date
 function parseDDMMYYYY(dateStr: string): Date {
   const [day, month, year] = dateStr.split('/').map(Number);
-  return new Date(year, month - 1, day); // mês é 0-indexado
+  return new Date(year, month - 1, day);
 }
 
 export const addRentalSchema = z.object({

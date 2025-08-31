@@ -4,7 +4,7 @@ export interface LocacaoInterface {
   placaVeiculo: string;
   dataInicio: string;
   dataFim: string;
-  valor: number | string; // Allow string for backend response, converted to number
+  valor: number | string; 
   periocidadePagamento: string;
  metodoPagamento: string;
   status?: 'ativa' | 'finalizada' | 'cancelada';

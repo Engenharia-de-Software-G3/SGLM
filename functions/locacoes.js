@@ -12,10 +12,8 @@ const app = express();
 
 app.use(cors({ origin: true }));
 
-// Middleware to parse JSON request bodies
 app.use(express.json());
 
-// Create rental
 app.post('/', async (req, res) => {
   try {
     const locacaoData = req.body;
@@ -31,15 +29,11 @@ app.post('/', async (req, res) => {
   }
 });
 
-// List rentals with pagination
 app.get('/', async (req, res) => {
   try {
     const { limite, ultimoDoc } = req.query;
 
-    // Provide a default value for limite if not provided in query params
-    const limiteNum = limite ? parseInt(limite) : 10; // Default to 10 if limite is undefined
-
-    // Check if the parsed limite is a valid number
+    const limiteNum = limite ? parseInt(limite) : 10;
     if (isNaN(limiteNum)) {
       return res.status(400).json({ error: 'Value for "limite" is not a valid integer.' });
     }
@@ -57,7 +51,6 @@ app.get('/:idLocacao', async (req, res) => {
   try {
     const { idLocacao } = req.params;
 
-    // Validação básica do idLocacao
     if (!idLocacao || idLocacao.trim().length === 0) {
       return res.status(400).json({
         error: 'id da locação é obrigatório',
@@ -89,7 +82,6 @@ app.get('/:idLocacao', async (req, res) => {
   }
 });
 
-// Update rental
 app.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -106,7 +98,6 @@ app.put('/:id', async (req, res) => {
   }
 });
 
-// Delete rental
 app.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;

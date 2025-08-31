@@ -1,4 +1,3 @@
-// /home/user/Documentos/es/SGLM/src/services/client/types.d.ts
 export interface ClientData {
   id: number;
   cpf: string;

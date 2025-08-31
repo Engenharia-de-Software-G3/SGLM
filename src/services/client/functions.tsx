@@ -1,4 +1,3 @@
-// /home/user/Documentos/es/SGLM/src/services/client/functions.tsx
 import { api } from "@/lib/axios";
 import {
   ClientData,
@@ -23,7 +22,7 @@ export async function getClientsFunction(): Promise<ListManyClients> {
   const clientes = data.clientes.map((cliente) => ({
     ...cliente,
     id: Number(cliente.id),
-    cpf: formatCPF(cliente.cpf), // Changed from cliente.id to cliente.cpf
+    cpf: formatCPF(cliente.cpf), 
   }));
 
   return {
@@ -117,6 +116,6 @@ export function useClientsQuery() {
       const response = await api.get('/clientes');
       return response.data as ListManyClientsResponse;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5, 
   });
 }

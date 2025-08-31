@@ -41,7 +41,6 @@ export const criarCliente = async (clienteData) => {
       throw new Error('CPF já cadastrado no sistema.');
     }
 
-    // 1. Documento principal na coleção 'clientes'
     await db.collection('clientes').doc(cpfFormatado).set({
       id: cpfFormatado,
       tipo: 'PF',
@@ -50,11 +49,9 @@ export const criarCliente = async (clienteData) => {
       status: 'ativo',
     });
 
-    // 2. Subcoleções (endereco, contato, documentos)
     const batch = db.batch();
     const clienteRef = db.collection('clientes').doc(cpfFormatado);
 
-    // Endereço
     batch.set(clienteRef.collection('enderecos').doc('principal'), {
       cep: endereco.cep,
       rua: endereco.rua,
@@ -65,14 +62,12 @@ export const criarCliente = async (clienteData) => {
       isPrincipal: true,
     });
 
-    // Contato
     batch.set(clienteRef.collection('contatos').doc('principal'), {
       email: contato.email,
       telefone: contato.telefone,
       isPrincipal: true,
     });
 
-    // CNH (documento)
     if (documentos?.cnh) {
       batch.set(clienteRef.collection('documentos').doc('cnh'), {
         tipo: 'CNH',
@@ -105,7 +100,6 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
   try {
     let query = db.collection('clientes').orderBy('nomeCompleto').limit(limite);
 
-    // Aplicar filtros
     if (filtros.nome) {
       query = query
         .where('nomeCompleto', '>=', filtros.nome)
@@ -121,7 +115,6 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
       q = query(q, where('cpf', '==', cleanCpf));
     }
 
-    // Paginação (startAfter)
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);
     }
@@ -169,13 +162,11 @@ export const atualizarCliente = async (cpf, updates) => {
     const clienteRef = db.collection('clientes').doc(cpf);
     const batch = db.batch();
 
-    // Verifica se o cliente existe antes de tentar atualizar
     const doc = await clienteRef.get();
     if (!doc.exists) {
       return { success: false, error: 'Cliente não encontrado.' };
     }
 
-    // Atualiza campos diretos do documento principal (clientes)
     const mainDocUpdates = {};
     if (updates.dadosPessoais?.nome) {
       mainDocUpdates.nomeCompleto = updates.dadosPessoais.nome;
@@ -183,12 +174,10 @@ export const atualizarCliente = async (cpf, updates) => {
     if (updates.dadosPessoais?.dataNascimento) {
       mainDocUpdates.dataNascimento = updates.dadosPessoais.dataNascimento;
     }
-    // Adicione outros campos diretos se necessário (ex: tipo, status)
     if (Object.keys(mainDocUpdates).length > 0) {
       batch.update(clienteRef, mainDocUpdates);
     }
 
-    // Atualiza subcoleções
     if (updates.endereco) {
       batch.set(clienteRef.collection('enderecos').doc('principal'), updates.endereco, {
         merge: true,
@@ -224,13 +213,11 @@ export const deletarCliente = async (cpf) => {
   try {
     const clienteRef = db.collection('clientes').doc(cpf);
 
-    // Verifica se o cliente existe
     const doc = await clienteRef.get();
     if (!doc.exists) {
       return { success: false, error: 'Cliente não encontrado.' };
     }
 
-    // Deleta subcoleções (Firestore não deleta subcoleções automaticamente com o documento pai)
     const subcollections = ['enderecos', 'contatos', 'documentos'];
     for (const subcollectionName of subcollections) {
       const snapshot = await clienteRef.collection(subcollectionName).get();
@@ -241,7 +228,6 @@ export const deletarCliente = async (cpf) => {
       await batch.commit();
     }
 
-    // Deleta o documento principal do cliente
     await clienteRef.delete();
 
     return { success: true };

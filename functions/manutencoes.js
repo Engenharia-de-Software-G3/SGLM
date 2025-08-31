@@ -38,17 +38,13 @@ router.get('/:veiculoId', async (req, res) => {
 
     const listaManutencoes = await listarManutencoes(veiculoId);
 
-    // TODO: Implementar tratamento de caso onde o veículo não existe ou não tem manutenções
-
     res.status(200).send(listaManutencoes);
   } catch (error) {
-    // Captura erros inesperados durante o processamento da rota
     console.error(`Erro inesperado na rota GET /manutencoes/${req.params.veiculoId}:`, error);
     res.status(500).send('Erro interno do servidor.');
   }
 });
 
-// TODO: Implementar rotas para adicionar novas manutenções (POST) se necessário
 
 /**
  * Exporta o roteador Express para ser utilizado no arquivo principal (index.js).

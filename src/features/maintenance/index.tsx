@@ -23,14 +23,9 @@ export const Maintenance = () => {
     loadManutencoes();
   }, []);
 
-  // const handleView = (id: string) => {
-  //   console.log('Visualizar manutenção', id);
-  // };
-
   const handleDelete = async (id: string) => {
     try {
       await deleteManutencao(id);
-      // Recarregar dados da API após deletar
       await loadManutencoes();
     } catch (error) {
       console.error('Erro ao deletar manutenção:', error);
@@ -54,7 +49,6 @@ export const Maintenance = () => {
   const handleAdd = async (data: CreateManutencaoRequest) => {
     try {
       await createManutencao(data);
-      // Recarregar dados da API após criar
       await loadManutencoes();
     } catch (error) {
       console.error('Erro ao criar manutenção:', error);

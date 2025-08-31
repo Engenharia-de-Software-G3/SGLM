@@ -11,15 +11,13 @@ import { generateContractPDF, ContractData } from '@/lib/generateContractPDF';
 export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
   const [isLoadingContract, setIsLoadingContract] = useState(false);
 
-  // Função para exportar contrato, replicando handleViewContract de Rental
   const handleExportContract = async () => {
     setIsLoadingContract(true);
     try {
       console.log('Gerando contrato com dados:', data);
 
-      // Montar ContractData com base nos dados disponíveis
       const contractData: ContractData = {
-        id: data.id || 'N/A', // Usar id de RentalInfoCardData
+        id: data.id || 'N/A', 
         client: {
           nomeCompleto: data.locatario || 'Não informado',
           cpf: data.cnpjcpf || 'Não informado',
@@ -68,7 +66,6 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
       console.log('Dados preparados para contrato:', contractData);
 
-      // Gerar PDF
       generateContractPDF(contractData, 'download');
 
       toast.success('Download do contrato iniciado!');

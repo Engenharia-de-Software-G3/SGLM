@@ -29,7 +29,6 @@ export interface CreateVehicleInterface extends Omit<VehicleData, 'id'> {
   file?: File | null;
 };
 
-// Remove o id, chassi e placa para update
 export type UpdateVehicleInterface = Partial<Omit<VehicleData, 'id' | 'chassi' | 'placa'>>;
 
 export type SingleVehicleResponse = VehicleData;
@@ -49,7 +48,7 @@ export interface VehicleActivity {
   date: string;
   status: StatusVehicle;
   statusColor: string;
-  description?: string; // Opcional, conforme usado no componente
+  description?: string; 
 }
 
 export type StatusVehicle = 'disponivel' | 'alugado' | 'manutencao'

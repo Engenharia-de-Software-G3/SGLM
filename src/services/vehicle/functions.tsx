@@ -42,9 +42,7 @@ export async function getVehiclesFunction({
 
     const data = response.data;
 
-    // Verificar se data.veiculos existe antes de tentar mapear
     if (data && data.veiculos && Array.isArray(data.veiculos)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data.veiculos.map((vehicle: any) => {
         try {
           vehicle.ano = vehicle.anoModelo.fabricacao + '/' + vehicle.anoModelo.modelo;
@@ -59,7 +57,6 @@ export async function getVehiclesFunction({
         return vehicle;
       });
     } else {
-      // Se data.veiculos não existir, retornar estrutura válida com array vazio
       console.warn('⚠️ data.veiculos não encontrado, retornando estrutura padrão');
       return {
         veiculos: [],
@@ -188,14 +185,12 @@ export async function deleteVehicleFunction(id: string) {
 
 export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
   try {
-    // VALIDAÇÃO CRÍTICA - evita busca com placa vazia
     if (!placa || placa.trim() === '') {
       throw new Error('Placa não fornecida');
     }
 
     const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
 
-    // Verifique novamente após a limpeza
     if (cleanPlaca === '') {
       throw new Error('Placa inválida');
     }
@@ -214,6 +209,6 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
     return data.veiculos[0];
   } catch (error) {
     console.error('Erro ao buscar veículo por placa:', error);
-    throw error; // Mantenha o erro original
+    throw error; 
   }
 }
