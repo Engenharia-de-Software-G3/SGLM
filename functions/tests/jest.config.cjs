@@ -17,6 +17,7 @@ module.exports = {
   collectCoverageFrom: [
     '*.js',
     'scripts/**/*.js',
+    '!.eslintrc.js',
     '!babel.config.js',
     '!firebaseConfig.js',
     '!node_modules/**',

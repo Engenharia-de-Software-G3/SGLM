@@ -63,11 +63,10 @@ describe('API Real - Testes de Integração', () => {
     test('deve usar limite padrão quando parâmetro é inválido', async () => {
       const response = await request(API_BASE_URL)
         .get('/veiculos?limite=abc')
-        .expect(200);
+        .expect(400);
 
-      // API usa limite padrão quando parâmetro é inválido
-      expect(response.body).toHaveProperty('veiculos');
-      expect(Array.isArray(response.body.veiculos)).toBe(true);
+      // API deve retornar erro para parâmetro inválido
+      expect(response.body).toHaveProperty('error');
     }, 10000);
 
     test('deve validar dados obrigatórios na criação', async () => {

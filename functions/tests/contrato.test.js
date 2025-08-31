@@ -7,14 +7,6 @@ jest.mock('../scripts/firestore/firestoreContratos.js', () => ({
     buscarContratoPorId: jest.fn(),
 }));
 
-jest.mock('../scripts/firestore/firestoreClientes.js', () => ({
-    buscarClientePorCPF: jest.fn(),
-}));
-
-jest.mock('../scripts/firestore/firestoreVeiculos.js', () => ({
-    buscarPorId: jest.fn(),
-}));
-
 jest.mock('../firebaseConfig.js', () => ({
     db: {
         collection: jest.fn(() => ({
@@ -26,69 +18,22 @@ jest.mock('../firebaseConfig.js', () => ({
     },
 }));
 
-jest.mock('uuid', () => ({
-    v4: jest.fn(() => 'uuid-fake-123'),
-}));
-
 const { criarContratoJuridico, buscarContratoPorId } = require('../scripts/firestore/firestoreContratos.js');
-const { buscarClientePorCPF } = require('../scripts/firestore/firestoreClientes.js');
-const { buscarPorId } = require('../scripts/firestore/firestoreVeiculos.js');
 
 describe('Contratos Routes', () => {
     let app;
-    let router;
+    let contratoRouter;
 
     beforeEach(() => {
         jest.clearAllMocks();
 
-        const mockRouter = express.Router();
+        // Import the actual router after mocks are set up
+        delete require.cache[require.resolve('../contrato.js')];
+        contratoRouter = require('../contrato.js').default;
 
-        // POST /
-        mockRouter.post('/', async (req, res) => {
-            try {
-                const { cpfCliente, chassiVeiculo, termosContrato } = req.body;
-                if (!cpfCliente || !chassiVeiculo || !termosContrato) {
-                    return res
-                        .status(400)
-                        .send(
-                            'Dados do contrato incompletos (cpfCliente, chassiVeiculo e termosContrato são obrigatórios).'
-                        );
-                }
-
-                const resultado = await criarContratoJuridico({ cpfCliente, chassiVeiculo, termosContrato });
-
-                if (resultado.success) {
-                    return res.status(201).send({ message: 'Contrato criado com sucesso!', id: resultado.id });
-                } else {
-                    const statusCode = resultado.error.includes('encontrado') ? 404 : 500;
-                    return res.status(statusCode).send({ message: 'Erro ao criar contrato', error: resultado.error });
-                }
-            } catch (error) {
-                return res.status(500).send('Erro interno do servidor.');
-            }
-        });
-
-        // GET /:id
-        mockRouter.get('/:id', async (req, res) => {
-            try {
-                const { id } = req.params;
-                const resultado = await buscarContratoPorId(id);
-
-                if (resultado.success) {
-                    return res.status(200).json(resultado.contrato);
-                } else {
-                    const statusCode = resultado.error === 'Contrato não encontrado.' ? 404 : 500;
-                    return res.status(statusCode).json({ message: 'Erro ao buscar contrato', error: resultado.error });
-                }
-            } catch (error) {
-                return res.status(500).send('Erro interno do servidor.');
-            }
-        });
-
-        router = mockRouter;
         app = express();
         app.use(express.json());
-        app.use('/contratos', router);
+        app.use('/contratos', contratoRouter);
     });
 
     // -------------------

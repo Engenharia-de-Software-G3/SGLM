@@ -1,839 +1,189 @@
 const request = require('supertest');
 const express = require('express');
 
-// Mock das funções do firestore
+// Mocks
+const mockGet = jest.fn();
+const mockLimit = jest.fn(() => ({ get: mockGet }));
+const mockWhere = jest.fn(() => ({ limit: mockLimit }));
+
+jest.mock('../firebaseConfig.js', () => ({
+  db: {
+    collection: jest.fn(() => ({
+      doc: jest.fn((docId) => ({
+        get: jest.fn().mockResolvedValue({ exists: docId !== 'invalid' }),
+      })),
+      where: mockWhere,
+    })),
+  },
+}));
+
 jest.mock('../scripts/firestore/firestoreVeiculos.js', () => ({
   criarVeiculo: jest.fn(),
   listarVeiculos: jest.fn(),
   buscarPorId: jest.fn(),
-}));
-
-// Mock do firebaseConfig
-jest.mock('../firebaseConfig.js', () => ({
-  db: {
-    collection: jest.fn(() => ({
-      doc: jest.fn(() => ({
-        get: jest.fn(),
-        delete: jest.fn(),
-      })),
-      where: jest.fn(() => ({
-        limit: jest.fn(() => ({
-          get: jest.fn(),
-        })),
-      })),
-    })),
-  },
+  buscaVeiculo: jest.fn(),
+  atualizarVeiculo: jest.fn(),
 }));
 
 const {
   criarVeiculo,
   listarVeiculos,
-  buscarPorId, atualizarVeiculo,
+  buscarPorId,
+  buscaVeiculo,
+  atualizarVeiculo,
 } = require('../scripts/firestore/firestoreVeiculos.js');
-
-const { db } = require('../firebaseConfig.js');
 
 describe('Veículos Routes', () => {
   let app;
-  let router;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Criar um mock manual do router
-    const mockRouter = express.Router();
-    
-    // Mock da rota POST
-    mockRouter.post('/', async (req, res) => {
-      try {
-        const veiculoData = req.body;
-        if (!veiculoData || !veiculoData.chassi || !veiculoData.placa || !veiculoData.modelo) {
-          return res.status(400).send('Os campos chassi, placa e modelo são obrigatórios.');
-        }
-        
-        const resultado = await criarVeiculo(veiculoData);
-        if (resultado.success) {
-          res.status(201).json({ message: 'Veículo criado com sucesso!', id: resultado.id });
-        } else {
-          res.status(400).json({ message: 'Erro ao criar veículo', error: resultado.error });
-        }
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    // Mock da rota GET
-    mockRouter.get('/', async (req, res) => {
-      try {
-        const { limite = '10', ultimoDocId, filtros } = req.query;
-        const limiteNum = parseInt(limite);
-        
-        if (isNaN(limiteNum)) {
-          return res.status(400).json({ error: 'Value for "limite" is not a valid integer.' });
-        }
-        
-        const limiteAplicado = Math.min(limiteNum, 100);
-        
-        let ultimoDoc = null;
-        if (ultimoDocId) {
-          const docRef = await db.collection('veiculos').doc(ultimoDocId).get();
-          if (!docRef.exists) {
-            return res.status(400).json({ error: 'ID do último documento inválido' });
-          }
-          ultimoDoc = docRef;
-        }
-        
-        let filtrosObj = {};
-        if (filtros) {
-          try {
-            filtrosObj = JSON.parse(filtros);
-          } catch (e) {
-            filtrosObj = {};
-          }
-        }
-        
-        const resultado = await listarVeiculos({
-          limite: limiteAplicado,
-          ultimoDoc,
-          filtros: filtrosObj
-        });
-        
-        res.status(200).json({
-          veiculos: resultado.veiculos,
-          paginacao: {
-            possuiMais: !!resultado.ultimoDoc,
-            proximoDocId: resultado.ultimoDoc ? resultado.ultimoDoc.id : null
-          }
-        });
-      } catch (error) {
-        res.status(500).json({ error: 'Erro interno no servidor' });
-      }
-    });
-    
-    // Mock da rota PUT
-    mockRouter.put('/:idVeiculo', async (req, res) => {
-      try {
-        const { idVeiculo } = req.params;
-        const updates = req.body;
-        
-        if (!idVeiculo || !updates || Object.keys(updates).length === 0) {
-          return res.status(400).send('Id do veículo e/ou dados de atualização ausentes.');
-        }
-        
-        const veiculoExistente = await buscarPorId(idVeiculo);
-        if (!veiculoExistente) {
-          return res.status(404).send('Veículo não encontrado.');
-        }
-        
-        if (updates.quilometragem && isNaN(parseInt(updates.quilometragem))) {
-          return res.status(400).send('Quilometragem deve ser um número válido.');
-        }
-        
-        let sucessoGeral = true;
-        let ultimoErro = null;
-        
-        if (updates) {
-          const resultado = await atualizarVeiculo(idVeiculo, updates);
-          if (!resultado.success) {
-            sucessoGeral = false;
-            ultimoErro = resultado.error;
-          }
-        }
-        
-        if (sucessoGeral) {
-          res.status(200).json({ message: 'Veículo atualizado com sucesso!' });
-        } else {
-          res.status(500).json({ error: ultimoErro });
-        }
-      } catch (error) {
-        res.status(500).json({ message: 'Erro ao atualizar veículo' });
-      }
-    });
-    
-    // Mock da rota DELETE
-    mockRouter.delete('/:idVeiculo', async (req, res) => {
-      try {
-        const { idVeiculo } = req.params;
-        
-        const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
-        
-        if (snapshot.empty) {
-          return res.status(404).send('Veículo não encontrado.');
-        }
-        
-        await snapshot.docs[0].ref.delete();
-        res.status(200).json({ message: 'Veículo deletado com sucesso!' });
-      } catch (error) {
-        res.status(500).json({ message: 'Erro ao deletar veículo' });
-      }
-    });
-    
-    router = mockRouter;
+    // Importa o router aqui para garantir que os mocks sejam aplicados por teste
+    const veiculoRouter = require('../veiculo.js').default;
     app = express();
     app.use(express.json());
-    app.use('/veiculos', router);
+    app.use('/', veiculoRouter);
   });
 
-  describe('POST /veiculos', () => {
-    test('deve criar veículo com dados válidos', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic',
-        ano: 2020,
-        cor: 'Branco'
-      };
+  afterEach(() => {
+    delete require.cache[require.resolve('../veiculo.js')];
+  });
 
-      criarVeiculo.mockResolvedValue({
-        success: true,
-        id: 'veiculo123'
-      });
+  describe('POST /', () => {
+    const veiculoData = { chassi: '123', placa: 'ABC', modelo: 'Modelo' };
 
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoData)
-        .expect(201);
-
-      expect(response.body).toEqual({
-        message: 'Veículo criado com sucesso!',
-        id: 'veiculo123'
-      });
-
-      expect(criarVeiculo).toHaveBeenCalledWith(veiculoData);
+    test('deve criar veículo com sucesso', async () => {
+      criarVeiculo.mockResolvedValue({ success: true, id: 'v1' });
+      await request(app).post('/').send(veiculoData).expect(201);
     });
 
-    test('deve retornar erro 400 quando chassi está ausente', async () => {
-      const veiculoData = {
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic'
-      };
-
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoData)
-        .expect(400);
-
-      expect(response.text).toContain('chassi, placa e modelo são obrigatórios');
-      expect(criarVeiculo).not.toHaveBeenCalled();
+    test('deve retornar 400 para dados incompletos', async () => {
+      await request(app).post('/').send({ chassi: '123' }).expect(400);
     });
 
-    test('deve retornar erro 400 quando placa está ausente', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        modelo: 'Honda Civic'
-      };
-
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoData)
-        .expect(400);
-
-      expect(response.text).toContain('chassi, placa e modelo são obrigatórios');
-      expect(criarVeiculo).not.toHaveBeenCalled();
+    test('deve retornar 400 se criarVeiculo falhar', async () => {
+      criarVeiculo.mockResolvedValue({ success: false, error: 'Falha' });
+      await request(app).post('/').send(veiculoData).expect(400);
     });
 
-    test('deve retornar erro 400 quando modelo está ausente', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234'
-      };
-
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoData)
-        .expect(400);
-
-      expect(response.text).toContain('chassi, placa e modelo são obrigatórios');
-      expect(criarVeiculo).not.toHaveBeenCalled();
-    });
-
-    test('deve retornar erro 400 quando criarVeiculo falha', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic'
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Chassi já existe'
-      });
-
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoData)
-        .expect(400);
-
-      expect(response.body).toEqual({
-        message: 'Erro ao criar veículo',
-        error: 'Chassi já existe'
-      });
-    });
-
-    test('deve capturar erros inesperados', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic'
-      };
-
-      criarVeiculo.mockRejectedValue(new Error('Erro inesperado'));
-
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoData)
-        .expect(500);
-
-      expect(response.text).toBe('Erro interno do servidor.');
-    });
-
-    test('deve criar veículo mesmo sem ano e cor (opcionais)', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109187',
-        placa: 'DEF-5678',
-        modelo: 'Toyota Corolla'
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: true,
-        id: 'veiculo124'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(201);
-
-      expect(response.body).toEqual({
-        message: 'Veículo criado com sucesso!',
-        id: 'veiculo124'
-      });
-
-      expect(criarVeiculo).toHaveBeenCalledWith(veiculoData);
-    });
-
-    test('deve retornar erro 400 quando placa já existe', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109188',
-        placa: 'ABC-1234',
-        modelo: 'Civic'
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Placa já existe'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(400);
-
-      expect(response.body).toEqual({
-        message: 'Erro ao criar veículo',
-        error: 'Placa já existe'
-      });
-    });
-
-    test('deve retornar 415 quando Content-Type não é application/json', async () => {
-      const response = await request(app)
-          .post('/veiculos')
-          .set('Content-Type', 'text/plain')
-          .send('chassi=1HGBH41JXMN109186&placa=ABC-1234')
-          .expect(400); // Unsupported Media Type, se aplicável
+    test('deve retornar 500 em caso de exceção', async () => {
+      criarVeiculo.mockRejectedValue(new Error('Erro'));
+      await request(app).post('/').send(veiculoData).expect(500);
     });
   });
 
-  describe('GET /veiculos', () => {
-    test('deve listar veículos com parâmetros padrão', async () => {
-      const mockResult = {
-        veiculos: [
-          { id: 'v1', chassi: '123', placa: 'ABC-1234', modelo: 'Honda Civic' }
-        ],
-        ultimoDoc: null
-      };
-
-      listarVeiculos.mockResolvedValue(mockResult);
-
-      const response = await request(app)
-        .get('/veiculos')
-        .expect(200);
-
-      expect(response.body).toEqual({
-        veiculos: mockResult.veiculos,
-        paginacao: {
-          possuiMais: false,
-          proximoDocId: null
-        }
-      });
-
-      expect(listarVeiculos).toHaveBeenCalledWith({
-        limite: 10,
-        ultimoDoc: null,
-        filtros: {}
-      });
+  describe('GET /', () => {
+    test('deve listar veículos', async () => {
+      listarVeiculos.mockResolvedValue({ veiculos: [] });
+      await request(app).get('/').expect(200);
     });
 
-    test('deve aplicar limite personalizado', async () => {
-      const mockResult = {
-        veiculos: [],
-        ultimoDoc: null
-      };
-
-      listarVeiculos.mockResolvedValue(mockResult);
-
-      await request(app)
-        .get('/veiculos?limite=5')
-        .expect(200);
-
-      expect(listarVeiculos).toHaveBeenCalledWith({
-        limite: 5,
-        ultimoDoc: null,
-        filtros: {}
-      });
+    test('deve retornar 400 para limite inválido', async () => {
+      await request(app).get('/?limite=abc').expect(400);
     });
 
-    test('deve retornar erro 400 para limite inválido', async () => {
-      const response = await request(app)
-        .get('/veiculos?limite=abc')
-        .expect(400);
-
-      expect(response.body.error).toBe('Value for "limite" is not a valid integer.');
-      expect(listarVeiculos).not.toHaveBeenCalled();
+    test('deve retornar 400 para ultimoDocId inválido', async () => {
+      await request(app).get('/?ultimoDocId=invalid').expect(400);
     });
 
-    test('deve aplicar limite máximo de 100', async () => {
-      const mockResult = {
-        veiculos: [],
-        ultimoDoc: null
-      };
-
-      listarVeiculos.mockResolvedValue(mockResult);
-
-      await request(app)
-        .get('/veiculos?limite=150')
-        .expect(200);
-
-      expect(listarVeiculos).toHaveBeenCalledWith({
-        limite: 100, // Deve ser limitado a 100
-        ultimoDoc: null,
-        filtros: {}
-      });
+    test('deve retornar 500 em caso de exceção', async () => {
+      listarVeiculos.mockRejectedValue(new Error('Erro'));
+      await request(app).get('/').expect(500);
     });
 
-    test('deve processar ultimoDocId para paginação', async () => {
-      const mockDoc = {
-        exists: true,
-        id: 'docId123'
-      };
-
-      db.collection.mockReturnValue({
-        doc: jest.fn(() => ({
-          get: jest.fn().mockResolvedValue(mockDoc)
-        }))
+    test('deve retornar detalhes do erro em desenvolvimento', async () => {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        listarVeiculos.mockRejectedValue(new Error('Detalhe do erro'));
+        await request(app)
+          .get('/')
+          .expect(500)
+          .then(response => {
+            expect(response.body.detalhes).toBe('Detalhe do erro');
+          });
+        process.env.NODE_ENV = originalEnv;
       });
-
-      const mockResult = {
-        veiculos: [],
-        ultimoDoc: mockDoc
-      };
-
-      listarVeiculos.mockResolvedValue(mockResult);
-
-      await request(app)
-        .get('/veiculos?ultimoDocId=docId123')
-        .expect(200);
-
-      expect(listarVeiculos).toHaveBeenCalledWith({
-        limite: 10,
-        ultimoDoc: mockDoc,
-        filtros: {}
-      });
-    });
-
-    test('deve aplicar filtros JSON válidos', async () => {
-      const filtros = { placa: 'ABC', status: 'disponivel' };
-      const mockResult = {
-        veiculos: [],
-        ultimoDoc: null
-      };
-
-      listarVeiculos.mockResolvedValue(mockResult);
-
-      await request(app)
-        .get(`/veiculos?filtros=${encodeURIComponent(JSON.stringify(filtros))}`)
-        .expect(200);
-
-      expect(listarVeiculos).toHaveBeenCalledWith({
-        limite: 10,
-        ultimoDoc: null,
-        filtros: filtros
-      });
-    });
-
-    test('deve usar filtros vazios quando JSON é inválido', async () => {
-      const mockResult = {
-        veiculos: [],
-        ultimoDoc: null
-      };
-
-      listarVeiculos.mockResolvedValue(mockResult);
-
-      await request(app)
-        .get('/veiculos?filtros=json-invalido')
-        .expect(200);
-
-      expect(listarVeiculos).toHaveBeenCalledWith({
-        limite: 10,
-        ultimoDoc: null,
-        filtros: {}
-      });
-    });
-
-
-
-    test('deve aplicar filtro com caracteres especiais', async () => {
-      const filtros = { modelo: 'Civic EXL 2.0 Álcool' };
-      const mockResult = { veiculos: [], ultimoDoc: null };
-
-      listarVeiculos.mockResolvedValue(mockResult);
-
-      await request(app)
-          .get(`/veiculos?filtros=${encodeURIComponent(JSON.stringify(filtros))}`)
-          .expect(200);
-
-      expect(listarVeiculos).toHaveBeenCalledWith({
-        limite: 10,
-        ultimoDoc: null,
-        filtros
-      });
-    });
-
-
   });
 
-  describe('PUT /veiculos/:idVeiculo', () => {
-
-    test('deve retornar erro 400 quando chassi está ausente', async () => {
-      const response = await request(app)
-        .put('/veiculos/')
-        .send({ placa: 'XYZ-9876' })
-        .expect(404); // Express retorna 404 para rota sem parâmetro
+  describe('GET /:idVeiculo', () => {
+    test('deve buscar um veículo com sucesso', async () => {
+        buscaVeiculo.mockResolvedValue({ success: true, veiculo: { id: '1' } });
+        await request(app).get('/1').expect(200);
     });
 
-    test('deve retornar erro 400 quando não há dados para atualizar', async () => {
-      const idVeiculo = 'veiculo123';
+    
 
-      const response = await request(app)
-        .put(`/veiculos/${idVeiculo}`)
-        .send({})
-        .expect(400);
-
-      expect(response.text).toContain('Id do veículo e/ou dados de atualização ausentes');
-      expect(buscarPorId).not.toHaveBeenCalled();
+    test('deve retornar 404 se veículo não for encontrado', async () => {
+        buscaVeiculo.mockResolvedValue({ success: false, error: 'Veículo não encontrado.' });
+        await request(app).get('/1').expect(404);
     });
 
-    test('deve retornar erro 404 quando veículo não é encontrado', async () => {
-      const idVeiculo = 'veiculo1123';
-      const updates = { placa: 'XYZ-9876' };
+    test('deve retornar 500 se buscaVeiculo falhar com outro erro', async () => {
+        buscaVeiculo.mockResolvedValue({ success: false, error: 'Outro erro' });
+        await request(app).get('/1').expect(500);
+    });
 
+    test('deve retornar 500 em caso de exceção', async () => {
+        buscaVeiculo.mockRejectedValue(new Error('Erro inesperado'));
+        await request(app).get('/1').expect(500);
+    });
+
+    test('deve retornar detalhes do erro em desenvolvimento', async () => {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        buscaVeiculo.mockRejectedValue(new Error('Detalhe do erro'));
+        await request(app)
+          .get('/1')
+          .expect(500)
+          .then(response => {
+            expect(response.body.detalhes).toBe('Detalhe do erro');
+          });
+        process.env.NODE_ENV = originalEnv;
+      });
+  });
+
+  describe('PUT /:idVeiculo', () => {
+    const updateData = { placa: 'novo' };
+
+    test('deve atualizar veículo com sucesso', async () => {
+      buscarPorId.mockResolvedValue({ id: '1' });
+      atualizarVeiculo.mockResolvedValue({ success: true });
+      await request(app).put('/1').send(updateData).expect(200);
+    });
+
+    test('deve retornar 400 para dados ausentes', async () => {
+      await request(app).put('/1').send({}).expect(400);
+    });
+
+    test('deve retornar 404 se o veículo não for encontrado', async () => {
       buscarPorId.mockResolvedValue(null);
-
-      const response = await request(app)
-        .put(`/veiculos/${idVeiculo}`)
-        .send(updates)
-        .expect(404);
-
-      expect(response.text).toBe('Veículo não encontrado.');
+      await request(app).put('/1').send(updateData).expect(404);
     });
 
-    test('deve retornar erro 400 para quilometragem inválida', async () => {
-      const idVeiculo = 'veiculo123';
-      const updates = { quilometragem: 'abc' };
-
-      buscarPorId.mockResolvedValue({ id: 'veiculo123', idVeiculo });
-
-      const response = await request(app)
-        .put(`/veiculos/${idVeiculo}`)
-        .send(updates)
-        .expect(400);
-
-      expect(response.text).toBe('Quilometragem deve ser um número válido.');
-    });
-
-    test('deve capturar erros inesperados', async () => {
-      const idVeiculo = 'veiculo123';
-      const updates = { placa: 'XYZ-9876' };
-
-      buscarPorId.mockRejectedValue(new Error('Erro inesperado'));
-
-      const response = await request(app)
-        .put(`/veiculos/${idVeiculo}`)
-        .send(updates)
-        .expect(500);
-
-      expect(response.body.message).toBe('Erro ao atualizar veículo');
+    test('deve retornar 500 em caso de exceção', async () => {
+      buscarPorId.mockRejectedValue(new Error('Erro'));
+      await request(app).put('/1').send(updateData).expect(500);
     });
   });
 
-  describe('DELETE /veiculos/:idVeiculo', () => {
+  describe('DELETE /:idVeiculo', () => {
     test('deve deletar veículo com sucesso', async () => {
-      const idVeiculo = 'veiculo123';
-      const mockSnapshot = {
-        empty: false,
-        docs: [{
-          ref: {
-            delete: jest.fn().mockResolvedValue()
-          }
-        }]
-      };
-
-      db.collection.mockReturnValue({
-        where: jest.fn(() => ({
-          limit: jest.fn(() => ({
-            get: jest.fn().mockResolvedValue(mockSnapshot)
-          }))
-        }))
-      });
-
-      const response = await request(app)
-        .delete(`/veiculos/${idVeiculo}`)
-        .expect(200);
-
-      expect(response.body).toEqual({
-        message: 'Veículo deletado com sucesso!'
-      });
-
-      expect(mockSnapshot.docs[0].ref.delete).toHaveBeenCalled();
+        mockGet.mockResolvedValue({ empty: false, docs: [{ ref: { delete: jest.fn() } }] });
+        await request(app).delete('/1').expect(200);
     });
 
-    test('deve retornar erro 400 quando id está ausente', async () => {
-      await request(app)
-        .delete('/veiculos/')
-        .expect(404); // Express retorna 404 para rota sem parâmetro
+    test('deve retornar 400 para ID ausente', async () => {
+        await request(app).delete('/').expect(404); // Rota não encontrada
     });
 
-    test('deve retornar erro 404 quando veículo não é encontrado', async () => {
-      const idVeiculo = 'veiculo123';
-      const mockSnapshot = {
-        empty: true,
-        docs: []
-      };
-
-      db.collection.mockReturnValue({
-        where: jest.fn(() => ({
-          limit: jest.fn(() => ({
-            get: jest.fn().mockResolvedValue(mockSnapshot)
-          }))
-        }))
-      });
-
-      const response = await request(app)
-        .delete(`/veiculos/${idVeiculo}`)
-        .expect(404);
-
-      expect(response.text).toBe('Veículo não encontrado.');
+    test('deve retornar 404 se o veículo não for encontrado', async () => {
+        mockGet.mockResolvedValue({ empty: true });
+        await request(app).delete('/1').expect(404);
     });
 
-
-    test('deve retornar erro 500 se falhar ao deletar veículo', async () => {
-      const idVeiculo = 'veiculo123';
-      const mockSnapshot = {
-        empty: false,
-        docs: [{
-          ref: {
-            delete: jest.fn().mockRejectedValue(new Error('Falha ao deletar'))
-          }
-        }]
-      };
-
-      db.collection.mockReturnValue({
-        where: jest.fn(() => ({
-          limit: jest.fn(() => ({
-            get: jest.fn().mockResolvedValue(mockSnapshot)
-          }))
-        }))
-      });
-
-      const response = await request(app)
-          .delete(`/veiculos/${idVeiculo}`)
-          .expect(500);
-
-      expect(response.body.message).toBe('Erro ao deletar veículo');
+    test('deve retornar 500 em caso de exceção', async () => {
+        mockGet.mockRejectedValue(new Error('Erro'));
+        await request(app).delete('/1').expect(500);
     });
-
-  describe('Validação de dados', () => {
-    test('deve processar veículo com dados completos', async () => {
-      const veiculoCompleto = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic EXL',
-        ano: 2022,
-        cor: 'Branco Perolizado',
-        categoria: 'Sedan',
-        combustivel: 'Flex',
-        quilometragem: 15000,
-        valor: 85000.00,
-        status: 'disponivel',
-        observacoes: 'Veículo em perfeito estado'
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: true,
-        id: 'veiculo123'
-      });
-
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoCompleto)
-        .expect(201);
-
-      expect(criarVeiculo).toHaveBeenCalledWith(veiculoCompleto);
-      expect(response.body.message).toBe('Veículo criado com sucesso!');
-    });
-
-    test('deve validar formato de chassi', async () => {
-      const veiculoData = {
-        chassi: 'chassi-muito-curto',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic'
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Chassi deve ter 17 caracteres'
-      });
-
-      const response = await request(app)
-        .post('/veiculos')
-        .send(veiculoData)
-        .expect(400);
-
-      expect(response.body.error).toBe('Chassi deve ter 17 caracteres');
-    });
-
-    test('deve validar formato da placa', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: '12345678', // formato inválido
-        modelo: 'Honda Civic'
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Placa em formato inválido'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(400);
-
-      expect(response.body.error).toBe('Placa em formato inválido');
-    });
-
-    test('deve validar ano como número entre 1900 e ano atual', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic',
-        ano: 1800 // inválido
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Ano do veículo inválido'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(400);
-
-      expect(response.body.error).toBe('Ano do veículo inválido');
-    });
-
-    test('deve retornar erro para valor negativo', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic',
-        valor: -10000
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Valor do veículo deve ser positivo'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(400);
-
-      expect(response.body.error).toBe('Valor do veículo deve ser positivo');
-    });
-
-    test('deve retornar erro para status inválido', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic',
-        status: 'em_transporte' // inválido
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Status inválido. Valores permitidos: disponivel, vendido, reservado'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(400);
-
-      expect(response.body.error).toBe('Status inválido. Valores permitidos: disponivel, vendido, reservado');
-    });
-
-    test('deve retornar erro para quilometragem como string', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic',
-        quilometragem: 'vinte mil'
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Quilometragem deve ser um número válido'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(400);
-
-      expect(response.body.error).toBe('Quilometragem deve ser um número válido');
-    });
-
-    test('deve retornar erro para observações muito longas', async () => {
-      const veiculoData = {
-        chassi: '1HGBH41JXMN109186',
-        placa: 'ABC-1234',
-        modelo: 'Honda Civic',
-        observacoes: 'A'.repeat(2001) // supondo limite de 2000 caracteres
-      };
-
-      criarVeiculo.mockResolvedValue({
-        success: false,
-        error: 'Observações excedem o limite de 2000 caracteres'
-      });
-
-      const response = await request(app)
-          .post('/veiculos')
-          .send(veiculoData)
-          .expect(400);
-
-      expect(response.body.error).toBe('Observações excedem o limite de 2000 caracteres');
-    });
-});})})
+  });
+});

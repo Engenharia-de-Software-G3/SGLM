@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
       !vistoriaData.placaVeiculo ||
       !vistoriaData.nomeEmpresa ||
       !vistoriaData.nomeFuncionario ||
-      !vistoriaData.quilometragem ||
+      (vistoriaData.quilometragem === undefined || vistoriaData.quilometragem === null) ||
       !vistoriaData.data
     ) {
       return res

@@ -33,136 +33,18 @@ const { db } = require('../firebaseConfig.js');
 
 describe('Cliente Routes', () => {
   let app;
-  let router;
+  let clienteRouter;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Criar um mock manual do router
-    const mockRouter = express.Router();
+    // Import the actual router after mocks are set up
+    delete require.cache[require.resolve('../cliente.js')];
+    clienteRouter = require('../cliente.js').default;
     
-    // Mock da rota POST
-    mockRouter.post('/', async (req, res) => {
-      try {
-        const clienteData = req.body;
-        if (!clienteData || !clienteData.cpf || !clienteData.dadosPessoais) {
-          return res.status(400).send('Dados do cliente incompletos (CPF e dadosPessoais são obrigatórios).');
-        }
-        const resultado = await criarCliente(clienteData);
-        if (resultado.success) {
-          res.status(201).send({ message: 'Cliente criado com sucesso!', id: clienteData.cpf });
-        } else {
-          res.status(500).send({ message: 'Erro ao criar cliente', error: resultado.error });
-        }
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    // Mock da rota GET
-    mockRouter.get('/', async (req, res) => {
-      try {
-        const { limite = '10', ultimoDocId, filtros = '{}' } = req.query;
-        const limiteNum = parseInt(limite) || 10;
-        let filtrosParsed;
-        try {
-          filtrosParsed = JSON.parse(filtros);
-        } catch {
-          filtrosParsed = {};
-        }
-        const { clientes, ultimoDoc } = await listarClientes({
-          limite: limiteNum,
-          ultimoDoc: null,
-          filtros: filtrosParsed,
-        });
-        const resposta = {
-          clientes,
-          paginacao: {
-            possuiMais: !!ultimoDoc,
-            ultimoDocId: ultimoDoc?.id || null,
-          },
-        };
-        res.status(200).json(resposta);
-      } catch (error) {
-        res.status(500).json({
-          error: 'Erro interno no servidor',
-          detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined,
-        });
-      }
-    });
-    
-    // Mock da rota GET /:cpf
-    mockRouter.get('/:cpf', async (req, res) => {
-      try {
-        const { cpf } = req.params;
-        if (!cpf || cpf.trim().length === 0) {
-          return res.status(400).json({ 
-            error: 'CPF é obrigatório',
-            message: 'Informe um CPF válido para busca.' 
-          });
-        }
-        const resultado = await buscarClientePorCPF(cpf);
-        if (resultado.success) {
-          res.status(200).json({
-            success: true,
-            cliente: resultado.cliente
-          });
-        } else {
-          const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
-          res.status(statusCode).json({ 
-            success: false,
-            error: resultado.error 
-          });
-        }
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: 'Erro interno do servidor.',
-          detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined,
-        });
-      }
-    });
-    
-    // Mock da rota PUT /:cpf
-    mockRouter.put('/:cpf', async (req, res) => {
-      try {
-        const { cpf } = req.params;
-        const updates = req.body;
-        if (!updates || Object.keys(updates).length === 0) {
-          return res.status(400).send('Nenhum dado fornecido para atualização.');
-        }
-        const resultado = await atualizarCliente(cpf, updates);
-        if (resultado.success) {
-          res.status(200).send({ message: `Cliente ${cpf} atualizado com sucesso!` });
-        } else {
-          const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
-          res.status(statusCode).send({ message: 'Erro ao atualizar cliente', error: resultado.error });
-        }
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    // Mock da rota DELETE /:cpf
-    mockRouter.delete('/:cpf', async (req, res) => {
-      try {
-        const { cpf } = req.params;
-        const resultado = await deletarCliente(cpf);
-        if (resultado.success) {
-          res.status(200).send({ message: `Cliente ${cpf} deletado com sucesso!` });
-        } else {
-          const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
-          res.status(statusCode).send({ message: 'Erro ao deletar cliente', error: resultado.error });
-        }
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    router = mockRouter;
     app = express();
     app.use(express.json());
-    app.use('/clientes', router);
+    app.use('/clientes', clienteRouter);
   });
 
   describe('POST /clientes', () => {
@@ -304,6 +186,40 @@ describe('Cliente Routes', () => {
         cpf: '12345678901',
         dadosPessoais: expect.any(Object)
       }));
+    });
+
+    test('deve retornar erro 400 quando CPF é inválido (formato)', async () => {
+      const clienteData = {
+        cpf: '123456789',  // CPF com formato inválido (menos de 11 dígitos)
+        dadosPessoais: {
+          nome: 'João Silva'
+        }
+      };
+
+      const response = await request(app)
+        .post('/clientes')
+        .send(clienteData)
+        .expect(400);
+
+      expect(response.text).toBe('CPF inválido');
+      expect(criarCliente).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 400 quando CPF contém caracteres não numéricos', async () => {
+      const clienteData = {
+        cpf: '123.456.789-01',  // CPF formatado com pontos e hífen
+        dadosPessoais: {
+          nome: 'João Silva'
+        }
+      };
+
+      const response = await request(app)
+        .post('/clientes')
+        .send(clienteData)
+        .expect(400);
+
+      expect(response.text).toBe('CPF inválido');
+      expect(criarCliente).not.toHaveBeenCalled();
     });
 
     test('deve retornar detalhes do erro em ambiente de desenvolvimento', async () => {
@@ -455,6 +371,47 @@ describe('Cliente Routes', () => {
       });
     });
 
+    test('deve retornar erro 400 quando ultimoDocId é inválido', async () => {
+      // Mock do db para simular documento inexistente
+      const mockDocSnapshot = {
+        get: jest.fn().mockResolvedValue({ exists: false })
+      };
+      const mockCollection = {
+        doc: jest.fn().mockReturnValue(mockDocSnapshot)
+      };
+      db.collection.mockReturnValue(mockCollection);
+
+      const response = await request(app)
+        .get('/clientes?ultimoDocId=invalid-id')
+        .expect(400);
+
+      expect(response.body.error).toBe('ultimoDocId inválido');
+    });
+
+    test('deve processar paginação com ultimoDocId válido', async () => {
+      // Mock do db para simular documento existente
+      const mockDocSnapshot = {
+        get: jest.fn().mockResolvedValue({ exists: true, id: 'valid-id' })
+      };
+      const mockCollection = {
+        doc: jest.fn().mockReturnValue(mockDocSnapshot)
+      };
+      db.collection.mockReturnValue(mockCollection);
+
+      const mockResult = {
+        clientes: [{ id: '123', cpf: '12345678901' }],
+        ultimoDoc: { id: 'next-doc-id' }
+      };
+      listarClientes.mockResolvedValue(mockResult);
+
+      const response = await request(app)
+        .get('/clientes?ultimoDocId=valid-id')
+        .expect(200);
+
+      expect(response.body.paginacao.possuiMais).toBe(true);
+      expect(response.body.paginacao.ultimoDocId).toBe('next-doc-id');
+    });
+
   });
 
   describe('GET /clientes/:cpf', () => {
@@ -519,6 +476,26 @@ describe('Cliente Routes', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Erro interno do servidor.');
+    });
+
+    test('deve retornar erro 400 quando CPF está vazio ou contém apenas espaços', async () => {
+      // Teste com CPF contendo apenas espaços
+      const response = await request(app)
+        .get('/clientes/%20%20')  // URL encoded spaces
+        .expect(400);
+
+      expect(response.body.error).toBe('CPF é obrigatório');
+      expect(response.body.message).toBe('Informe um CPF válido para busca.');
+      expect(buscarClientePorCPF).not.toHaveBeenCalled();
+    });
+
+    test('deve retornar erro 400 quando CPF é inválido na busca', async () => {
+      const response = await request(app)
+        .get('/clientes/123456789')  // CPF inválido
+        .expect(400);
+
+      expect(response.text).toBe('CPF inválido');
+      expect(buscarClientePorCPF).not.toHaveBeenCalled();
     });
 
     test('deve retornar Content-Type application/json', async () => {
@@ -671,6 +648,18 @@ describe('Cliente Routes', () => {
       expect(response.text).toContain('Nenhum dado fornecido para atualização');
       expect(atualizarCliente).not.toHaveBeenCalled();
     });
+
+    test('deve retornar erro 400 quando CPF é inválido na atualização', async () => {
+      const updates = { dadosPessoais: { nome: 'João' } };
+
+      const response = await request(app)
+        .put('/clientes/123456789')  // CPF inválido
+        .send(updates)
+        .expect(400);
+
+      expect(response.text).toBe('CPF inválido');
+      expect(atualizarCliente).not.toHaveBeenCalled();
+    });
   });
 
   describe('DELETE /clientes/:cpf', () => {
@@ -724,6 +713,15 @@ describe('Cliente Routes', () => {
         .expect(500);
 
       expect(response.text).toBe('Erro interno do servidor.');
+    });
+
+    test('deve retornar erro 400 quando CPF é inválido na deleção', async () => {
+      const response = await request(app)
+        .delete('/clientes/123456789')  // CPF inválido
+        .expect(400);
+
+      expect(response.text).toBe('CPF inválido');
+      expect(deletarCliente).not.toHaveBeenCalled();
     });
   });
 

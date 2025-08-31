@@ -12,6 +12,7 @@ import {
   deletarCliente,
   buscarClientePorCPF,
 } from './scripts/firestore/firestoreClientes.js';
+import { db } from './firebaseConfig.js';
 //import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
 /**
@@ -151,7 +152,7 @@ router.get('/:cpf', async (req, res) => {
     }
 
     // Validação do formato do CPF
-    if (!/^\d{11}$/.test(clienteData.cpf)) {
+    if (!/^\d{11}$/.test(cpf)) {
       return res.status(400).send('CPF inválido');
     }
 
@@ -204,7 +205,7 @@ router.put('/:cpf', async (req, res) => {
     }
 
     // Validação do formato do CPF
-    if (!/^\d{11}$/.test(clienteData.cpf)) {
+    if (!/^\d{11}$/.test(cpf)) {
       return res.status(400).send('CPF inválido');
     }
 
@@ -244,7 +245,7 @@ router.delete('/:cpf', async (req, res) => {
     const { cpf } = req.params;
 
     // Validação do formato do CPF
-    if (!/^\d{11}$/.test(clienteData.cpf)) {
+    if (!/^\d{11}$/.test(cpf)) {
       return res.status(400).send('CPF inválido');
     }
 

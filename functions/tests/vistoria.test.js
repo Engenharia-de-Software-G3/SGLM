@@ -10,49 +10,18 @@ const { criarVistoria } = require('../scripts/firestore/firestoreVistoria.js');
 
 describe('Vistoria Routes', () => {
   let app;
-  let router;
+  let vistoriaRouter;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Criar um mock manual do router
-    const mockRouter = express.Router();
+    // Import the actual router after mocks are set up
+    delete require.cache[require.resolve('../vistoria.js')];
+    vistoriaRouter = require('../vistoria.js').default;
     
-    // Mock da rota POST
-    mockRouter.post('/', async (req, res) => {
-      try {
-        const vistoriaData = req.body;
-        
-        if (!vistoriaData || !vistoriaData.chassiVeiculo || !vistoriaData.placaVeiculo || 
-            !vistoriaData.nomeEmpresa || !vistoriaData.nomeFuncionario || 
-            vistoriaData.quilometragem === undefined || !vistoriaData.data) {
-          return res.status(400).send('Os campos chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios.');
-        }
-        
-        const resultado = await criarVistoria(vistoriaData);
-        if (resultado.success) {
-          res.status(201).json({ message: 'Vistoria criada com sucesso!' });
-        } else {
-          res.status(500).json({ message: 'Erro ao criar Vistoria', error: resultado.error });
-        }
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    // Mock da rota GET
-    mockRouter.get('/', async (req, res) => {
-      try {
-        res.status(200).json({ message: 'Rota GET /vistoria implementada em breve.' });
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    router = mockRouter;
     app = express();
     app.use(express.json());
-    app.use('/vistorias', router);
+    app.use('/vistorias', vistoriaRouter);
   });
 
   describe('POST /vistorias', () => {
@@ -98,7 +67,7 @@ describe('Vistoria Routes', () => {
         .send(vistoriaData)
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 
@@ -116,7 +85,7 @@ describe('Vistoria Routes', () => {
         .send(vistoriaData)
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 
@@ -134,7 +103,7 @@ describe('Vistoria Routes', () => {
         .send(vistoriaData)
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 
@@ -152,7 +121,7 @@ describe('Vistoria Routes', () => {
         .send(vistoriaData)
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 
@@ -170,7 +139,7 @@ describe('Vistoria Routes', () => {
         .send(vistoriaData)
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 
@@ -188,7 +157,7 @@ describe('Vistoria Routes', () => {
         .send(vistoriaData)
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 
@@ -198,7 +167,7 @@ describe('Vistoria Routes', () => {
         .send({})
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 
@@ -208,7 +177,7 @@ describe('Vistoria Routes', () => {
         .send(null)
         .expect(400);
 
-      expect(response.text).toContain('chassi do veículo, placa do veículo, nome da empresa, nome do funcionário, quilometragem e data da vistoria são obrigatórios');
+      expect(response.text).toContain('Dados da vistoria incompletos');
       expect(criarVistoria).not.toHaveBeenCalled();
     });
 

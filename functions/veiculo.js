@@ -75,11 +75,16 @@ router.get('/', async (req, res) => {
     const { limite, ultimoDocId, ...filtrosQuery } = req.query;
 
     // Converter e validar parâmetros
-    const limiteNum = limite ? Math.min(parseInt(limite) || 10, 100) : 10; // Default 10, max 100
+    let limiteNum = 10; // Padrão
+    if (limite) {
+      limiteNum = parseInt(limite, 10);
+    }
 
     if (isNaN(limiteNum)) {
       return res.status(400).json({ error: 'Value for "limite" is not a valid integer.' });
     }
+
+    const limiteAplicado = Math.min(limiteNum, 100);
 
     const filtrosParsed = {};
     Object.keys(filtrosQuery).forEach((key) => {

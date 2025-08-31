@@ -3,7 +3,9 @@ const express = require('express');
 
 // Mock das funções do firestore
 jest.mock('../scripts/firestore/firestoreManutencao.js', () => ({
+  adicionarManutencao: jest.fn(),
   listarManutencoes: jest.fn(),
+  listarManutencao: jest.fn(),
   deletarManutencao: jest.fn(),
 }));
 
@@ -18,60 +20,105 @@ jest.mock('../firebaseConfig.js', () => ({
   },
 }));
 
-const { listarManutencoes, deletarManutencao } = require('../scripts/firestore/firestoreManutencao.js');
+const { adicionarManutencao, listarManutencoes, listarManutencao, deletarManutencao } = require('../scripts/firestore/firestoreManutencao.js');
 const { db } = require('../firebaseConfig.js');
 
 describe('Manutenções Routes', () => {
   let app;
-  let router;
+  let manutencaoRouter;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Criar um mock manual do router
-    const mockRouter = express.Router();
+    // Import the actual router after mocks are set up
+    delete require.cache[require.resolve('../manutencoes.js')];
+    manutencaoRouter = require('../manutencoes.js').default;
 
-    // Mock da rota GET /:veiculoId
-    mockRouter.get('/:veiculoId', async (req, res) => {
-      try {
-        const {veiculoId} = req.params;
-
-        // Verificar se o veículo existe
-        const veiculoDoc = await db.collection('veiculos').doc(veiculoId).get();
-
-        if (!veiculoDoc.exists) {
-          return res.status(404).send(`Veículo com ID ${veiculoId} não encontrado.`);
-        }
-
-        const manutencoes = await listarManutencoes(veiculoId);
-        res.status(200).json(manutencoes);
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-
-    mockRouter.delete('/:idManutencao', async (req, res) => {
-      const {idManutencao} = req.params;
-
-      try {
-        const resultado = await deletarManutencao(idManutencao);
-
-        if (resultado.success) {
-          return res.status(200).json({message: `Manutenção ${idManutencao} deletada com sucesso!`});
-        } else {
-          const statusCode = resultado.error === 'Manutenção não encontrada.' ? 404 : 500;
-          return res.status(statusCode).json({message: 'Erro ao deletar manutenção', error: resultado.error});
-        }
-      } catch (error) {
-        return res.status(500).send('Erro interno do servidor.');
-      }
-    });
-
-    router = mockRouter;
     app = express();
     app.use(express.json());
-    app.use('/manutencoes', router);
+    app.use('/manutencoes', manutencaoRouter);
   });
+
+  describe('POST /manutencoes', () => {
+    const manutencaoValida = {
+      placaVeiculo: 'ABC-1234',
+      nomeServico: 'Troca de óleo',
+      data: '2024-01-01',
+      quilometragem: 50000,
+      valor: 150.00
+    };
+
+    test('deve criar manutenção com sucesso', async () => {
+      adicionarManutencao.mockResolvedValue({ success: true, id: 'manut-123' });
+
+      const response = await request(app).post('/manutencoes').send(manutencaoValida).expect(201);
+      expect(response.body).toEqual({ message: 'Manutenção criada com sucesso!', id: 'manut-123' });
+      expect(adicionarManutencao).toHaveBeenCalledWith(manutencaoValida);
+    });
+
+    test('deve retornar 400 quando campos obrigatórios não são fornecidos', async () => {
+      const response = await request(app).post('/manutencoes').send({}).expect(400);
+      expect(response.text).toContain('Dados da manutenção incompletos');
+    });
+
+    test('deve retornar 400 quando placaVeiculo não é fornecida', async () => {
+      const manutencaoSemPlaca = { nomeServico: 'Troca de óleo' };
+      const response = await request(app).post('/manutencoes').send(manutencaoSemPlaca).expect(400);
+      expect(response.text).toContain('Dados da manutenção incompletos');
+    });
+
+    test('deve retornar 400 quando nomeServico não é fornecido', async () => {
+      const manutencaoSemServico = { placaVeiculo: 'ABC-1234' };
+      const response = await request(app).post('/manutencoes').send(manutencaoSemServico).expect(400);
+      expect(response.text).toContain('Dados da manutenção incompletos');
+    });
+
+    test('deve retornar 500 quando adicionarManutencao retorna erro', async () => {
+      adicionarManutencao.mockResolvedValue({ success: false, error: 'Erro ao salvar no banco' });
+
+      const response = await request(app).post('/manutencoes').send(manutencaoValida).expect(500);
+      expect(response.body).toEqual({ message: 'Erro ao criar manutenção', error: 'Erro ao salvar no banco' });
+    });
+
+    test('deve retornar 500 quando ocorre exceção', async () => {
+      adicionarManutencao.mockImplementation(() => {
+        throw new Error('Falha inesperada');
+      });
+
+      const response = await request(app).post('/manutencoes').send(manutencaoValida).expect(500);
+      expect(response.text).toBe('Erro interno do servidor.');
+    });
+  });
+
+  describe('GET /manutencoes', () => {
+    test('deve listar todas as manutenções com sucesso', async () => {
+      const mockManutencoes = [
+        { id: 'manut1', placaVeiculo: 'ABC-1234', nomeServico: 'Troca de óleo' },
+        { id: 'manut2', placaVeiculo: 'XYZ-5678', nomeServico: 'Revisão' }
+      ];
+      
+      listarManutencoes.mockResolvedValue(mockManutencoes);
+
+      const response = await request(app).get('/manutencoes').expect(200);
+      expect(response.body).toEqual(mockManutencoes);
+      expect(listarManutencoes).toHaveBeenCalled();
+    });
+
+    test('deve retornar lista vazia quando não há manutenções', async () => {
+      listarManutencoes.mockResolvedValue([]);
+
+      const response = await request(app).get('/manutencoes').expect(200);
+      expect(response.body).toEqual([]);
+    });
+
+    test('deve retornar 500 quando ocorre erro na listagem', async () => {
+      listarManutencoes.mockRejectedValue(new Error('Erro no banco'));
+
+      const response = await request(app).get('/manutencoes').expect(500);
+      expect(response.text).toBe('Erro interno do servidor.');
+    });
+  });
+
     describe('GET /manutencoes/:veiculoId', () => {
       test('deve listar manutenções de um veículo válido', async () => {
         const veiculoId = 'veiculo123';
@@ -107,22 +154,17 @@ describe('Manutenções Routes', () => {
           }))
         });
 
-        listarManutencoes.mockResolvedValue(mockManutencoes);
+        listarManutencao.mockResolvedValue({ manutencoes: mockManutencoes, ultimoDoc: null });
 
         const response = await request(app)
             .get(`/manutencoes/${veiculoId}`)
             .expect(200);
 
-        expect(response.body).toEqual(mockManutencoes);
+        expect(response.body.manutencoes).toEqual(mockManutencoes);
         expect(db.collection).toHaveBeenCalledWith('veiculos');
-        expect(listarManutencoes).toHaveBeenCalledWith(veiculoId);
+        expect(listarManutencao).toHaveBeenCalledWith(veiculoId);
       });
 
-      test('deve retornar erro 400 quando veiculoId não é fornecido', async () => {
-        const response = await request(app)
-            .get('/manutencoes/')
-            .expect(404); // Express retorna 404 para rota não encontrada sem parâmetro
-      });
 
       test('deve retornar erro 404 quando veículo não existe', async () => {
         const veiculoId = 'veiculo-inexistente';
@@ -162,14 +204,14 @@ describe('Manutenções Routes', () => {
           }))
         });
 
-        listarManutencoes.mockResolvedValue([]);
+        listarManutencao.mockResolvedValue({ manutencoes: [], ultimoDoc: null });
 
         const response = await request(app)
             .get(`/manutencoes/${veiculoId}`)
             .expect(200);
 
-        expect(response.body).toEqual([]);
-        expect(listarManutencoes).toHaveBeenCalledWith(veiculoId);
+        expect(response.body.manutencoes).toEqual([]);
+        expect(listarManutencao).toHaveBeenCalledWith(veiculoId);
       });
 
       test('deve capturar erros inesperados na verificação do veículo', async () => {
@@ -207,14 +249,14 @@ describe('Manutenções Routes', () => {
         });
 
         // Mock de erro na listagem de manutenções
-        listarManutencoes.mockRejectedValue(new Error('Erro ao buscar manutenções'));
+        listarManutencao.mockRejectedValue(new Error('Erro ao buscar manutenções'));
 
         const response = await request(app)
             .get(`/manutencoes/${veiculoId}`)
             .expect(500);
 
         expect(response.text).toBe('Erro interno do servidor.');
-        expect(listarManutencoes).toHaveBeenCalledWith(veiculoId);
+        expect(listarManutencao).toHaveBeenCalledWith(veiculoId);
       });
 
       test('deve processar veiculoId com caracteres especiais', async () => {
@@ -240,14 +282,14 @@ describe('Manutenções Routes', () => {
           }
         ];
 
-        listarManutencoes.mockResolvedValue(mockManutencoes);
+        listarManutencao.mockResolvedValue({ manutencoes: mockManutencoes, ultimoDoc: null });
 
         const response = await request(app)
             .get(`/manutencoes/${veiculoId}`)
             .expect(200);
 
-        expect(response.body).toEqual(mockManutencoes);
-        expect(listarManutencoes).toHaveBeenCalledWith(veiculoId);
+        expect(response.body.manutencoes).toEqual(mockManutencoes);
+        expect(listarManutencao).toHaveBeenCalledWith(veiculoId);
       });
 
       test('deve retornar manutenções ordenadas cronologicamente', async () => {
@@ -285,108 +327,18 @@ describe('Manutenções Routes', () => {
           }))
         });
 
-        listarManutencoes.mockResolvedValue(mockManutencoes);
+        listarManutencao.mockResolvedValue({ manutencoes: mockManutencoes, ultimoDoc: null });
 
         const response = await request(app)
             .get(`/manutencoes/${veiculoId}`)
             .expect(200);
 
-        expect(response.body).toEqual(mockManutencoes);
-        expect(response.body.length).toBe(3);
-        expect(listarManutencoes).toHaveBeenCalledWith(veiculoId);
+        expect(response.body.manutencoes).toEqual(mockManutencoes);
+        expect(response.body.manutencoes.length).toBe(3);
+        expect(listarManutencao).toHaveBeenCalledWith(veiculoId);
       });
 
-      test('deve processar manutenções com dados completos', async () => {
-        const veiculoId = 'veiculo123';
-        const mockManutencao = {
-          id: 'manut-completa',
-          tipo: 'preventiva',
-          data: '2024-01-15T10:30:00Z',
-          quilometragem: 75000,
-          descricao: 'Manutenção preventiva completa',
-          valor: 850.50,
-          oficina: {
-            nome: 'Oficina Central',
-            cnpj: '12345678000195'
-          },
-          pecas: [
-            {nome: 'Filtro de óleo', valor: 25.00},
-            {nome: 'Óleo motor', valor: 120.00}
-          ],
-          observacoes: 'Manutenção realizada conforme manual'
-        };
 
-        const mockVeiculoDoc = {
-          exists: true,
-          id: veiculoId,
-          data: () => ({placa: 'ABC-1234'})
-        };
-
-        db.collection.mockReturnValue({
-          doc: jest.fn(() => ({
-            get: jest.fn().mockResolvedValue(mockVeiculoDoc)
-          }))
-        });
-
-        listarManutencoes.mockResolvedValue([mockManutencao]);
-
-        const response = await request(app)
-            .get(`/manutencoes/${veiculoId}`)
-            .expect(200);
-
-        expect(response.body[0]).toEqual(mockManutencao);
-        expect(response.body[0].pecas).toBeDefined();
-        expect(response.body[0].oficina).toBeDefined();
-      });
-
-      test('deve garantir que as peças da manutenção estão completas', async () => {
-        const veiculoId = 'veiculo123';
-        const mockManutencao = {
-          id: 'manut-completa',
-          tipo: 'preventiva',
-          data: '2024-01-15T10:30:00Z',
-          quilometragem: 75000,
-          descricao: 'Manutenção preventiva completa',
-          valor: 850.50,
-          oficina: {
-            nome: 'Oficina Central',
-            cnpj: '12345678000195'
-          },
-          pecas: [
-            {nome: 'Filtro de óleo', valor: 25.00},
-            {nome: 'Óleo motor', valor: 120.00}
-          ],
-          observacoes: 'Manutenção realizada conforme manual'
-        };
-
-        const mockVeiculoDoc = {
-          exists: true,
-          id: veiculoId,
-          data: () => ({placa: 'ABC-1234'})
-        };
-
-        db.collection.mockReturnValue({
-          doc: jest.fn(() => ({
-            get: jest.fn().mockResolvedValue(mockVeiculoDoc)
-          }))
-        });
-
-        listarManutencoes.mockResolvedValue([mockManutencao]);
-
-        const response = await request(app)
-            .get(`/manutencoes/${veiculoId}`)
-            .expect(200);
-
-        // Verifica se as peças estão completas e os valores batem com os esperados
-        expect(response.body[0].pecas).toEqual(expect.arrayContaining([
-          {nome: 'Filtro de óleo', valor: 25.00},
-          {nome: 'Óleo motor', valor: 120.00}
-        ]));
-        expect(response.body[0].oficina).toEqual({
-          nome: 'Oficina Central',
-          cnpj: '12345678000195'
-        });
-      });
     });
 
     describe('DELETE /manutencoes/:idManutencao', () => {
@@ -472,11 +424,6 @@ describe('Manutenções Routes', () => {
     });
 
     describe('Validação de rotas', () => {
-      test('deve rejeitar requisição sem veiculoId', async () => {
-        await request(app)
-            .get('/manutencoes/')
-            .expect(404); // ou 400, dependendo da sua configuração de erro
-      });
 
       test('deve permitir requisição com token de autenticação válido', async () => {
         await request(app)

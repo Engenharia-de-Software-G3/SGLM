@@ -10,45 +10,18 @@ const { criarFornecedor } = require('../scripts/firestore/firestoreFornecedores.
 
 describe('Fornecedores Routes', () => {
   let app;
-  let router;
+  let fornecedorRouter;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Criar um mock manual do router
-    const mockRouter = express.Router();
+    // Import the actual router after mocks are set up
+    delete require.cache[require.resolve('../fornecedores.js')];
+    fornecedorRouter = require('../fornecedores.js').default;
     
-    // Mock da rota POST
-    mockRouter.post('/', async (req, res) => {
-      try {
-        const fornecedorData = req.body;
-        if (!fornecedorData || !fornecedorData.cnpj) {
-          return res.status(400).send('Dados do fornecedor incompletos (CNPJ é obrigatório).');
-        }
-        const resultado = await criarFornecedor(fornecedorData);
-        if (resultado.success) {
-          res.status(201).send({ message: 'Fornecedor criado com sucesso!', id: fornecedorData.cnpj });
-        } else {
-          res.status(500).send({ message: 'Erro ao criar fornecedor', error: resultado.error });
-        }
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    // Mock da rota GET
-    mockRouter.get('/', async (req, res) => {
-      try {
-        res.status(200).send({ message: 'Rota GET /fornecedores implementada em breve.' });
-      } catch (error) {
-        res.status(500).send('Erro interno do servidor.');
-      }
-    });
-    
-    router = mockRouter;
     app = express();
     app.use(express.json());
-    app.use('/fornecedores', router);
+    app.use('/fornecedores', fornecedorRouter);
   });
 
   describe('POST /fornecedores', () => {
