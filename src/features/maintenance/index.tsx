@@ -1,0 +1,141 @@
+import { useEffect, useState } from 'react';
+import { Layout } from '@/shared/components/layout';
+import { Plus, Loader2 } from 'lucide-react';
+import { PaginatedTable } from '@/shared/components/display-table';
+import { SearchBar } from '@/shared/components/display-table/components/search-bar';
+import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
+import { DeleteModal } from '@/shared/components/delete-modal';
+import { ActionButton } from '@/shared/components/display-table/components/action-button';
+import { AddMaintenanceModal } from './components/add-maintenance-modal';
+import {
+  getManutencoes,
+  createManutencao,
+  deleteManutencao,
+} from '@/services/maintenance/functions';
+import { Manutencao, CreateManutencaoRequest } from '@/services/maintenance/types';
+
+export const Maintenance = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [manutencoes, setManutencoes] = useState<Manutencao[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await getManutencoes();
+        setManutencoes(res?.manutencoes ?? []);
+      } catch (err) {
+        console.error('Erro ao buscar manutenções:', err);
+        setManutencoes([]); // segurança
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // const handleView = (id: string) => {
+  //   console.log('Visualizar manutenção', id);
+  // };
+
+  const handleDelete = async (id: string) => {
+    await deleteManutencao(id);
+    setManutencoes((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const handleAdd = async (data: CreateManutencaoRequest) => {
+    const res = await createManutencao(data);
+
+    const novaManutencao = {
+      id: res.id,
+      nomeServico: data.nomeServico,
+      placaVeiculo: data.placaVeiculo,
+      valor: data.valor,
+      data: new Date().toISOString(),
+      quilometragem: 0,
+    };
+
+    setManutencoes((prev) => [...prev, novaManutencao]);
+    window.location.reload();
+  };
+
+  const filtered = Array.isArray(manutencoes)
+    ? manutencoes.filter(
+        (m) =>
+          m.nomeServico.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.placaVeiculo.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    : [];
+
+  return (
+    <Layout title="Manutenções" subtitle="Lista de serviços de manutenção realizados">
+      <div className="flex-1 overflow-auto p-6">
+        <DisplayTableHeader>
+          <SearchBar
+            placeholder="Filtrar por manutenção"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <AddMaintenanceModal
+            onAdd={handleAdd}
+            trigger={
+              <ActionButton
+                label="Adicionar manutenção"
+                icon={<Plus className="h-4 w-4 mr-1" />}
+                className="bg-blue-600 hover:bg-blue-700"
+              />
+            }
+          />
+        </DisplayTableHeader>
+
+        {loading ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : (
+          <PaginatedTable
+            data={filtered}
+            columns={[
+              { key: 'maintenance', title: 'Serviço' },
+              { key: 'plate', title: 'Placa' },
+              { key: 'date', title: 'Data' },
+              { key: 'value', title: 'Valor' },
+              { key: 'mileage', title: 'Quilometragem' },
+              { key: 'actions', title: 'Ações' },
+            ]}
+            renderRow={(m) => (
+              <tr key={m.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">{m.nomeServico}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {m.placaVeiculo}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {new Date(m.data).toLocaleDateString('pt-BR')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  R$ {m.valor.toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {m.quilometragem} km
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <DeleteModal
+                      title="Tem certeza que deseja excluir esta manutenção?"
+                      description="Todos os dados salvos serão excluídos."
+                      actionText="Excluir manutenção"
+                      onConfirm={() => handleDelete(m.id)}
+                    />
+                  </div>
+                </td>
+              </tr>
+            )}
+          />
+        )}
+      </div>
+    </Layout>
+  );
+};

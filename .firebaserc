@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "slmg-es",
+    "sglm-es": "sglm-es",
+    "sglm-data": "slmg-es"
+  },
+  "targets": {},
+  "etags": {}
+}
