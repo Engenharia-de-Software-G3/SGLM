@@ -1,13 +1,9 @@
 import { Card } from '@/components/ui/card';
 import { Users, Car, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useClientsQuery } from '@/services/client';
 import { useVehiclesQuery } from '@/services/vehicle';
 
 export const StatsCards = () => {
-
-  const navigate = useNavigate();
-
   // Busca clientes e veículos
   const { data: clientsData } = useClientsQuery();
   console.log('👥 Clientes carregados:', clientsData);
@@ -18,13 +14,16 @@ export const StatsCards = () => {
 
   // Contagem de status de veículos
   const statusCount =
-    vehiclesData?.veiculos.reduce((acc, v) => {
-      const status = v.status?.toLowerCase() || "indefinido";
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>) ?? {};
+    vehiclesData?.veiculos.reduce(
+      (acc: Record<string, number>, v: { status?: string }) => {
+        const status = v.status?.toLowerCase() || 'indefinido';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ) ?? {};
 
-  console.log("📊 Contagem por status:", statusCount);
+  console.log('📊 Contagem por status:', statusCount);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -50,7 +49,7 @@ export const StatsCards = () => {
               <Car className="h-5 w-5" />
               <span className="text-sm font-medium">Veículos Locados</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{statusCount["alugado"] ?? 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{statusCount['alugado'] ?? 0}</p>
           </div>
           <div className="text-blue-500">
             <TrendingUp className="h-12 w-12 opacity-20" />
@@ -65,7 +64,7 @@ export const StatsCards = () => {
               <Car className="h-5 w-5" />
               <span className="text-sm font-medium">Veículos Disponíveis</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{statusCount["disponivel"] ?? 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{statusCount['disponivel'] ?? 0}</p>
           </div>
           <div className="text-orange-500">
             <TrendingUp className="h-12 w-12 opacity-20" />

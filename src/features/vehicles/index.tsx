@@ -12,8 +12,18 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { EditVehicleModal } from './components/edit-vehicle-modal';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
-import { useCreateVehicleMutation, useDeleteVehicleMutation, useUpdateVehicleMutation, useVehiclesQuery } from '@/services/vehicle';
-import { CreateVehicleInterface, StatusVehicle, UpdateVehicleInterface, VehicleData } from '@/services/vehicle/types';
+import {
+  useCreateVehicleMutation,
+  useDeleteVehicleMutation,
+  useUpdateVehicleMutation,
+  useVehiclesQuery,
+} from '@/services/vehicle';
+import {
+  CreateVehicleInterface,
+  StatusVehicle,
+  UpdateVehicleInterface,
+  VehicleData,
+} from '@/services/vehicle/types';
 import { toast, Toaster } from 'sonner';
 
 function getStatusProps(status: StatusVehicle) {
@@ -31,18 +41,22 @@ function getStatusProps(status: StatusVehicle) {
 
 export const Vehicles = () => {
   const navigate = useNavigate();
-  
+
   const { mutate: createVehicle } = useCreateVehicleMutation();
   const { mutate: deleteVehicle } = useDeleteVehicleMutation();
   const { mutate: updateVehicle } = useUpdateVehicleMutation();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusVehicle | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState<VehicleData | null>(null);
 
-  const { data: vehicles } = useVehiclesQuery({status: statusFilter, search: searchTerm, page: 1});
+  const { data: vehicles } = useVehiclesQuery({
+    status: statusFilter,
+    search: searchTerm,
+    page: 1,
+  });
 
   const handleEditSave = (data: VeiculoFormulario) => {
     if (vehicleToEdit) {
@@ -67,9 +81,9 @@ export const Vehicles = () => {
   };
 
   const handleOpenEditModal = (id: string) => {
-    const vehicle = vehicles?.veiculos.find((v) => v.id === id);
+    const vehicle = vehicles?.veiculos.find((v: { id: string }) => v.id === id);
 
-    console.log(`vehicle: searched`, { vehicle})
+    console.log(`vehicle: searched`, { vehicle });
     if (vehicle) {
       setVehicleToEdit(vehicle);
       setShowEditModal(true);
@@ -81,7 +95,7 @@ export const Vehicles = () => {
   };
 
   const handleDelete = (id: string) => {
-    const vehicle = vehicles?.veiculos.find((v) => v.id === id);
+    const vehicle = vehicles?.veiculos.find((v: { id: string }) => v.id === id);
     if (vehicle?.status === 'alugado') {
       toast.error('O veículo está locado e não pode ser excluído');
       return;
@@ -96,7 +110,7 @@ export const Vehicles = () => {
   };
 
   const handleAddVehicleSubmit = (data: VeiculoFormulario) => {
-    console.log(`data before submiting: `, { data})
+    console.log(`data before submiting: `, { data });
 
     const payload: CreateVehicleInterface = {
       chassi: data.chassi,
@@ -111,11 +125,11 @@ export const Vehicles = () => {
       quilometragem: data.quilometragemAtual,
       quilometragemNaCompra: data.quilometragemCompra,
       ano: data.ano,
-      renavam: "",
+      renavam: '',
       status: data.status as StatusVehicle,
       dataCadastro: data.dataCompra,
-      dataAtualizacao: "",
-      dataVenda: "",
+      dataAtualizacao: '',
+      dataVenda: '',
       file: data.arquivo,
     };
 
@@ -124,7 +138,7 @@ export const Vehicles = () => {
       return;
     }
 
-    console.log(`payload before submiting: `, { payload})
+    console.log(`payload before submiting: `, { payload });
 
     createVehicle(payload);
   };
@@ -138,16 +152,16 @@ export const Vehicles = () => {
     //     vehicle.placa.toLowerCase().includes(term) ||
     //     vehicle.marca.toLowerCase().includes(term) ||
     //     vehicle.modelo.toLowerCase().includes(term);
-    //   // const matchesStatus = statusFilter === '' 
+    //   // const matchesStatus = statusFilter === ''
     //   // return matchesSearch ;
     //   return true;
     // });
-    return vehicles.veiculos
-  }, [vehicles])
+    return vehicles.veiculos;
+  }, [vehicles]);
 
   useEffect(() => {
-    console.log({vehicles})
-  }, [vehicles])
+    console.log({ vehicles });
+  }, [vehicles]);
 
   return (
     <Layout title="Gerenciamento de Veículos" subtitle="Veja a lista de todos os seus veículos">
@@ -210,7 +224,7 @@ export const Vehicles = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
-          key={vehicles?.veiculos?.length || 0} 
+          key={vehicles?.veiculos?.length || 0}
           data={filteredVehicles || []}
           columns={[
             { key: 'marca', title: 'Marca do veículo' },
@@ -282,9 +296,9 @@ export const Vehicles = () => {
           setVehicleToEdit(null);
         }}
         onSave={handleEditSave}
-        vehicle={vehicleToEdit }
+        vehicle={vehicleToEdit}
       />
-      
+
       <Toaster />
     </Layout>
   );
