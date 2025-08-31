@@ -9,9 +9,23 @@ export async function createManutencao(payload: CreateManutencaoRequest): Promis
 }
 
 export async function getManutencoes(): Promise<Manutencao[]> {
-  const { data } = await axios.get<Manutencao[]>(API_URL);
-  console.log(data);
-  return data;
+  const { data } = await axios.get(API_URL);
+  console.log('Raw API response:', data);
+
+  // Se a API retorna um objeto com propriedade manutencoes
+  if (data && data.manutencoes && Array.isArray(data.manutencoes)) {
+    console.log('Using data.manutencoes:', data.manutencoes);
+    return data.manutencoes;
+  }
+
+  // Se a API retorna diretamente um array
+  if (Array.isArray(data)) {
+    console.log('Using direct array:', data);
+    return data;
+  }
+
+  console.warn('Unexpected API response format, returning empty array');
+  return [];
 }
 
 export async function deleteManutencao(id: string): Promise<void> {

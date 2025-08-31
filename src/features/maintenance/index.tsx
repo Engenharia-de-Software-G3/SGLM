@@ -20,18 +20,7 @@ export const Maintenance = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await getManutencoes();
-        setManutencoes(res ?? []);
-      } catch (err) {
-        console.error('Erro ao buscar manutenções:', err);
-        setManutencoes([]); // segurança
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadManutencoes();
   }, []);
 
   // const handleView = (id: string) => {
@@ -39,24 +28,37 @@ export const Maintenance = () => {
   // };
 
   const handleDelete = async (id: string) => {
-    await deleteManutencao(id);
-    setManutencoes((prev) => prev.filter((m) => m.id !== id));
+    try {
+      await deleteManutencao(id);
+      // Recarregar dados da API após deletar
+      await loadManutencoes();
+    } catch (error) {
+      console.error('Erro ao deletar manutenção:', error);
+    }
+  };
+
+  const loadManutencoes = async () => {
+    setLoading(true);
+    try {
+      const res = await getManutencoes();
+      const manutencoesList = Array.isArray(res) ? res : [];
+      setManutencoes(manutencoesList);
+    } catch (err) {
+      console.error('Erro ao buscar manutenções:', err);
+      setManutencoes([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAdd = async (data: CreateManutencaoRequest) => {
-    const res = await createManutencao(data);
-
-    const novaManutencao = {
-      id: res.id,
-      nomeServico: data.nomeServico,
-      placaVeiculo: data.placaVeiculo,
-      valor: data.valor,
-      data: new Date().toISOString(),
-      quilometragem: 0,
-    };
-
-    setManutencoes((prev) => [...prev, novaManutencao]);
-    window.location.reload();
+    try {
+      await createManutencao(data);
+      // Recarregar dados da API após criar
+      await loadManutencoes();
+    } catch (error) {
+      console.error('Erro ao criar manutenção:', error);
+    }
   };
 
   const filtered = Array.isArray(manutencoes)
