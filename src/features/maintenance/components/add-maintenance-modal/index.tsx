@@ -44,7 +44,7 @@ export const AddMaintenanceModal = ({ trigger, onAdd }: AddMaintenanceModalProps
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="name">Serviço</Label>
             <Input
               id="name"
@@ -53,7 +53,7 @@ export const AddMaintenanceModal = ({ trigger, onAdd }: AddMaintenanceModalProps
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="plate">Placa</Label>
             <Input
               id="plate"
@@ -62,7 +62,7 @@ export const AddMaintenanceModal = ({ trigger, onAdd }: AddMaintenanceModalProps
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="value">Valor</Label>
             <Input
               id="value"

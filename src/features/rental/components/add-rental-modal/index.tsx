@@ -10,14 +10,8 @@ import { FormSelect } from '@/shared/components/form-select';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useState } from 'react';
-import { getClientByCpf } from '@/services/client/functions';
-import { getVehicleByPlaca } from '@/services/vehicle/functions';
 
-export const AddRentalModal = ({
-  open,
-  onOpenChange,
-  onSubmit,
-}: AddRentalModalProps) => {
+export const AddRentalModal = ({ open, onOpenChange, onSubmit }: AddRentalModalProps) => {
   const {
     control,
     handleSubmit,
@@ -39,16 +33,16 @@ export const AddRentalModal = ({
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
 
   const handleFormSubmit = handleSubmit(async (data: AddRentalFormData) => {
-  try {
-    await onSubmit(data);
-    reset();
-    onOpenChange(false);
-    toast('Locação salva com sucesso');
-  } catch (error) {
-    console.error('Erro ao salvar locação:', error);
-    toast('Erro ao salvar locação');
-  }
-});
+    try {
+      await onSubmit(data);
+      reset();
+      onOpenChange(false);
+      toast('Locação salva com sucesso');
+    } catch (error) {
+      console.error('Erro ao salvar locação:', error);
+      toast('Erro ao salvar locação');
+    }
+  });
 
   const handleCancel = () => {
     reset();
@@ -62,7 +56,7 @@ export const AddRentalModal = ({
           <DialogTitle>Cadastro de locação</DialogTitle>
           <p className="text-sm text-gray-600">Insira os dados abaixo</p>
         </DialogHeader>
-        
+
         {/* Seleção do tipo de pessoa */}
         <div className="flex space-x-4 mb-4">
           <RadioGroup
@@ -76,7 +70,9 @@ export const AddRentalModal = ({
                 id="fisica"
                 className="w-4 h-4 rounded-full border border-gray-400 checked:bg-[#6080BE] checked:border-[#6080BE] focus:ring-2 focus:ring-[#6080BE]"
               />
-              <label htmlFor="fisica" className="text-sm select-none">Pessoa Física</label>
+              <label htmlFor="fisica" className="text-sm select-none">
+                Pessoa Física
+              </label>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -85,13 +81,14 @@ export const AddRentalModal = ({
                 id="juridica"
                 className="w-4 h-4 rounded-full border border-gray-400 checked:bg-[#6080BE] checked:border-[#6080BE] focus:ring-2 focus:ring-[#6080BE]"
               />
-              <label htmlFor="juridica" className="text-sm select-none">Pessoa Jurídica</label>
+              <label htmlFor="juridica" className="text-sm select-none">
+                Pessoa Jurídica
+              </label>
             </div>
           </RadioGroup>
         </div>
 
         <form onSubmit={handleFormSubmit} className="space-y-4">
-          
           <MaskedFormInput
             label={clientType === 'fisica' ? 'CPF' : 'CNPJ'}
             id="cnpjcpf"
@@ -161,7 +158,7 @@ export const AddRentalModal = ({
             />
           </div>
 
-         <div className="col-span-2">
+          <div className="col-span-2">
             <FormSelect
               name="metodoPagamento"
               control={control}

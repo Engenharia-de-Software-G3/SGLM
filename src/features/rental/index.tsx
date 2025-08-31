@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { DeleteModal } from '@/shared/components/delete-modal';
-import { ExternalLinkIcon, FileText, Plus, Download } from 'lucide-react';
+import { FileText, Plus, Download } from 'lucide-react';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
@@ -16,7 +16,6 @@ import {
   useDeleteLocacaoMutation,
   useLocacoesQuery,
 } from '@/services/rental';
-import { useClientsQuery } from '@/services/client';
 import { toast } from 'sonner';
 import {
   ContractData,
@@ -48,7 +47,6 @@ export const Rental = () => {
     isError: isErrorLocacoes,
     error: locacoesError,
   } = useLocacoesQuery();
-  const { data: clientsData } = useClientsQuery();
   const { mutateAsync: createLocacao } = useCreateLocacaoMutation();
   const { mutateAsync: deleteLocacao } = useDeleteLocacaoMutation();
 
@@ -87,7 +85,6 @@ export const Rental = () => {
       const rentalsWithDetails = await Promise.all(
         locacoesData.locacoes.map(async (locacao: LocacaoData) => {
           let client: ClientData | null = null;
-          let vehicle = null;
 
           console.log('Cliente ID:', locacao.clienteId);
           console.log('Placa do veículo:', locacao.placaVeiculo);
@@ -105,7 +102,7 @@ export const Rental = () => {
             placa: locacao.placaVeiculo || 'N/A',
             cpf: locacao.clienteId || '',
           };
-        })
+        }),
       );
 
       setRentals(rentalsWithDetails);
@@ -121,8 +118,8 @@ export const Rental = () => {
 
     return rentals.filter(
       (rental) =>
-          (rental.locatario || "").toLowerCase().includes(lowerSearch) ||
-          (rental.placa || "").toLowerCase().includes(lowerSearch),
+        (rental.locatario || '').toLowerCase().includes(lowerSearch) ||
+        (rental.placa || '').toLowerCase().includes(lowerSearch),
     );
   }, [rentals, search]);
 
@@ -137,12 +134,6 @@ export const Rental = () => {
 
     const cleanPlaca = rentalForm.placaVeiculo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     const cleanCpf = rentalForm.cnpjcpf.replace(/\D/g, '');
-    const formatDate = (dateString: string) => {
-      const [day, month, year] = dateString.split('/');
-      const d = new Date(Number(year), Number(month) - 1, Number(day));
-      return d.toISOString().split('T')[0]; // "YYYY-MM-DD"
-    };
-
 
     const valorNumerico = Number(rentalForm.valorLocacao);
     console.log('submitRental - valor convertido para número:', valorNumerico);
@@ -154,7 +145,7 @@ export const Rental = () => {
       dataFim: rentalForm.fim,
       valor: valorNumerico,
       periocidadePagamento: rentalForm.periocidadePagamento,
-      metodoPagamento: rentalForm.metodoPagamento
+      metodoPagamento: rentalForm.metodoPagamento,
     };
 
     console.log('submitRental - payload final:', payload);
@@ -305,7 +296,7 @@ export const Rental = () => {
           modelo: vehicle?.modelo || 'Não informado',
           marca: vehicle?.marca || 'Não informado',
           renavam: vehicle?.renavam || 'Não informado',
-          ano: vehicle?.ano ||  'Não informado',
+          ano: vehicle?.ano || 'Não informado',
           cor: vehicle?.cor || 'Não informado',
           quilometragem: vehicle?.quilometragem || '0',
           quilometragemNaCompra: vehicle?.quilometragemNaCompra || '0',
@@ -368,21 +359,21 @@ export const Rental = () => {
   }
 
   const formatCpfCnpj = (value: string): string => {
-  if (!value || typeof value !== 'string') return value || '';
-  
-  const cleanValue = value.replace(/\D/g, '');
-  
-  switch (cleanValue.length) {
-    case 11: // CPF
-      return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    
-    case 14: // CNPJ
-      return cleanValue.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-    
-    default:
-      return value; // Retorna original se não for CPF/CNPJ válido
-  }
-};
+    if (!value || typeof value !== 'string') return value || '';
+
+    const cleanValue = value.replace(/\D/g, '');
+
+    switch (cleanValue.length) {
+      case 11: // CPF
+        return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+
+      case 14: // CNPJ
+        return cleanValue.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+
+      default:
+        return value; // Retorna original se não for CPF/CNPJ válido
+    }
+  };
 
   return (
     <Layout title="Gerenciamento de locações" subtitle="Veja todas as locações">
@@ -481,7 +472,6 @@ export const Rental = () => {
                         </>
                       )}
                     </Button>
-                    
                   </div>
                 </td>
               </tr>

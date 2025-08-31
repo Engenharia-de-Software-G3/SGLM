@@ -1,28 +1,15 @@
-import { Calendar, Check, FileText, Download } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { rentalInfoCardSchema, type RentalInfoCardProps } from './@types';
+import { type RentalInfoCardProps } from './@types';
 import { Input } from '@/components/ui/input';
 import { MaskedInput } from '@/shared/components/masked-input';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useState } from 'react';
 import { generateContractPDF, ContractData } from '@/lib/generateContractPDF';
 
 export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
-  const [isReadOnly, setIsReadOnly] = useState(false);
   const [isLoadingContract, setIsLoadingContract] = useState(false);
-
-  useEffect(() => {
-    const value = localStorage.getItem('isReadOnly');
-    setIsReadOnly(value === 'true');
-  }, []);
 
   // Função para exportar contrato, replicando handleViewContract de Rental
   const handleExportContract = async () => {
@@ -95,15 +82,6 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
     } finally {
       setIsLoadingContract(false);
     }
-  };
-
-  const submit = () => {
-    const parsed = rentalInfoCardSchema.safeParse(data);
-    if (!parsed.success) {
-      toast('Preencha todos os campos obrigatórios');
-      return;
-    }
-    toast('Salvo com sucesso');
   };
 
   return (
@@ -180,9 +158,7 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Valor da Locação
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Valor da Locação</label>
           <Input
             value={
               data.valorLocacao
@@ -202,9 +178,7 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
           <p className="p-2 border rounded bg-gray-50">{data.intervaloPagamento || '-'}</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Forma de Pagamento
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
           <Input value={data.formaPagamento || ''} readOnly />
         </div>
       </div>

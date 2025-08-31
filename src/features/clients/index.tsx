@@ -10,13 +10,13 @@ import { DisplayTableHeader } from '@/shared/components/display-table/components
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { Badge } from '@/components/ui/badge';
 import { useClientsQuery, useDeleteClientMutation } from '@/services/client';
-import { ListManyClientsClient } from '@/services/client/types';
+import type { ClientData } from '@/services/client/types';
 import { toast } from 'sonner';
 
 export const Clients = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: clientsData, isLoading } = useClientsQuery()
-  const { mutateAsync: deleteClient } = useDeleteClientMutation()
+  const { data: clientsData, isLoading } = useClientsQuery();
+  const { mutateAsync: deleteClient } = useDeleteClientMutation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,13 +30,13 @@ export const Clients = () => {
     navigate(`/clientes/${clientId}`);
   };
 
-  async function handleDeleteClient (clientId: number) {
-    await deleteClient(clientId)
-    toast.success('Cliente deletado com sucesso')
-  };
+  async function handleDeleteClient(clientId: number) {
+    await deleteClient(clientId);
+    toast.success('Cliente deletado com sucesso');
+  }
 
   const filteredClients = useMemo(() => {
-    return clientsData?.clientes.filter((c) =>
+    return clientsData?.clientes.filter((c: { nomeCompleto: string }) =>
       c.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [clientsData, searchTerm]);
@@ -73,73 +73,76 @@ export const Clients = () => {
             <Loader2 className="h-4 w-4 animate-spin" />
           </div>
         ) : (
-        <PaginatedTable
-          key={searchTerm}
-          data={filteredClients || []}
-          
-          columns={[
-            { key: 'client', title: 'Cliente' },
-            { key: 'cpf/cnpj', title: 'CPF/CNPJ' },
-            { key: 'status', title: 'Status' },
-            { key: 'actions', title: 'Ações' },
-          ]}
-          renderRow={(client: ListManyClientsClient) => (
-            <tr key={client.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-blue-600 font-medium">
-                      {client.nomeCompleto
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
-                    </span>
+          <PaginatedTable
+            key={searchTerm}
+            data={filteredClients || []}
+            columns={[
+              { key: 'client', title: 'Cliente' },
+              { key: 'cpf/cnpj', title: 'CPF/CNPJ' },
+              { key: 'status', title: 'Status' },
+              { key: 'actions', title: 'Ações' },
+            ]}
+            renderRow={(client: ClientData & { dataNascimento?: string; status?: string }) => (
+              <tr key={client.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-medium">
+                        {client.nomeCompleto
+                          .split(' ')
+                          .map((n: string) => n[0])
+                          .join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{client.nomeCompleto}</div>
+                      <div className="text-sm text-gray-500">{client.dataNascimento}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{client.nomeCompleto}</div>
-                    <div className="text-sm text-gray-500">{client.dataNascimento}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{client.cpf}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <Badge
+                    className={
+                      client.status === 'ativo'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }
+                  >
+                    {client.status}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewClientWithReadOnly(Number(client.id))}
+                      className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+
+                    <DeleteModal
+                      title="Tem certeza que você deseja excluir esse cliente?"
+                      description="Todos os dados salvos serão excluídos."
+                      actionText="Excluir cliente"
+                      onConfirm={() => handleDeleteClient(Number(client.id))}
+                    />
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewClientWithoutReadOnly(Number(client.id))}
+                      className="text-green-600 border-green-300 hover:bg-green-50"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {client.cpf}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <Badge 
-                  className={client.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                    {client.status}</Badge>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewClientWithReadOnly(client.id)}
-                    className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-
-                  <DeleteModal
-                    title="Tem certeza que você deseja excluir esse cliente?"
-                    description="Todos os dados salvos serão excluídos."
-                    actionText="Excluir cliente"
-                    onConfirm={() => handleDeleteClient(client.id)}
-                  />
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewClientWithoutReadOnly(client.id)}
-                    className="text-green-600 border-green-300 hover:bg-green-50"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          )}
-        />
+                </td>
+              </tr>
+            )}
+          />
         )}
       </div>
     </Layout>

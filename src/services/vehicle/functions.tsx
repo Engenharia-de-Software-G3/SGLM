@@ -20,9 +20,12 @@ function formatDateToClient(dateString: string): string {
   return `${day}/${month}/${year}`;
 }
 
-export async function getVehiclesFunction({status, page, search}: GetVehiclesParams): Promise<ListManyVehicles> {
+export async function getVehiclesFunction({
+  status,
+  page,
+  search,
+}: GetVehiclesParams): Promise<ListManyVehicles> {
   try {
-
     console.log('🔍 Querying by status:', status, 'page:', page, 'search:', search);
 
     const response = await api.get('/veiculos', {
@@ -39,20 +42,33 @@ export async function getVehiclesFunction({status, page, search}: GetVehiclesPar
 
     const data = response.data;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data.veiculos.map((vehicle: any) => {
-      try {
-        vehicle.ano = vehicle.anoModelo.fabricacao + '/' + vehicle.anoModelo.modelo;
-        vehicle.dataCompra = formatDateToClient(vehicle.dataCompra);
-        vehicle.dataVenda = formatDateToClient(vehicle.dataVenda);
-        vehicle.dataAtualizacao = formatDateToClient(vehicle.dataAtualizacao);
-        vehicle.dataCadastro = formatDateToClient(vehicle.dataCadastro);
-      } catch (error) {
-        console.error('❌ Error formatting vehicle:', error);
-      }
+    // Verificar se data.veiculos existe antes de tentar mapear
+    if (data && data.veiculos && Array.isArray(data.veiculos)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data.veiculos.map((vehicle: any) => {
+        try {
+          vehicle.ano = vehicle.anoModelo.fabricacao + '/' + vehicle.anoModelo.modelo;
+          vehicle.dataCompra = formatDateToClient(vehicle.dataCompra);
+          vehicle.dataVenda = formatDateToClient(vehicle.dataVenda);
+          vehicle.dataAtualizacao = formatDateToClient(vehicle.dataAtualizacao);
+          vehicle.dataCadastro = formatDateToClient(vehicle.dataCadastro);
+        } catch (error) {
+          console.error('❌ Error formatting vehicle:', error);
+        }
 
-      return vehicle;
-    })
+        return vehicle;
+      });
+    } else {
+      // Se data.veiculos não existir, retornar estrutura válida com array vazio
+      console.warn('⚠️ data.veiculos não encontrado, retornando estrutura padrão');
+      return {
+        veiculos: [],
+        paginacao: {
+          possuiMais: false,
+          proximoDocId: '',
+        },
+      } as ListManyVehicles;
+    }
 
     return data as ListManyVehicles;
   } catch (error) {
@@ -63,18 +79,19 @@ export async function getVehiclesFunction({status, page, search}: GetVehiclesPar
 
 export async function createVehicleFunction(input: CreateVehicleInterface) {
   try {
-    
     const { dataCadastro, dataVenda, dataCompra, dataAtualizacao, ano } = input;
 
-    const payload = { ...input, anoModelo: {
-      fabricacao: ano.split('/')[0],
-      modelo: ano.split('/')[1],
-    }, 
-    dataCadastro: formatDateToServer(dataCadastro),
-    dataVenda: formatDateToServer(dataVenda),
-    dataCompra: formatDateToServer(dataCompra),
-    dataAtualizacao: formatDateToServer(dataAtualizacao),
-   };
+    const payload = {
+      ...input,
+      anoModelo: {
+        fabricacao: ano.split('/')[0],
+        modelo: ano.split('/')[1],
+      },
+      dataCadastro: formatDateToServer(dataCadastro),
+      dataVenda: formatDateToServer(dataVenda),
+      dataCompra: formatDateToServer(dataCompra),
+      dataAtualizacao: formatDateToServer(dataAtualizacao),
+    };
 
     console.log('➕ Creating vehicle with payload:', payload);
 
@@ -103,12 +120,16 @@ export async function getVehicleFunction(id: string) {
       throw new Error('Veículo não encontrado');
     }
 
-    const vehicle: VehicleData = {...response.data.veiculo, dataCompra: response.data.veiculo.dataCompra.split('T')[0]};
+    const vehicle: VehicleData = {
+      ...response.data.veiculo,
+      dataCompra: response.data.veiculo.dataCompra.split('T')[0],
+    };
 
     vehicle.dataCompra = vehicle.dataCompra.split('T')[0];
-    vehicle.ano = response.data.veiculo.anoModelo.fabricacao + '/' + response.data.veiculo.anoModelo.modelo;
+    vehicle.ano =
+      response.data.veiculo.anoModelo.fabricacao + '/' + response.data.veiculo.anoModelo.modelo;
 
-    console.log(vehicle.ano)
+    console.log(vehicle.ano);
 
     return vehicle as SingleVehicleResponse;
   } catch (error) {
@@ -121,8 +142,7 @@ export async function updateVehicleFunction(id: string, payload: UpdateVehicleIn
   try {
     console.log('✏️ Updating vehicle:', id, payload);
 
-
-    const send = { 
+    const send = {
       renavam: payload.renavam || undefined,
       cor: payload.cor || undefined,
       quilometragem: payload.quilometragem || undefined,
@@ -132,7 +152,7 @@ export async function updateVehicleFunction(id: string, payload: UpdateVehicleIn
       nome: payload.nome || undefined,
       observacoes: payload.observacoes || undefined,
       status: payload.status || undefined,
-    }
+    };
 
     const response = await api.put(`/veiculos/${id}`, send);
 
@@ -174,7 +194,7 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
     }
 
     const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
-    
+
     // Verifique novamente após a limpeza
     if (cleanPlaca === '') {
       throw new Error('Placa inválida');
@@ -187,7 +207,7 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
     });
 
     const data = response.data;
-    if (!data.veiculos || data.veiculos.length === 0) {
+    if (!data || !data.veiculos || !Array.isArray(data.veiculos) || data.veiculos.length === 0) {
       throw new Error('Veículo não encontrado');
     }
 
