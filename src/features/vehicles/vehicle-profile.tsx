@@ -21,19 +21,16 @@ export const VehicleProfile = () => {
 
   const { mutate: updateVehicle } = useUpdateVehicleMutation();
 
-  // Buscar dados do veículo
   const {
     data: vehicleQuery,
     isLoading: isLoadingVehicle,
     error: vehicleError,
   } = useGetVehicleQuery(chassi || '');
 
-  // Atualizar estado local sempre que a query carregar
   useEffect(() => {
      if (vehicleQuery) setLocalVehicle(vehicleQuery);
   }, [vehicleQuery]);
 
-  // Buscar atividades do veículo
   const {
     data: activities = [],
     isLoading: isLoadingActivities,
@@ -53,7 +50,6 @@ export const VehicleProfile = () => {
       { id: vehicleToEdit.id, payload: data },
       {
         onSuccess: () => {
-          // Atualiza estado local sem recarregar
           setLocalVehicle((prev) => (prev ? { ...prev, ...data } : prev));
           toast.success('Quilometragem atualizada com sucesso!');
           queryClient.invalidateQueries({ queryKey: ['vehicle'] });

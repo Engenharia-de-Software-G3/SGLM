@@ -8,7 +8,6 @@ import type { EditVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
 import { StatusVehicle } from '@/services/vehicle/types';
 
-// Máscara para data (DD/MM/YYYY)
 function maskData(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   if (digits.length <= 2) return digits;
@@ -16,7 +15,6 @@ function maskData(value: string) {
   return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
 }
 
-// Máscara para Fabricação/Modelo (AAAA/YYYY)
 function maskAnoModelo(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   if (digits.length <= 4) return digits;
@@ -128,7 +126,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Marca e Modelo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>
@@ -152,7 +149,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             </div>
           </div>
 
-          {/* Placa e Fabricação/Modelo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa</Label>
@@ -177,7 +173,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             </div>
           </div>
 
-          {/* Cor e Chassi */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cor">Cor</Label>
@@ -198,7 +193,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             </div>
           </div>
 
-          {/* Quilometragens */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quilometragemAtual">Quilometragem Atual</Label>
@@ -218,7 +212,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             </div>
           </div>
 
-          {/* Local e Data */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="local">Local</Label>
@@ -239,7 +232,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             </div>
           </div>
 
-          {/* Nome e Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome</Label>
@@ -267,7 +259,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             </div>
           </div>
 
-          {/* Observações */}
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observações</Label>
             <textarea
@@ -279,7 +270,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             />
           </div>
 
-          {/* Upload */}
           <Label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block hover:border-blue-400 transition">
             <div className="flex justify-center mb-2 text-blue-500">
               <CloudUpload className="w-10 h-10" />
@@ -293,7 +283,6 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
             />
           </Label>
 
-          {/* Botões */}
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={handleReset}>
               Resetar

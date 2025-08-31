@@ -10,7 +10,6 @@ export const VehicleActionDialog = ({
   onClose,
   vehicle,
   onFilterByVehicle,
-  // onSave
 
 }: VehicleActionDialogProps) => {
   const [isEditingKm, setIsEditingKm] = useState(false);
@@ -108,7 +107,6 @@ export const VehicleActionDialog = ({
               onClick={() => {
                 if (!vehicle) return;
                 
-                // Remove caracteres não numéricos e transforma em número
                 const sanitizedKm = newKm.trim().replace(/\D/g, '');
                 const newKmNumber = Number(sanitizedKm);
                 
