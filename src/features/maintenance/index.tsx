@@ -27,7 +27,7 @@ export const Maintenance = () => {
         setManutencoes(res ?? []);
       } catch (err) {
         console.error('Erro ao buscar manutenções:', err);
-        setManutencoes([]); // segurança
+        setManutencoes([]);
       } finally {
         setLoading(false);
       }

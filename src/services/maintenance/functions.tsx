@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { CreateManutencaoRequest, Manutencao } from './types';
+import { CreateManutencaoRequest, GetManutencoesResponse, Manutencao } from './types';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/manutencoes`;
 
@@ -8,9 +8,9 @@ export async function createManutencao(payload: CreateManutencaoRequest): Promis
   return data;
 }
 
-export async function getManutencoes(): Promise<Manutencao[]> {
-  const { data } = await axios.get<Manutencao[]>(API_URL);
-  console.log(data);
+export async function getManutencoes(): Promise<GetManutencoesResponse> {
+  const { data } = await axios.get<GetManutencoesResponse>(API_URL);
+  console.log('Resposta da API:', data);
   return data;
 }
 
