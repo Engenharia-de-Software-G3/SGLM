@@ -31,5 +31,5 @@ export const vehicleFormSchema = z.object({
   local: z.string().nonempty('Local de compra é obrigatório'),
   nome: z.string().nonempty('Nome do proprietário é obrigatório'),
   observacoes: z.string().optional(),
-  status: z.enum(['disponivel', 'locado', 'manutenção']).default('disponivel'),
+  status: z.enum(['disponivel', 'alugado', 'manutencao']).default('disponivel'),
 });

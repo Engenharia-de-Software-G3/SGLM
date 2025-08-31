@@ -60,7 +60,7 @@ export const Vehicles = () => {
 
   const handleEditSave = (data: VeiculoFormulario) => {
     if (vehicleToEdit) {
-      if (!data.status || !['disponivel', 'alugado', 'vendido'].includes(data.status)) {
+      if (!data.status || !['disponivel', 'alugado', 'manutencao'].includes(data.status)) {
         console.error('Error: Invalid or missing status');
         return;
       }
