@@ -24,10 +24,10 @@ export const Maintenance = () => {
       setLoading(true);
       try {
         const res = await getManutencoes();
-        setManutencoes(res?.manutencoes ?? []);
+        setManutencoes(res.manutencoes ?? []);
       } catch (err) {
         console.error('Erro ao buscar manutenções:', err);
-        setManutencoes([]); // segurança
+        setManutencoes([]);
       } finally {
         setLoading(false);
       }
