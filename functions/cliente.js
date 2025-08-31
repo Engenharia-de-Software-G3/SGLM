@@ -11,7 +11,6 @@ import {
   atualizarCliente,
   deletarCliente,
 } from '../src/scripts/firestore/firestoreClientes.js';
-//import { verificarDocumentoExistente } from '../src/scripts/firestore/firestoreUtils.js';
 
 /**
  * Rota POST para criar um novo cliente.
@@ -32,32 +31,26 @@ router.post('/', async (req, res) => {
   try {
     const clienteData = req.body;
 
-    // TODO: Adicionar validação mais robusta (incluindo autenticação por middleware)
     /**
      * @todo Implementar validação completa dos dados de entrada (CPF, dados pessoais, contato, endereço, documentos).
      * Considerar usar um esquema de validação (ex: Joi, Yup).
      * Integrar middleware de autenticação e autorização.
      * Adicionar validação de CPF duplicado usando verificarDocumentoExistente antes de criar.
      */
-    // Validação básica
     if (!clienteData || !clienteData.cpf || !clienteData.dadosPessoais) {
       return res
         .status(400)
         .send('Dados do cliente incompletos (CPF e dadosPessoais são obrigatórios).');
     }
 
-    // Chame a função do Firestore para criar o cliente
     const resultado = await criarCliente(clienteData);
 
     if (resultado.success) {
-      // Use o ID retornado pela função criarCliente (que é o cpf)
       res.status(201).send({ message: 'Cliente criado com sucesso!', id: clienteData.cpf });
     } else {
-      // A função criarCliente já trata e loga erros do Firestore e retorna { success: false, error: ... }
       res.status(500).send({ message: 'Erro ao criar cliente', error: resultado.error });
     }
   } catch (error) {
-    // Captura erros inesperados durante o processamento da rota
     console.error('Erro inesperado na rota POST /clientes:', error);
     res.status(500).send('Erro interno do servidor.');
   }
@@ -75,7 +68,6 @@ router.get('/', async (req, res) => {
   try {
     const { limite = '10', ultimoDocId, filtros = '{}' } = req.query;
 
-    // Validar e parsear parâmetros
     const limiteNum = parseInt(limite) || 10;
     let filtrosParsed;
 
@@ -85,7 +77,6 @@ router.get('/', async (req, res) => {
       filtrosParsed = {};
     }
 
-    // Recuperar último documento para paginação
     let ultimoDocSnapshot = null;
     if (ultimoDocId) {
       ultimoDocSnapshot = await db.collection('clientes').doc(ultimoDocId).get();
@@ -94,14 +85,12 @@ router.get('/', async (req, res) => {
       }
     }
 
-    // Chamar função de listagem
     const { clientes, ultimoDoc } = await listarClientes({
       limite: limiteNum,
       ultimoDoc: ultimoDocSnapshot,
       filtros: filtrosParsed,
     });
 
-    // Preparar resposta
     const resposta = {
       clientes,
       paginacao: {
@@ -139,20 +128,15 @@ router.put('/:cpf', async (req, res) => {
     const { cpf } = req.params;
     const updates = req.body;
 
-    // Validação básica: verifica se há dados para atualizar
     if (!updates || Object.keys(updates).length === 0) {
       return res.status(400).send('Nenhum dado fornecido para atualização.');
     }
-
-    // TODO: Adicionar validação mais robusta dos dados de entrada (formato de CPF, campos específicos, etc.)
-    // Considerar usar um esquema de validação (ex: Joi, Yup).
 
     const resultado = await atualizarCliente(cpf, updates);
 
     if (resultado.success) {
       res.status(200).send({ message: `Cliente ${cpf} atualizado com sucesso!` });
     } else {
-      // A função atualizarCliente já trata e loga erros do Firestore
       const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
       res.status(statusCode).send({ message: 'Erro ao atualizar cliente', error: resultado.error });
     }

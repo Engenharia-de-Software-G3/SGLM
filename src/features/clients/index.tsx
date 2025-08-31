@@ -45,7 +45,6 @@ export const Clients = () => {
 
   useEffect(() => {
     if (location.state?.newClient && !addedRef.current) {
-      // setClients((prev) => [...prev, location.state.newClient]);
       addedRef.current = true;
       navigate(location.pathname, { replace: true });
     }

@@ -258,7 +258,6 @@ export const Rental = () => {
         console.log('Cliente encontrado:', client);
       } catch (error) {
         console.warn('Erro ao buscar cliente:', error);
-        // Continua sem o cliente se não encontrar
       }
 
       // 3. Buscar dados do veículo
@@ -271,7 +270,6 @@ export const Rental = () => {
         console.log('Veículo encontrado:', vehicle);
       } catch (error) {
         console.warn('Erro ao buscar veículo:', error);
-        // Continua sem o veículo se não encontrar
       }
 
       // 4. Preparar dados para o contrato
@@ -364,14 +362,14 @@ export const Rental = () => {
     const cleanValue = value.replace(/\D/g, '');
 
     switch (cleanValue.length) {
-      case 11: // CPF
+      case 11: 
         return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 
-      case 14: // CNPJ
+      case 14: 
         return cleanValue.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
 
       default:
-        return value; // Retorna original se não for CPF/CNPJ válido
+        return value; 
     }
   };
 

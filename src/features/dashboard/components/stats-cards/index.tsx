@@ -4,7 +4,6 @@ import { useClientsQuery } from '@/services/client';
 import { useVehiclesQuery } from '@/services/vehicle';
 
 export const StatsCards = () => {
-  // Busca clientes e veículos
   const { data: clientsData } = useClientsQuery();
   console.log('👥 Clientes carregados:', clientsData);
   const totalClientes = clientsData?.clientes.length ?? 0;
@@ -12,7 +11,6 @@ export const StatsCards = () => {
   const { data: vehiclesData } = useVehiclesQuery();
   console.log('🚗 Veículos carregados:', vehiclesData);
 
-  // Contagem de status de veículos
   const statusCount =
     vehiclesData?.veiculos.reduce(
       (acc: Record<string, number>, v: { status?: string }) => {

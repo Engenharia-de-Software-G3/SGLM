@@ -15,7 +15,6 @@ export const clientInfoCardSchema = z.object({
   telefone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().email('E-mail inválido'),
   
-  // Flattened address fields
   enderecos_principal_cep: z.string().min(1, 'CEP é obrigatório'),
   enderecos_principal_rua: z.string().min(1, 'Rua é obrigatória'),
   enderecos_principal_numero: z.string().min(1, 'Número é obrigatório'),
@@ -23,7 +22,6 @@ export const clientInfoCardSchema = z.object({
   enderecos_principal_cidade: z.string().min(1, 'Cidade é obrigatória'),
   enderecos_principal_estado: z.string().min(1, 'Estado é obrigatório'),
   
-  // Flattened document fields
   documentos_cnh_numero: z.string().min(1, 'Número da CNH é obrigatório'),
   documentos_cnh_categoria: z.string().min(1, 'Categoria é obrigatória'),
   documentos_cnh_dataValidade: z.string().min(1, 'Validade é obrigatória'),

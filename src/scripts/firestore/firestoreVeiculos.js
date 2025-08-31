@@ -1,15 +1,9 @@
 import { db } from '../../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Cadastra um novo veículo com:
- * - ID aleatório (UUID)
- * - Chassi como campo único imutável
- * - Placa como campo normal (atualizável)
- */
 export const criarVeiculo = async (veiculoData) => {
   try {
-    const id = uuidv4(); // ID aleatório universal
+    const id = uuidv4(); 
     const { chassi, placa } = veiculoData;
 
     // 1. Validar chassi único
@@ -28,12 +22,10 @@ export const criarVeiculo = async (veiculoData) => {
       .collection('veiculos')
       .doc(id)
       .set({
-        // Identificação
-        id, // UUID (redundante para facilidade em queries)
-        chassi, // Campo único imutável
-        placa: placa.replace(/-/g, ''), // Formato sem hífen
+        id, 
+        chassi,
+        placa: placa.replace(/-/g, ''), 
 
-        // Dados técnicos (do Figma)
         modelo: veiculoData.modelo,
         marca: veiculoData.marca,
         renavam: veiculoData.renavam,
@@ -43,18 +35,15 @@ export const criarVeiculo = async (veiculoData) => {
           modelo: parseInt(veiculoData.anoModelo),
         },
 
-        // Histórico
         quilometragem: parseInt(veiculoData.quilometragem),
         quilometragemNaCompra: parseInt(veiculoData.quilometragemNaCompra || '0'),
         dataCompra: new Date(veiculoData.dataCompra).toISOString(),
         dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
 
-        // Localização
         local: veiculoData.local,
         nome: veiculoData.nome,
         observacoes: veiculoData.observacoes,
 
-        // Controle
         status: 'disponivel',
         dataCadastro: new Date().toISOString(),
         dataAtualizacao: new Date().toISOString(),
@@ -72,14 +61,11 @@ export const criarVeiculo = async (veiculoData) => {
  */
 export const atualizarPlaca = async (chassi, novaPlaca) => {
   try {
-    // 1. Buscar veículo por chassi (campo único)
     const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
 
     if (snapshot.empty) {
       throw new Error('Veículo não encontrado.');
     }
-
-    // 2. Atualizar apenas a placa (ID do documento permanece o mesmo)
     const veiculoRef = snapshot.docs[0].ref;
     await veiculoRef.update({
       placa: novaPlaca.replace(/-/g, ''),
@@ -131,7 +117,6 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
   try {
     let query = db.collection('veiculos').orderBy('placa').limit(limite);
 
-    // Aplicar filtros
     if (filtros.placa) {
       query = query.where('placa', '==', filtros.placa.replace(/-/g, ''));
     }
@@ -144,7 +129,6 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
       query = query.where('marca', '==', filtros.marca);
     }
 
-    // Paginação
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);
     }
@@ -204,7 +188,6 @@ export const atualizarQuilometragemVeiculo = async (chassi, quilometragem) => {
 
     const docId = snapshot.docs[0].id;
 
-    // Atualizar o campo quilometragem no documento encontrado
     await db.collection('veiculos').doc(docId).update({ quilometragem });
 
     return {

@@ -1,4 +1,3 @@
-// rent.js
 import { db } from '../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -159,7 +158,6 @@ export const atualizarLocacao = async (id, locacaoData) => {
 
     const updateData = { ...locacaoData, dataAtualizacao: new Date().toISOString() };
 
-    // Handle date formatting if provided
     if (updateData.dataInicio) {
       updateData.dataInicio = parseDate(updateData.dataInicio).toISOString();
     }
@@ -192,7 +190,6 @@ export const excluirLocacao = async (id) => {
 
     const locacaoData = locacaoDoc.data();
 
-    // Update the vehicle status back to 'disponivel' if the rental was active
     if (locacaoData.status === 'ativa' && locacaoData.veiculoId) {
       const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
       await veiculoRef.update({
@@ -201,7 +198,6 @@ export const excluirLocacao = async (id) => {
       });
     }
 
-    // Delete the rental document
     await locacaoRef.delete();
 
     return { success: true };
@@ -211,7 +207,6 @@ export const excluirLocacao = async (id) => {
   }
 };
 
-// Função auxiliar para formatar data (DD/MM/YYYY)
 const formatDate = (isoString) => {
   const date = new Date(isoString);
   return [
@@ -221,7 +216,6 @@ const formatDate = (isoString) => {
   ].join('/');
 };
 
-// Helper function to parse DD/MM/YYYY string to Date object
 const parseDate = (dateStr) => {
   const [day, month, year] = dateStr.split('/');
   return new Date(`${year}-${month}-${day}`);

@@ -33,7 +33,7 @@ export function useGetVehicleQuery(chassi: string) {
   return useQuery({
     queryKey: ['vehicle', chassi],
     queryFn: () => getVehicleFunction(chassi),
-    enabled: !!chassi, // Só executa se chassi estiver definido
+    enabled: !!chassi, 
     retry: 3,
     retryDelay: 1000,
   });

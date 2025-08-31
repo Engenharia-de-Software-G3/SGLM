@@ -18,7 +18,7 @@ export const adicionarManutencao = async (veiculoId, manutencaoData) => {
       .collection('veiculos')
       .doc(veiculoId)
       .collection('manutencoes')
-      .doc(); // ID automático
+      .doc();
 
     await docRef.set({
       ...manutencaoData,

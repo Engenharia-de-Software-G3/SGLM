@@ -6,17 +6,16 @@
 import express from 'express';
 const router = express.Router();
 
-// Importando funções da Firestore para veículos
 import {
   atualizarQuilometragemVeiculo,
   criarVeiculo,
   listarVeiculos,
   atualizarPlaca,
   registrarVenda,
-  buscarPorChassi, // Import this to help with DELETE and general updates
+  buscarPorChassi,
 } from '../src/scripts/firestore/firestoreVeiculos.js';
 
-import { db } from '../firebaseConfig.js'; // Import db for direct Firestore operations if needed
+import { db } from '../firebaseConfig.js';
 
 /**
  * Rota POST para criar um novo veículo.
@@ -32,7 +31,6 @@ router.post('/', async (req, res) => {
   try {
     const veiculoData = req.body;
 
-    // TODO: Adicionar validação mais robusta (incluindo autenticação por middleware)
     /**
      * @todo Adicionar validação de dados de entrada mais robusta para veiculoData.
      * Considerar usar um esquema de validação (ex: Joi, Yup).
@@ -44,11 +42,9 @@ router.post('/', async (req, res) => {
         .send('Dados do veículo incompletos (chassi, placa e modelo são obrigatórios).');
     }
 
-    // Chame a função do Firestore para criar o veículo
     const resultado = await criarVeiculo(veiculoData);
 
     if (resultado.success) {
-      // Use o ID retornado pela função criarVeiculo
       res.status(201).send({ message: 'Veículo criado com sucesso!', id: resultado.id });
     } else {
       res.status(400).send({ message: 'Erro ao criar veículo', error: resultado.error });
@@ -75,7 +71,6 @@ router.get('/', async (req, res) => {
   try {
     const { limite, ultimoDocId, filtros = '{}' } = req.query;
 
-    // Converter e validar parâmetros
     const limiteNum = limite ? Math.min(parseInt(limite) || 10, 100) : 10; // Default 10, max 100
 
     if (isNaN(limiteNum)) {
@@ -89,10 +84,8 @@ router.get('/', async (req, res) => {
       filtrosParsed = {};
     }
 
-    // Obter documento de referência para paginação
     let ultimoDoc = null;
     if (ultimoDocId) {
-      // Need to get the DocumentSnapshot for startAfter
       const lastDocSnapshot = await db.collection('veiculos').doc(ultimoDocId).get();
       if (!lastDocSnapshot.exists) {
         return res.status(400).json({ error: 'ID do último documento inválido' });
@@ -100,14 +93,12 @@ router.get('/', async (req, res) => {
       ultimoDoc = lastDocSnapshot;
     }
 
-    // Chamar função de listagem
     const { veiculos, ultimoDoc: ultimoDocSnapshot } = await listarVeiculos({
       limite: limiteNum,
       ultimoDoc,
       filtros: filtrosParsed,
     });
 
-    // Formatar resposta
     res.status(200).json({
       veiculos,
       paginacao: {
@@ -150,7 +141,6 @@ router.put('/:chassi', async (req, res) => {
       return res.status(400).send('Chassi e/ou dados de atualização ausentes.');
     }
 
-    // Check if vehicle exists first
     const veiculo = await buscarPorChassi(chassi);
     if (!veiculo) {
       return res.status(404).send('Veículo não encontrado.');
@@ -158,7 +148,6 @@ router.put('/:chassi', async (req, res) => {
 
     let resultado;
 
-    // Handle specific updates using existing functions
     if (updates.placa !== undefined) {
       resultado = await atualizarPlaca(chassi, updates.placa);
       if (!resultado.success) throw new Error(resultado.error);
@@ -173,23 +162,10 @@ router.put('/:chassi', async (req, res) => {
     }
 
     if (updates.dataVenda !== undefined) {
-      // You might want more date validation here
       resultado = await registrarVenda(chassi, updates.dataVenda);
       if (!resultado.success) throw new Error(resultado.error);
     }
 
-    // Handle other potential direct updates if needed (e.g., local, nome, observacoes)
-    // If there are other fields you want to allow updating directly on the main document,
-    // you would add logic here to call a generic update function or update directly.
-    // Example (assuming a generic update function exists or using batched writes):
-    // const directUpdates = {};
-    // if(updates.local !== undefined) directUpdates.local = updates.local;
-    // if(updates.nome !== undefined) directUpdates.nome = updates.nome;
-    // if(Object.keys(directUpdates).length > 0) {
-    //     await db.collection('veiculos').doc(veiculo.id).update(directUpdates);
-    // }
-
-    // If no specific update function was called, assume a generic success if vehicle was found
     if (resultado === undefined) {
       return res
         .status(200)
@@ -222,7 +198,6 @@ router.delete('/:chassi', async (req, res) => {
       return res.status(400).send('Chassi do veículo ausente.');
     }
 
-    // Find the vehicle document by chassi to get its ID
     const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
 
     if (snapshot.empty) {
@@ -231,7 +206,6 @@ router.delete('/:chassi', async (req, res) => {
 
     const veiculoDocRef = snapshot.docs[0].ref;
 
-    // Delete the document
     await veiculoDocRef.delete();
 
     res.status(200).send({ message: 'Veículo deletado com sucesso!' });

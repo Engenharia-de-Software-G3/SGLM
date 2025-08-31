@@ -20,7 +20,6 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
     navigate("/locacoes");
   };
 
-  // Create flattened data for the form
   const [flattenedData, setFlattenedData] = useState(() => {
     return {
       id: initialData.id,
@@ -42,7 +41,6 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
     };
   });
 
-  // Helper function to restore nested object structure
   const restoreData = (flattened: Record<string, unknown>): Record<string, unknown> => {
     const restored: Record<string, unknown> = {};
     
@@ -66,7 +64,6 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
     return restored;
   };
 
-  // Helper function to update flattened data
   const updateFlattenedData = (field: string, value: string) => {
     setFlattenedData(prev => ({
       ...prev,
@@ -87,7 +84,6 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       return;
     }
     
-    // Restore the nested structure before sending to API
     const restoredData = restoreData(parsed.data);
     await updateClient({id: Number(initialData.id), payload: restoredData});
     toast('Salvo com sucesso');
