@@ -1,6 +1,8 @@
+import { CreateManutencaoRequest } from '@/services/maintenance/types';
+
 export interface AddMaintenanceModalProps {
   trigger: React.ReactNode;
-  onAdd: (data: MaintenanceFormData) => void;
+  onAdd: (data: CreateManutencaoRequest) => void;
 }
 
 export interface MaintenanceFormData {

@@ -12,3 +12,7 @@ export interface Manutencao {
   quilometragem: number;
   data: string;
 }
+
+export interface GetManutencoesResponse {
+  manutencoes: Manutencao[];
+}
