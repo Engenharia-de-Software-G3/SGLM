@@ -8,7 +8,6 @@ import { Layout } from '@/shared/components/layout';
 import { ReturnHeader } from '@/shared/components/return-header';
 import { VehicleActionDialog } from './components/vehicle-action-dialog';
 import { useGetVehicleQuery, useGetVehicleActivitiesQuery, useUpdateVehicleMutation } from '@/services/vehicle';
-import type { VeiculoFormulario } from '@/features/vehicles/types';
 import type { VehicleData } from '@/services/vehicle/types';
 import { toast } from 'sonner';
 import { queryClient } from '@/lib/tanstack/query-client';

@@ -3,18 +3,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import type { VehicleActionDialogProps } from './@types';
 import { toast } from 'sonner';
+import { useUpdateVehicleMutation } from '@/services/vehicle';
 
 export const VehicleActionDialog = ({
   isOpen,
   onClose,
   vehicle,
   onFilterByVehicle,
-  onSave
+  // onSave
 
 }: VehicleActionDialogProps) => {
   const [isEditingKm, setIsEditingKm] = useState(false);
   const [newKm, setNewKm] = useState<string>('');
 
+  const { mutateAsync: updateVehicle } = useUpdateVehicleMutation();
 
   const actions = [
     {
@@ -32,7 +34,7 @@ export const VehicleActionDialog = ({
       color: 'bg-blue-600 hover:bg-blue-700',
       onClick: () => {
         console.log(`📜 Histórico de Locações do veículo ${vehicle?.id}`);
-        onFilterByVehicle && onFilterByVehicle();
+        onFilterByVehicle();
       },
     },
     {
@@ -104,39 +106,39 @@ export const VehicleActionDialog = ({
               </Button>
               <Button
               onClick={() => {
-
                 if (!vehicle) return;
-
+                
                 // Remove caracteres não numéricos e transforma em número
                 const sanitizedKm = newKm.trim().replace(/\D/g, '');
                 const newKmNumber = Number(sanitizedKm);
-
+                
                 if (!sanitizedKm || isNaN(newKmNumber)) {
                   toast.error('Informe uma quilometragem válida');
                   return;
                 }
-
+                
                 if (newKmNumber <= Number(vehicle.quilometragem)) {
                   toast.error(`A nova quilometragem deve ser maior ou igual à atual (${vehicle.quilometragem} km)`);
                   return;
                 }
-
+                
+                updateVehicle({ id: vehicle.id, payload: { quilometragemAtual: newKm } });
                 // Chama a função passada do parent
-                onSave?.({
-                  quilometragemAtual: sanitizedKm,
-                  marca: vehicle.marca,
-                  modelo: vehicle.modelo,
-                  placa: vehicle.placa,
-                  ano: vehicle.ano,
-                  cor: vehicle.cor,
-                  chassi: vehicle.chassi,
-                  quilometragemCompra: vehicle.quilometragemNaCompra,
-                  dataCompra: vehicle.dataCompra,
-                  local: vehicle.local,
-                  nome: vehicle.nome,
-                  observacoes: vehicle.observacoes,
-                  status: vehicle.status,
-                });
+                // onSave?.({
+                //   quilometragemAtual: sanitizedKm,
+                //   marca: vehicle.marca,
+                //   modelo: vehicle.modelo,
+                //   placa: vehicle.placa,
+                //   ano: vehicle.ano,
+                //   cor: vehicle.cor,
+                //   chassi: vehicle.chassi,
+                //   quilometragemCompra: vehicle.quilometragemNaCompra,
+                //   dataCompra: vehicle.dataCompra,
+                //   local: vehicle.local,
+                //   nome: vehicle.nome,
+                //   observacoes: vehicle.observacoes,
+                //   status: vehicle.status,
+                // });
 
                 setIsEditingKm(false);
                 setNewKm('');

@@ -14,7 +14,7 @@ import { EditVehicleModal } from './components/edit-vehicle-modal';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
 import { useCreateVehicleMutation, useDeleteVehicleMutation, useUpdateVehicleMutation, useVehiclesQuery } from '@/services/vehicle';
 import { CreateVehicleInterface, StatusVehicle, UpdateVehicleInterface, VehicleData } from '@/services/vehicle/types';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 function getStatusProps(status: StatusVehicle) {
   switch (status) {
@@ -57,6 +57,11 @@ export const Vehicles = () => {
         return;
       }
 
+      if (data.quilometragemAtual < data.quilometragemCompra) {
+        toast.error('A quilometragem atual não pode ser menor que a quilometragem de compra');
+        return;
+      }
+
       updateVehicle({ id: vehicleToEdit.id.toString(), payload: data as UpdateVehicleInterface });
     }
   };
@@ -76,6 +81,17 @@ export const Vehicles = () => {
   };
 
   const handleDelete = (id: string) => {
+    const vehicle = vehicles?.veiculos.find((v) => v.id === id);
+    if (vehicle?.status === 'alugado') {
+      toast.error('O veículo está locado e não pode ser excluído');
+      return;
+    }
+
+    if (vehicle?.status === 'manutencao') {
+      toast.error('O veículo está em manutenção e não pode ser excluído');
+      return;
+    }
+
     deleteVehicle(id);
   };
 
@@ -102,6 +118,11 @@ export const Vehicles = () => {
       dataVenda: "",
       file: data.arquivo,
     };
+
+    if (data.quilometragemAtual < data.quilometragemCompra) {
+      toast.error('A quilometragem atual não pode ser menor que a quilometragem de compra');
+      return;
+    }
 
     console.log(`payload before submiting: `, { payload})
 
@@ -263,6 +284,8 @@ export const Vehicles = () => {
         onSave={handleEditSave}
         vehicle={vehicleToEdit }
       />
+      
+      <Toaster />
     </Layout>
   );
 };
