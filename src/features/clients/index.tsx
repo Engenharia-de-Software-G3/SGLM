@@ -10,6 +10,7 @@ import { DisplayTableHeader } from '@/shared/components/display-table/components
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { Badge } from '@/components/ui/badge';
 import { useClientsQuery, useDeleteClientMutation } from '@/services/client';
+import type { ClientData } from '@/services/client/types';
 import { toast } from 'sonner';
 
 export const Clients = () => {
@@ -81,7 +82,7 @@ export const Clients = () => {
               { key: 'status', title: 'Status' },
               { key: 'actions', title: 'Ações' },
             ]}
-            renderRow={(client: { id: string; nomeCompleto: string; cpf: string }) => (
+            renderRow={(client: ClientData & { dataNascimento?: string; status?: string }) => (
               <tr key={client.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -116,7 +117,7 @@ export const Clients = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewClientWithReadOnly(client.id)}
+                      onClick={() => handleViewClientWithReadOnly(Number(client.id))}
                       className="text-orange-600 border-orange-300 hover:bg-orange-50"
                     >
                       <FileText className="h-4 w-4" />
@@ -126,13 +127,13 @@ export const Clients = () => {
                       title="Tem certeza que você deseja excluir esse cliente?"
                       description="Todos os dados salvos serão excluídos."
                       actionText="Excluir cliente"
-                      onConfirm={() => handleDeleteClient(client.id)}
+                      onConfirm={() => handleDeleteClient(Number(client.id))}
                     />
 
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewClientWithoutReadOnly(client.id)}
+                      onClick={() => handleViewClientWithoutReadOnly(Number(client.id))}
                       className="text-green-600 border-green-300 hover:bg-green-50"
                     >
                       <Edit className="h-4 w-4" />
