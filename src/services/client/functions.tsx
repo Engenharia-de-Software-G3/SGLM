@@ -22,13 +22,8 @@ export async function getClientsFunction(): Promise<ListManyClients> {
 
   const clientes = data.clientes.map((cliente) => ({
     ...cliente,
-<<<<<<< HEAD
-    id: Number(cliente.id),
-    cpf: formatCPF(cliente.cpf), 
-=======
     id: cliente.id,
     cpf: formatCPF(cliente.cpf), // Changed from cliente.id to cliente.cpf
->>>>>>> develop
   }));
 
   return {

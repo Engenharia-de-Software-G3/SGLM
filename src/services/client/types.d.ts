@@ -1,18 +1,4 @@
 export interface ClientData {
-<<<<<<< HEAD
-  id: number;
-  cpf: string;
-  nomeCompleto: string;
-  email?: string;
-  telefone?: string;
-  endereco?: string;
-  rg?: string;
-  cnpj?: string;
-  nacionalidade?: string;
-  estadoCivil?: string;
-  profissao?: string;
-}
-=======
     id: number;
     cpf: string;
     nomeCompleto: string;
@@ -70,7 +56,6 @@ export interface ClientData {
     ultimoDoc?: string | null;
   }
   
->>>>>>> develop
 
 export interface CreateClientInterface {
   cpf: string;

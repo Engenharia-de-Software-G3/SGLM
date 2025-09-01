@@ -31,17 +31,10 @@ export const Clients = () => {
     navigate(`/clientes/${clientId}`);
   };
 
-<<<<<<< HEAD
-  async function handleDeleteClient(clientId: number) {
-    await deleteClient(clientId);
-    toast.success('Cliente deletado com sucesso');
-  }
-=======
   async function handleDeleteClient (clientId: string) {
     await deleteClient(clientId)
     toast.success('Cliente deletado com sucesso')
   };
->>>>>>> develop
 
   const filteredClients = useMemo(() => {
     return clientsData?.clientes.filter((c: { nomeCompleto: string }) =>
