@@ -85,7 +85,7 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
     }
     
     const restoredData = restoreData(parsed.data);
-    await updateClient({id: Number(initialData.id), payload: restoredData});
+    await updateClient({id: initialData.id, payload: restoredData});
     toast('Salvo com sucesso');
     setTimeout(() => {
       navigate('/clientes')

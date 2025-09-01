@@ -20,20 +20,28 @@ export const Clients = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleViewClientWithReadOnly = (clientId: number) => {
+  const handleViewClientWithReadOnly = (clientId: string) => {
     localStorage.setItem('isReadOnly', 'true');
     navigate(`/clientes/${clientId}`);
   };
 
-  const handleViewClientWithoutReadOnly = (clientId: number) => {
+  const handleViewClientWithoutReadOnly = (clientId: string) => {
     localStorage.setItem('isReadOnly', 'false');
+    console.log({clientId})
     navigate(`/clientes/${clientId}`);
   };
 
+<<<<<<< HEAD
   async function handleDeleteClient(clientId: number) {
     await deleteClient(clientId);
     toast.success('Cliente deletado com sucesso');
   }
+=======
+  async function handleDeleteClient (clientId: string) {
+    await deleteClient(clientId)
+    toast.success('Cliente deletado com sucesso')
+  };
+>>>>>>> develop
 
   const filteredClients = useMemo(() => {
     return clientsData?.clientes.filter((c: { nomeCompleto: string }) =>

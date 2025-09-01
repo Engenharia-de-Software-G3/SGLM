@@ -8,13 +8,13 @@ import {
   GetVehiclesParams,
 } from './types';
 
-function formatDateToServer(dateString: string | undefined): string {
+export function formatDateToServer(dateString: string | undefined): string {
   if (!dateString) return '';
   const [day, month, year] = dateString.split('/');
   return `${year}-${month}-${day}`;
 }
 
-function formatDateToClient(dateString: string): string {
+export function formatDateToClient(dateString: string): string {
   if (!dateString) return '';
   const [year, month, day] = dateString.split('T')[0].split('-');
   return `${day}/${month}/${year}`;
