@@ -48,7 +48,6 @@ export const stepTwoSchema = z.object({
 export const stepThreeSchema = z.object({
   cnhNumero: z.string().min(1, 'Número da CNH é obrigatório'),
   categoria: z.string().min(1, 'Categoria é obrigatória'),
-  registro: z.string().min(1, 'Registro é obrigatório'),
   validade: z.string().min(1, 'Validade é obrigatória'),
 });
 
@@ -78,6 +77,5 @@ export const initialStepTwoData: StepTwoData = {
 export const initialStepThreeData: StepThreeData = {
   cnhNumero: '',
   categoria: '',
-  registro: '',
   validade: '',
 };
