@@ -34,14 +34,12 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     const { id, value } = 'target' in e ? e.target : e;
     let maskedValue = value;
 
-    // Máscara Fabricação/Modelo AAAA/YYYY
     if (id === 'ano') {
       let val = value.replace(/\D/g, '').slice(0, 8);
       if (val.length > 4) val = val.slice(0, 4) + '/' + val.slice(4);
       maskedValue = val;
     }
 
-    // Máscara Data Compra DD/MM/YYYY
     if (id === 'dataCompra') {
       const digits = value.replace(/\D/g, '').slice(0, 8);
       if (digits.length <= 2) maskedValue = digits;
@@ -50,7 +48,6 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     }
 
     setFormData((prev) => ({ ...prev, [id]: maskedValue }));
-    // Limpar erro do campo ao alterar
     setErrors((prev) => ({ ...prev, [id]: undefined }));
   };
 

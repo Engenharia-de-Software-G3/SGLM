@@ -210,7 +210,7 @@ export const Vehicles = () => {
         </DisplayTableHeader>
 
         <PaginatedTable
-          key={vehicles?.veiculos?.length || 0} // Simplificado para reagir a mudanças no array
+          key={vehicles?.veiculos?.length || 0} 
           data={filteredVehicles || []}
           columns={[
             { key: 'marca', title: 'Marca do veículo' },

@@ -125,8 +125,8 @@ export async function updateVehicleFunction(id: string, payload: UpdateVehicleIn
     const send = { 
       renavam: payload.renavam || undefined,
       cor: payload.cor || undefined,
-      quilometragem: payload.quilometragemAtual || undefined,
-      quilometragemNaCompra: payload.quilometragemCompra || undefined,
+      quilometragem: payload.quilometragem || undefined,
+      quilometragemNaCompra: payload.quilometragemNaCompra || undefined,
       dataCompra: formatDateToServer(payload.dataCompra) || undefined,
       local: payload.local || undefined,
       nome: payload.nome || undefined,
