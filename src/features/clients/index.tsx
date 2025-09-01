@@ -20,17 +20,18 @@ export const Clients = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleViewClientWithReadOnly = (clientId: number) => {
+  const handleViewClientWithReadOnly = (clientId: string) => {
     localStorage.setItem('isReadOnly', 'true');
     navigate(`/clientes/${clientId}`);
   };
 
-  const handleViewClientWithoutReadOnly = (clientId: number) => {
+  const handleViewClientWithoutReadOnly = (clientId: string) => {
     localStorage.setItem('isReadOnly', 'false');
+    console.log({clientId})
     navigate(`/clientes/${clientId}`);
   };
 
-  async function handleDeleteClient (clientId: number) {
+  async function handleDeleteClient (clientId: string) {
     await deleteClient(clientId)
     toast.success('Cliente deletado com sucesso')
   };

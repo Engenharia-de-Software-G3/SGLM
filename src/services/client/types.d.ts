@@ -39,7 +39,7 @@ export interface ClientData {
   }
   
   export interface SingleClientResponse {
-    id: number;
+    id: string;
     cpf: string;
     nomeCompleto: string;
     email?: string;

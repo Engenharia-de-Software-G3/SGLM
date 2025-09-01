@@ -10,6 +10,7 @@ import {
 } from "./types";
 import { formatCPF } from "../utils/formatCpf";
 import { useQuery } from '@tanstack/react-query';
+import { formatDateToServer } from "../vehicle/functions";
 
 export async function getClientsFunction(): Promise<ListManyClients> {
   const response = await api.get('/clientes');
@@ -22,7 +23,7 @@ export async function getClientsFunction(): Promise<ListManyClients> {
 
   const clientes = data.clientes.map((cliente) => ({
     ...cliente,
-    id: Number(cliente.id),
+    id: cliente.id,
     cpf: formatCPF(cliente.cpf), // Changed from cliente.id to cliente.cpf
   }));
 
@@ -42,14 +43,44 @@ export async function createClientFunction(payload: CreateClientInterface) {
   return null;
 }
 
-export async function getClientFunction(id: number) {
+export async function getClientFunction(id: string) {
   const response = await api.get(`/clientes/${id}`);
 
   return response.data.cliente as SingleClientResponse;
 }
 
-export async function updateClientFunction(id: number, payload: UpdateClientInterface) {
-  const response = await api.put(`/clientes/${id}`, payload);
+export async function updateClientFunction(id: string, payload: UpdateClientInterface) {
+  
+  const send = {
+    cpf: payload.cpf,
+    dadosPessoais: {
+      nome: payload.nomeCompleto,
+      dataNascimento: formatDateToServer(payload.dataNascimento),
+    },
+    endereco: {
+      cep: payload.enderecos.principal.cep,
+      rua: payload.enderecos.principal.rua,
+      numero: payload.enderecos.principal.numero,
+      bairro: payload.enderecos.principal.bairro,
+      cidade: payload.enderecos.principal.cidade,
+      estado: payload.enderecos.principal.estado,
+    },
+    contato: {
+      email: payload.email,
+      telefone: payload.telefone,
+    },
+    documentos: {
+      cnh: {
+        numero: payload.documentos?.cnh?.numero,
+        categoria: payload.documentos?.cnh?.categoria,
+        dataValidade: formatDateToServer(payload.documentos?.cnh?.dataValidade),
+        tipo: payload.documentos?.cnh?.tipo,
+      },
+    },
+  }
+  const response = await api.put(`/clientes/${id}`, send);
+  
+  console.log('Should send', send);
 
   if (response.status !== 200) {
     throw new Error('Erro ao atualizar cliente');
@@ -58,7 +89,7 @@ export async function updateClientFunction(id: number, payload: UpdateClientInte
   return null;
 }
 
-export async function deleteClientFunction(id: number) {
+export async function deleteClientFunction(id: string) {
   const response = await api.delete(`/clientes/${id}`);
 
   if (response.status !== 200) {

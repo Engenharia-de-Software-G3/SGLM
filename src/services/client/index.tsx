@@ -24,14 +24,14 @@ export function useUpdateClientMutation() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: ({id, payload}: {id: number, payload: UpdateClientInterface}) => updateClientFunction(id, payload),
+        mutationFn: ({id, payload}: {id: string, payload: UpdateClientInterface}) => updateClientFunction(id, payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clients'] })
         }
     })
 }
 
-export function useGetClientQuery(id: number) {
+export function useGetClientQuery(id: string) {
     return useQuery({
         queryKey: ['client', id],
         queryFn: () => getClientFunction(id),

@@ -89,7 +89,7 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
     
     // Restore the nested structure before sending to API
     const restoredData = restoreData(parsed.data);
-    await updateClient({id: Number(initialData.id), payload: restoredData});
+    await updateClient({id: initialData.id, payload: restoredData});
     toast('Salvo com sucesso');
     setTimeout(() => {
       navigate('/clientes')

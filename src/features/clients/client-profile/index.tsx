@@ -13,7 +13,7 @@ export const ClientProfile = () => {
   
   console.log({id})
   
-  const { data: clientData, isLoading } = useGetClientQuery(Number(id))
+  const { data: clientData, isLoading } = useGetClientQuery(id)
   
   return (
     <Layout showHeader={false}>
