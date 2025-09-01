@@ -1,4 +1,4 @@
-import { api } from "@/lib/axios";
+import { api } from '@/lib/axios';
 import {
   ClientData,
   CreateClientInterface,
@@ -6,10 +6,10 @@ import {
   ListManyClientsResponse,
   SingleClientResponse,
   UpdateClientInterface,
-} from "./types";
-import { formatCPF } from "../utils/formatCpf";
+} from './types';
+import { formatCPF } from '../utils/formatCpf';
 import { useQuery } from '@tanstack/react-query';
-import { formatDateToServer } from "../vehicle/functions";
+import { formatDateToServer } from '../vehicle/functions';
 
 export async function getClientsFunction(): Promise<ListManyClients> {
   const response = await api.get('/clientes');
@@ -49,20 +49,19 @@ export async function getClientFunction(id: string) {
 }
 
 export async function updateClientFunction(id: string, payload: UpdateClientInterface) {
-  
   const send = {
-    cpf: payload.cpf,
+    cpf: '',
     dadosPessoais: {
-      nome: payload.nomeCompleto,
-      dataNascimento: formatDateToServer(payload.dataNascimento),
+      nome: payload.nomeCompleto || '',
+      dataNascimento: formatDateToServer(''),
     },
     endereco: {
-      cep: payload.enderecos.principal.cep,
-      rua: payload.enderecos.principal.rua,
-      numero: payload.enderecos.principal.numero,
-      bairro: payload.enderecos.principal.bairro,
-      cidade: payload.enderecos.principal.cidade,
-      estado: payload.enderecos.principal.estado,
+      cep: payload.endereco || '',
+      rua: payload.endereco || '',
+      numero: payload.endereco || '',
+      bairro: payload.endereco || '',
+      cidade: payload.endereco || '',
+      estado: payload.endereco || '',
     },
     contato: {
       email: payload.email,
@@ -70,15 +69,15 @@ export async function updateClientFunction(id: string, payload: UpdateClientInte
     },
     documentos: {
       cnh: {
-        numero: payload.documentos?.cnh?.numero,
-        categoria: payload.documentos?.cnh?.categoria,
-        dataValidade: formatDateToServer(payload.documentos?.cnh?.dataValidade),
-        tipo: payload.documentos?.cnh?.tipo,
+        numero: payload.rg || '',
+        categoria: payload.rg || '',
+        dataValidade: formatDateToServer(payload.rg || ''),
+        tipo: payload.rg || '',
       },
     },
-  }
+  };
   const response = await api.put(`/clientes/${id}`, send);
-  
+
   console.log('Should send', send);
 
   if (response.status !== 200) {
@@ -101,7 +100,7 @@ export async function deleteClientFunction(id: string) {
 export async function getClientByCpf(cpf: string): Promise<SingleClientResponse> {
   try {
     if (!cpf || cpf.trim() === '') throw new Error('CPF não fornecido');
-    
+
     const cleanCpf = cpf.replace(/\D/g, '');
     if (cleanCpf === '') throw new Error('CPF inválido');
 
@@ -110,30 +109,28 @@ export async function getClientByCpf(cpf: string): Promise<SingleClientResponse>
         filtros: JSON.stringify({ cpf: cleanCpf }),
       },
     });
-    
+
     const clientes = response.data.clientes as ClientData[];
 
     console.log('CPF buscado:', cleanCpf);
     console.log('Número de clientes retornados:', response.data.clientes.length);
     console.log('Todos os clientes:', response.data.clientes);
-    
+
     if (clientes.length === 0) {
       throw new Error('Cliente não encontrado');
     }
-    
 
-    const clienteEncontrado = clientes.find(cliente => {
+    const clienteEncontrado = clientes.find((cliente) => {
       const clienteCpfClean = cliente.cpf.replace(/\D/g, '');
       return clienteCpfClean === cleanCpf;
     });
-    
+
     if (!clienteEncontrado) {
       throw new Error('Cliente não encontrado');
     }
-    
+
     console.log('Cliente encontrado:', clienteEncontrado.nomeCompleto);
-    return clienteEncontrado;
-    
+    return clienteEncontrado as unknown as SingleClientResponse;
   } catch (error) {
     console.error('Erro ao buscar cliente por CPF:', error);
     throw error;
@@ -147,6 +144,6 @@ export function useClientsQuery() {
       const response = await api.get('/clientes');
       return response.data as ListManyClientsResponse;
     },
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 }

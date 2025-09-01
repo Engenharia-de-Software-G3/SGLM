@@ -24,8 +24,8 @@ export const ClientRegister = () => {
     }
   };
 
-  async function handleFinish (newClient: NewClient)  {
-    const payload: CreateClientInterface = {
+  async function handleFinish(newClient: NewClient) {
+    const payload = {
       cpf: newClient.cpfcnpj,
       dadosPessoais: {
         nome: newClient.nome,
@@ -42,7 +42,7 @@ export const ClientRegister = () => {
       contato: {
         email: newClient.email,
         telefone: newClient.telefone,
-      }, 
+      },
       documentos: {
         cnh: {
           numero: newClient.cnhNumero,
@@ -50,18 +50,17 @@ export const ClientRegister = () => {
           dataValidade: newClient.validade,
         },
       },
-    }
-
+    } as unknown as CreateClientInterface;
 
     try {
-      await createClient(payload)
+      await createClient(payload);
       setTimeout(() => {
-        navigate('/clientes')
-      }, 1000)
+        navigate('/clientes');
+      }, 1000);
     } catch (error) {
-      console.log({error})
+      console.log({ error });
     }
-  };
+  }
 
   if (showSuccess) {
     return (
