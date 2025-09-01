@@ -27,14 +27,14 @@ export const Clients = () => {
 
   const handleViewClientWithoutReadOnly = (clientId: string) => {
     localStorage.setItem('isReadOnly', 'false');
-    console.log({clientId})
+    console.log({ clientId });
     navigate(`/clientes/${clientId}`);
   };
 
-  async function handleDeleteClient (clientId: string) {
-    await deleteClient(clientId)
-    toast.success('Cliente deletado com sucesso')
-  };
+  async function handleDeleteClient(clientId: string) {
+    await deleteClient(clientId);
+    toast.success('Cliente deletado com sucesso');
+  }
 
   const filteredClients = useMemo(() => {
     return clientsData?.clientes.filter((c: { nomeCompleto: string }) =>
@@ -117,7 +117,7 @@ export const Clients = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewClientWithReadOnly(client.id)}
+                      onClick={() => handleViewClientWithReadOnly(client.id.toString())}
                       className="text-orange-600 border-orange-300 hover:bg-orange-50"
                     >
                       <FileText className="h-4 w-4" />
@@ -127,13 +127,13 @@ export const Clients = () => {
                       title="Tem certeza que você deseja excluir esse cliente?"
                       description="Todos os dados salvos serão excluídos."
                       actionText="Excluir cliente"
-                      onConfirm={() => handleDeleteClient(client.id)}
+                      onConfirm={() => handleDeleteClient(client.id.toString())}
                     />
 
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewClientWithoutReadOnly(client.id)}
+                      onClick={() => handleViewClientWithoutReadOnly(client.id.toString())}
                       className="text-green-600 border-green-300 hover:bg-green-50"
                     >
                       <Edit className="h-4 w-4" />

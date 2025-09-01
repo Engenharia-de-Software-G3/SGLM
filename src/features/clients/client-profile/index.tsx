@@ -8,20 +8,24 @@ import { Loader2 } from 'lucide-react';
 
 export const ClientProfile = () => {
   const navigate = useNavigate();
-  
-  const { id } = useParams()
-  
-  console.log({id})
-  
-  const { data: clientData, isLoading } = useGetClientQuery(id)
-  
+
+  const { id } = useParams();
+
+  console.log({ id });
+
+  const { data: clientData, isLoading } = useGetClientQuery(id!);
+
   return (
     <Layout showHeader={false}>
       <div className="flex-1 overflow-auto">
         <ReturnHeader title="Perfil do Cliente" onBack={() => navigate('/clientes')} />
         <Toaster />
         <div className="p-6">
-          { isLoading || !clientData ? <Loader2 className="animate-spin" /> : <ClientInfoCard data={clientData} /> }
+          {isLoading || !clientData ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <ClientInfoCard data={clientData} />
+          )}
         </div>
       </div>
     </Layout>
