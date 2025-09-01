@@ -32,7 +32,10 @@ export async function getVehiclesFunction({
       params: {
         status: status ? status : undefined,
         page: page ? page : undefined,
-        search: search ? search : undefined,
+
+        marca: search ? search : undefined,
+        // placa: search ? search : undefined,
+        // modelo: search ? search : undefined,
       },
     });
 
