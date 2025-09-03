@@ -6,7 +6,12 @@ import {
   getVehiclesFunction,
   updateVehicleFunction,
 } from './functions';
-import { CreateVehicleInterface, GetVehiclesParams, StatusVehicle, UpdateVehicleInterface } from './types';
+import {
+  CreateVehicleInterface,
+  GetVehiclesParams,
+  StatusVehicle,
+  UpdateVehicleInterface,
+} from './types';
 import { queryClient } from '@/lib/tanstack/query-client';
 
 export function useCreateVehicleMutation() {
@@ -23,9 +28,9 @@ export function useUpdateVehicleMutation() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateVehicleInterface }) =>
       updateVehicleFunction(id, payload),
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    },
   });
 }
 
@@ -33,7 +38,7 @@ export function useGetVehicleQuery(chassi: string) {
   return useQuery({
     queryKey: ['vehicle', chassi],
     queryFn: () => getVehicleFunction(chassi),
-    enabled: !!chassi, 
+    enabled: !!chassi,
     retry: 3,
     retryDelay: 1000,
   });
@@ -90,7 +95,7 @@ export function useVehiclesQuery(params?: GetVehiclesParams) {
 
   return useQuery({
     queryKey: ['vehicles', status, page, search],
-    queryFn: () => getVehiclesFunction({status, page, search}),
+    queryFn: () => getVehiclesFunction({ status, page, search }),
     retry: 3,
     retryDelay: 1000,
   });

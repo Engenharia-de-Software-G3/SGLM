@@ -299,12 +299,7 @@ export function generateContractPDF(
     .replace(/\[Placa do Veículo\]/g, vehicle.placa)
     .replace(/\[Renavam do Veículo\]/g, vehicle.renavam || 'Não informado')
     .replace(/\[Chassi do Veículo\]/g, vehicle.chassi || 'Não informado')
-    .replace(
-      /\[Ano do Veículo\]/g,
-      vehicle.ano
-        ? `${vehicle.ano}`
-        : 'Não informado',
-    )
+    .replace(/\[Ano do Veículo\]/g, vehicle.ano ? `${vehicle.ano}` : 'Não informado')
     .replace(/\[Quilometragem Atual do Veículo\]/g, vehicle.quilometragem || '0')
     .replace(/\[Nome da Cidade\]/g, company.cidade)
     .replace(/\[Data Atual\]/g, new Date().toLocaleDateString('pt-BR'))

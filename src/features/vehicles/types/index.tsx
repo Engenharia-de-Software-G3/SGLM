@@ -1,4 +1,4 @@
-import { StatusVehicle } from "@/services/vehicle/types";
+import { StatusVehicle } from '@/services/vehicle/types';
 
 export interface VeiculoFormulario {
   marca: string;

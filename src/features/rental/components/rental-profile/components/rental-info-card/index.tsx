@@ -17,7 +17,7 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
       console.log('Gerando contrato com dados:', data);
 
       const contractData: ContractData = {
-        id: data.id || 'N/A', 
+        id: data.id || 'N/A',
         client: {
           nomeCompleto: data.locatario || 'Não informado',
           cpf: data.cnpjcpf || 'Não informado',

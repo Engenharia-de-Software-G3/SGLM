@@ -42,7 +42,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
-    console.log({vehicle})
+    console.log({ vehicle });
     if (vehicle) {
       setFormData({
         marca: vehicle.marca || '',
@@ -58,20 +58,19 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         nome: vehicle.nome || '',
         observacoes: vehicle.observacoes || '',
         status: vehicle.status as StatusVehicle,
-      }); 
+      });
     }
   }, [vehicle]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | 
-       { target: { id: string; value: string } },
+    e:
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+      | { target: { id: string; value: string } },
   ) => {
     const { id, value } = 'target' in e ? e.target : e;
 
     const maskedValue =
-      id === 'dataCompra' ? maskData(value) :
-      id === 'ano' ? maskAnoModelo(value) :
-      value;
+      id === 'dataCompra' ? maskData(value) : id === 'ano' ? maskAnoModelo(value) : value;
 
     setFormData((prev) => ({ ...prev, [id]: maskedValue }));
     if (errors[id]) setErrors((prev) => ({ ...prev, [id]: '' }));
@@ -86,7 +85,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
     e.preventDefault();
     setErrors({});
 
-    console.log({ formData, selectedFile})
+    console.log({ formData, selectedFile });
     onSave({ ...formData, arquivo: selectedFile });
     onClose();
     setSelectedFile(null);
@@ -115,8 +114,8 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
   };
 
   useEffect(() => {
-    console.log({formData})
-  }, [formData])
+    console.log({ formData });
+  }, [formData]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -152,10 +151,10 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa</Label>
-              <Input 
-                id="placa" 
-                value={formData.placa} 
-                onChange={handleInputChange} 
+              <Input
+                id="placa"
+                value={formData.placa}
+                onChange={handleInputChange}
                 className="bg-gray-200 cursor-not-allowed"
                 disabled={true}
               />
@@ -176,11 +175,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cor">Cor</Label>
-              <Input 
-                id="cor" 
-                value={formData.cor} 
-                onChange={handleInputChange} 
-              />
+              <Input id="cor" value={formData.cor} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="chassi">Chassi</Label>
@@ -215,11 +210,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="local">Local</Label>
-              <Input 
-                id="local" 
-                value={formData.local} 
-                onChange={handleInputChange} 
-              />
+              <Input id="local" value={formData.local} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataCompra">Data da Compra</Label>
@@ -235,11 +226,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome</Label>
-              <Input 
-                id="nome" 
-                value={formData.nome} 
-                onChange={handleInputChange} 
-              />
+              <Input id="nome" value={formData.nome} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
@@ -251,9 +238,15 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                   disabled
                   className="w-full h-10 px-3 py-2  rounded-md text-sm  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-gray-100 text-gray-400"
                 >
-                  <option value="disponivel" disabled>Disponível</option>
-                  <option value="alugado" disabled>Locado</option>
-                  <option value="manutencao" disabled>Manutenção</option>
+                  <option value="disponivel" disabled>
+                    Disponível
+                  </option>
+                  <option value="alugado" disabled>
+                    Locado
+                  </option>
+                  <option value="manutencao" disabled>
+                    Manutenção
+                  </option>
                 </select>
               </div>
             </div>

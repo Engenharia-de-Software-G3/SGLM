@@ -16,8 +16,8 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const navigate = useNavigate();
 
   const filterByClient = () => {
-    localStorage.setItem("filterRentalsByClient", JSON.stringify(flattenedData.nomeCompleto || ''))
-    navigate("/locacoes");
+    localStorage.setItem('filterRentalsByClient', JSON.stringify(flattenedData.nomeCompleto || ''));
+    navigate('/locacoes');
   };
 
   const [flattenedData, setFlattenedData] = useState(() => {
@@ -43,12 +43,12 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
 
   const restoreData = (flattened: Record<string, unknown>): Record<string, unknown> => {
     const restored: Record<string, unknown> = {};
-    
+
     for (const key in flattened) {
       if (Object.prototype.hasOwnProperty.call(flattened, key)) {
         const keys = key.split('_');
         let current = restored as Record<string, unknown>;
-        
+
         for (let i = 0; i < keys.length - 1; i++) {
           const currentKey = keys[i];
           if (!current[currentKey]) {
@@ -56,18 +56,18 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           }
           current = current[currentKey] as Record<string, unknown>;
         }
-        
+
         current[keys[keys.length - 1]] = flattened[key];
       }
     }
-    
+
     return restored;
   };
 
   const updateFlattenedData = (field: string, value: string) => {
-    setFlattenedData(prev => ({
+    setFlattenedData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -83,13 +83,13 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       toast('Preencha todos os campos obrigatórios');
       return;
     }
-    
+
     const restoredData = restoreData(parsed.data);
-    await updateClient({id: initialData.id, payload: restoredData});
+    await updateClient({ id: initialData.id, payload: restoredData });
     toast('Salvo com sucesso');
     setTimeout(() => {
-      navigate('/clientes')
-    }, 1000)
+      navigate('/clientes');
+    }, 1000);
   };
 
   return (
@@ -122,30 +122,27 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           </div>
         </div>
         <div>
-          { flattenedData.cpf.length === 14 ? (
+          {flattenedData.cpf.length === 14 ? (
             <div>
-
-            <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
-            <MaskedInput
-              type="cpf"
-              value={flattenedData.cpf || ''}
-              onAccept={(value) => updateFlattenedData('cpf', value)}
-              readOnly={isReadOnly}
+              <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
+              <MaskedInput
+                type="cpf"
+                value={flattenedData.cpf || ''}
+                onAccept={(value) => updateFlattenedData('cpf', value)}
+                readOnly={isReadOnly}
               />
             </div>
           ) : (
             <div>
-
-            <label className="block text-sm font-medium text-gray-700 mb-2">CNPJ</label>
-            <MaskedInput
-              type="cnpj"
-              value={flattenedData.cpf || ''}
-              onAccept={(value) => updateFlattenedData('cpf', value)}
-              readOnly={isReadOnly}
+              <label className="block text-sm font-medium text-gray-700 mb-2">CNPJ</label>
+              <MaskedInput
+                type="cnpj"
+                value={flattenedData.cpf || ''}
+                onAccept={(value) => updateFlattenedData('cpf', value)}
+                readOnly={isReadOnly}
               />
             </div>
           )}
-          
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
@@ -164,7 +161,9 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           <MaskedInput
             type="cep"
             value={flattenedData.enderecos_principal_cep || ''}
-            onAccept={(value) => updateFlattenedData('enderecos_principal_cep', value.replace(/\D/g, ''))}
+            onAccept={(value) =>
+              updateFlattenedData('enderecos_principal_cep', value.replace(/\D/g, ''))
+            }
             readOnly={isReadOnly}
           />
         </div>
@@ -236,12 +235,7 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Banco</label>
-          <Input
-            placeholder="Insira o nome do banco"
-            value=""
-            readOnly={true}
-            disabled={true}
-          />
+          <Input placeholder="Insira o nome do banco" value="" readOnly={true} disabled={true} />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Agência</label>
@@ -315,9 +309,13 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       </div>
 
       {isReadOnly && (
-          <Button onClick={() => filterByClient()} style={{ width: "25%" }} className="bg-blue-600 hover:bg-blue-700 mt-5">
-            Ver histórico de locações do cliente
-          </Button>
+        <Button
+          onClick={() => filterByClient()}
+          style={{ width: '25%' }}
+          className="bg-blue-600 hover:bg-blue-700 mt-5"
+        >
+          Ver histórico de locações do cliente
+        </Button>
       )}
 
       {!isReadOnly && (

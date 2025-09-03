@@ -1,3 +1,4 @@
+// rent.js
 import { db } from '../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 

@@ -29,7 +29,9 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { id: string; value: string } },
+    e:
+      | ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      | { target: { id: string; value: string } },
   ) => {
     const { id, value } = 'target' in e ? e.target : e;
     let maskedValue = value;
@@ -59,7 +61,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     console.log('🔍 Submitting form:', formData);
-  
+
     const result = vehicleFormSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof VeiculoFormulario, string>> = {};
@@ -71,7 +73,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
       console.log('🔍 Validation errors:', fieldErrors);
       return;
     }
-  
+
     onSubmit({ ...formData, arquivo: selectedFile });
     onOpenChange(false);
     setFormData({
@@ -105,12 +107,22 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>
-              <Input id="marca" value={formData.marca} onChange={handleChange} placeholder="Marca do veículo" />
+              <Input
+                id="marca"
+                value={formData.marca}
+                onChange={handleChange}
+                placeholder="Marca do veículo"
+              />
               {errors.marca && <span className="text-red-500 text-sm">{errors.marca}</span>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="modelo">Modelo</Label>
-              <Input id="modelo" value={formData.modelo} onChange={handleChange} placeholder="Modelo do veículo" />
+              <Input
+                id="modelo"
+                value={formData.modelo}
+                onChange={handleChange}
+                placeholder="Modelo do veículo"
+              />
               {errors.modelo && <span className="text-red-500 text-sm">{errors.modelo}</span>}
             </div>
           </div>
@@ -118,12 +130,23 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa</Label>
-              <Input id="placa" value={formData.placa} onChange={handleChange} placeholder="Placa do veículo" />
+              <Input
+                id="placa"
+                value={formData.placa}
+                onChange={handleChange}
+                placeholder="Placa do veículo"
+              />
               {errors.placa && <span className="text-red-500 text-sm">{errors.placa}</span>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="ano">Fabricação/Modelo</Label>
-              <Input id="ano" value={formData.ano} onChange={handleChange} placeholder="AAAA/YYYY" maxLength={9} />
+              <Input
+                id="ano"
+                value={formData.ano}
+                onChange={handleChange}
+                placeholder="AAAA/YYYY"
+                maxLength={9}
+              />
               {errors.ano && <span className="text-red-500 text-sm">{errors.ano}</span>}
             </div>
           </div>
@@ -131,12 +154,22 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cor">Cor</Label>
-              <Input id="cor" value={formData.cor} onChange={handleChange} placeholder="Cor do veículo" />
+              <Input
+                id="cor"
+                value={formData.cor}
+                onChange={handleChange}
+                placeholder="Cor do veículo"
+              />
               {errors.cor && <span className="text-red-500 text-sm">{errors.cor}</span>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="chassi">Chassi</Label>
-              <Input id="chassi" value={formData.chassi} onChange={handleChange} placeholder="Número do chassi" />
+              <Input
+                id="chassi"
+                value={formData.chassi}
+                onChange={handleChange}
+                placeholder="Número do chassi"
+              />
               {errors.chassi && <span className="text-red-500 text-sm">{errors.chassi}</span>}
             </div>
           </div>
@@ -144,32 +177,64 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quilometragemAtual">Quilometragem Atual</Label>
-              <Input id="quilometragemAtual" value={formData.quilometragemAtual} onChange={handleChange} placeholder="KM atual" />
-              {errors.quilometragemAtual && <span className="text-red-500 text-sm">{errors.quilometragemAtual}</span>}
+              <Input
+                id="quilometragemAtual"
+                value={formData.quilometragemAtual}
+                onChange={handleChange}
+                placeholder="KM atual"
+              />
+              {errors.quilometragemAtual && (
+                <span className="text-red-500 text-sm">{errors.quilometragemAtual}</span>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="quilometragemCompra">Quilometragem na Compra</Label>
-              <Input id="quilometragemCompra" value={formData.quilometragemCompra} onChange={handleChange} placeholder="KM na compra" />
-              {errors.quilometragemCompra && <span className="text-red-500 text-sm">{errors.quilometragemCompra}</span>}
+              <Input
+                id="quilometragemCompra"
+                value={formData.quilometragemCompra}
+                onChange={handleChange}
+                placeholder="KM na compra"
+              />
+              {errors.quilometragemCompra && (
+                <span className="text-red-500 text-sm">{errors.quilometragemCompra}</span>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="local">Local</Label>
-              <Input id="local" value={formData.local} onChange={handleChange} placeholder="Local do veículo" />
+              <Input
+                id="local"
+                value={formData.local}
+                onChange={handleChange}
+                placeholder="Local do veículo"
+              />
               {errors.local && <span className="text-red-500 text-sm">{errors.local}</span>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataCompra">Data da Compra</Label>
-              <Input id="dataCompra" value={formData.dataCompra} onChange={handleChange} placeholder="DD/MM/YYYY" maxLength={10} />
-              {errors.dataCompra && <span className="text-red-500 text-sm">{errors.dataCompra}</span>}
+              <Input
+                id="dataCompra"
+                value={formData.dataCompra}
+                onChange={handleChange}
+                placeholder="DD/MM/YYYY"
+                maxLength={10}
+              />
+              {errors.dataCompra && (
+                <span className="text-red-500 text-sm">{errors.dataCompra}</span>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={formData.nome} onChange={handleChange} placeholder="Nome do veículo" />
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={handleChange}
+              placeholder="Nome do veículo"
+            />
             {errors.nome && <span className="text-red-500 text-sm">{errors.nome}</span>}
           </div>
 
@@ -182,7 +247,9 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               placeholder="Observações adicionais"
               className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-none"
             />
-            {errors.observacoes && <span className="text-red-500 text-sm">{errors.observacoes}</span>}
+            {errors.observacoes && (
+              <span className="text-red-500 text-sm">{errors.observacoes}</span>
+            )}
           </div>
 
           <Label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition">
@@ -190,11 +257,21 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               <CloudUpload className="w-10 h-10" />
             </div>
             <p className="text-gray-600">Anexe o documento do veículo</p>
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleFileChange} />
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </Label>
 
           <div className="flex space-x-3 pt-4">
-            <Button variant="outline" className="flex-1 text-blue-600 border-blue-600" onClick={() => onOpenChange(false)} type="button">
+            <Button
+              variant="outline"
+              className="flex-1 text-blue-600 border-blue-600"
+              onClick={() => onOpenChange(false)}
+              type="button"
+            >
               Cancelar
             </Button>
             <Button className="flex-1 bg-blue-600 hover:bg-blue-700" type="submit">

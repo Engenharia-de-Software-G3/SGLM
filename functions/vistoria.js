@@ -5,7 +5,8 @@
 import express from 'express';
 const router = express.Router();
 
-import { criarVistoria } from '../src/scripts/firestore/firestoreVistoria.js';
+// Importando funções da Firestore para vistoria
+import { criarVistoria } from './scripts/firestore/firestoreVistoria.js';
 
 /**
  * Rota POST para criar uma nova vistoria.
@@ -34,7 +35,7 @@ router.post('/', async (req, res) => {
       !vistoriaData.placaVeiculo ||
       !vistoriaData.nomeEmpresa ||
       !vistoriaData.nomeFuncionario ||
-      !vistoriaData.quilometragem ||
+      (vistoriaData.quilometragem === undefined || vistoriaData.quilometragem === null) ||
       !vistoriaData.data
     ) {
       return res

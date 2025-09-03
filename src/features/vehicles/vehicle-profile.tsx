@@ -7,7 +7,11 @@ import { VehicleRecentActivitiesCard } from '../vehicles/components/vehicle-rece
 import { Layout } from '@/shared/components/layout';
 import { ReturnHeader } from '@/shared/components/return-header';
 import { VehicleActionDialog } from './components/vehicle-action-dialog';
-import { useGetVehicleQuery, useGetVehicleActivitiesQuery, useUpdateVehicleMutation } from '@/services/vehicle';
+import {
+  useGetVehicleQuery,
+  useGetVehicleActivitiesQuery,
+  useUpdateVehicleMutation,
+} from '@/services/vehicle';
 import type { VehicleData } from '@/services/vehicle/types';
 import { toast } from 'sonner';
 import { queryClient } from '@/lib/tanstack/query-client';
@@ -28,13 +32,12 @@ export const VehicleProfile = () => {
   } = useGetVehicleQuery(chassi || '');
 
   useEffect(() => {
-     if (vehicleQuery) setLocalVehicle(vehicleQuery);
+    if (vehicleQuery) setLocalVehicle(vehicleQuery);
   }, [vehicleQuery]);
 
-  const {
-    data: activities = [],
-    isLoading: isLoadingActivities,
-  } = useGetVehicleActivitiesQuery(chassi || '');
+  const { data: activities = [], isLoading: isLoadingActivities } = useGetVehicleActivitiesQuery(
+    chassi || '',
+  );
 
   const handleOpenActionDialog = () => {
     if (localVehicle) {
@@ -57,7 +60,7 @@ export const VehicleProfile = () => {
           setVehicleToEdit(null);
         },
         onError: () => toast.error('Erro ao atualizar veículo'),
-      }
+      },
     );
   };
 
@@ -127,10 +130,7 @@ export const VehicleProfile = () => {
             />
           )}
 
-          <VehicleRecentActivitiesCard
-            activities={activities}
-            isLoading={isLoadingActivities}
-          />
+          <VehicleRecentActivitiesCard activities={activities} isLoading={isLoadingActivities} />
         </div>
       </div>
 

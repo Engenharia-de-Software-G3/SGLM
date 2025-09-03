@@ -362,14 +362,14 @@ export const Rental = () => {
     const cleanValue = value.replace(/\D/g, '');
 
     switch (cleanValue.length) {
-      case 11: 
+      case 11:
         return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 
-      case 14: 
+      case 14:
         return cleanValue.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
 
       default:
-        return value; 
+        return value;
     }
   };
 

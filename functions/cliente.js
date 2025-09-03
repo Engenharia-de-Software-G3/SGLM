@@ -10,7 +10,9 @@ import {
   listarClientes,
   atualizarCliente,
   deletarCliente,
-} from '../src/scripts/firestore/firestoreClientes.js';
+  buscarClientePorCPF,
+} from './scripts/firestore/firestoreClientes.js';
+import { db } from './firebaseConfig.js';
 
 /**
  * Rota POST para criar um novo cliente.
@@ -31,16 +33,14 @@ router.post('/', async (req, res) => {
   try {
     const clienteData = req.body;
 
-    /**
-     * @todo Implementar validação completa dos dados de entrada (CPF, dados pessoais, contato, endereço, documentos).
-     * Considerar usar um esquema de validação (ex: Joi, Yup).
-     * Integrar middleware de autenticação e autorização.
-     * Adicionar validação de CPF duplicado usando verificarDocumentoExistente antes de criar.
-     */
     if (!clienteData || !clienteData.cpf || !clienteData.dadosPessoais) {
       return res
         .status(400)
         .send('Dados do cliente incompletos (CPF e dadosPessoais são obrigatórios).');
+    }
+
+    if (!/^\d{11}$/.test(clienteData.cpf)) {
+      return res.status(400).send('CPF inválido');
     }
 
     const resultado = await criarCliente(clienteData);
@@ -110,6 +110,59 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * Rota GET para buscar um cliente específico por CPF.
+ * Retorna todos os dados do cliente, incluindo subcoleções (endereços, contatos, documentos, dados bancários).
+ * @name GET /:cpf
+ * @function
+ * @memberof module:cliente
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} req.params.cpf - CPF do cliente a ser buscado (pode estar formatado ou não).
+ * @param {object} res - Objeto de resposta do Express.
+ * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ * @throws {Error} Em caso de erro interno no servidor ou no processo de busca no Firestore.
+ */
+router.get('/:cpf', async (req, res) => {
+  try {
+    const { cpf } = req.params;
+
+    // Validação básica do CPF
+    if (!cpf || cpf.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'CPF é obrigatório',
+        message: 'Informe um CPF válido para busca.' 
+      });
+    }
+
+    // Validação do formato do CPF
+    if (!/^\d{11}$/.test(cpf)) {
+      return res.status(400).send('CPF inválido');
+    }
+
+    const resultado = await buscarClientePorCPF(cpf);
+
+    if (resultado.success) {
+      res.status(200).json({
+        success: true,
+        cliente: resultado.cliente
+      });
+    } else {
+      const statusCode = resultado.error === 'Cliente não encontrado.' ? 404 : 500;
+      res.status(statusCode).json({ 
+        success: false,
+        error: resultado.error 
+      });
+    }
+  } catch (error) {
+    console.error('Erro inesperado na rota GET /clientes/:cpf:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor.',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
+/**
  * Rota PUT para atualizar um cliente existente.
  * Espera o CPF do cliente como parâmetro na URL e os dados a serem atualizados no corpo da requisição.
  * Realiza a atualização parcial do cliente no Firestore.
@@ -130,6 +183,10 @@ router.put('/:cpf', async (req, res) => {
 
     if (!updates || Object.keys(updates).length === 0) {
       return res.status(400).send('Nenhum dado fornecido para atualização.');
+    }
+
+    if (!/^\d{11}$/.test(cpf)) {
+      return res.status(400).send('CPF inválido');
     }
 
     const resultado = await atualizarCliente(cpf, updates);
@@ -162,6 +219,12 @@ router.put('/:cpf', async (req, res) => {
 router.delete('/:cpf', async (req, res) => {
   try {
     const { cpf } = req.params;
+
+    // Validação do formato do CPF
+    if (!/^\d{11}$/.test(cpf)) {
+      return res.status(400).send('CPF inválido');
+    }
+
 
     const resultado = await deletarCliente(cpf);
 

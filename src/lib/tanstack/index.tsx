@@ -1,10 +1,10 @@
-import { QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { ReactNode } from 'react'
-import { queryClient } from './query-client'
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ReactNode } from 'react';
+import { queryClient } from './query-client';
 
 interface TanstackProviderProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function TanstackProvider({ children }: TanstackProviderProps) {
@@ -13,5 +13,5 @@ export function TanstackProvider({ children }: TanstackProviderProps) {
       {children}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  )
+  );
 }

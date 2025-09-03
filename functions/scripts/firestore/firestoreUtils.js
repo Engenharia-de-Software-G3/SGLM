@@ -1,4 +1,4 @@
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../../firebaseConfig.js';
 
 export const verificarDocumentoExistente = async (tipo, valor) => {
   const snapshot = await db

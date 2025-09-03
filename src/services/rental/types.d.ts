@@ -4,9 +4,9 @@ export interface LocacaoInterface {
   placaVeiculo: string;
   dataInicio: string;
   dataFim: string;
-  valor: number | string; 
+  valor: number | string;
   periocidadePagamento: string;
- metodoPagamento: string;
+  metodoPagamento: string;
   status?: 'ativa' | 'finalizada' | 'cancelada';
   dataCadastro?: string;
   dataAtualizacao?: string;

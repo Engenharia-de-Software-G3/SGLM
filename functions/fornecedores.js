@@ -1,7 +1,11 @@
 import express from 'express';
 const router = express.Router();
 
-import { criarFornecedor } from '../src/scripts/firestore/firestoreFornecedores.js';
+// TODO: Importe sua função do Firestore para criar fornecedores aqui
+// Certifique-se de que o arquivo firestoreFornecedores.js usa export const
+// para a sua função de criação.
+// Exemplo:
+import { criarFornecedor } from './scripts/firestore/firestoreFornecedores.js';
 
 /**
  * Rota POST para criar um novo fornecedor.

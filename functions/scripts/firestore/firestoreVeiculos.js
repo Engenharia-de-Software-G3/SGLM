@@ -1,4 +1,4 @@
-import { db } from '../../../firebaseConfig.js';
+import { db } from '../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export const criarVeiculo = async (veiculoData) => {
@@ -27,18 +27,18 @@ export const criarVeiculo = async (veiculoData) => {
         placa: placa.replace(/-/g, ''), 
 
         modelo: veiculoData.modelo,
+        cor: veiculoData.cor,
         marca: veiculoData.marca,
         renavam: veiculoData.renavam,
-        numeroDocumento: veiculoData.numeroDocumento,
         anoModelo: {
-          fabricacao: parseInt(veiculoData.anoFabricacao),
-          modelo: parseInt(veiculoData.anoModelo),
+          fabricacao: veiculoData.anoModelo.fabricacao,
+          modelo: veiculoData.anoModelo.modelo,
         },
 
         quilometragem: parseInt(veiculoData.quilometragem),
         quilometragemNaCompra: parseInt(veiculoData.quilometragemNaCompra || '0'),
         dataCompra: new Date(veiculoData.dataCompra).toISOString(),
-        dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
+        //dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
 
         local: veiculoData.local,
         nome: veiculoData.nome,
@@ -57,55 +57,80 @@ export const criarVeiculo = async (veiculoData) => {
 };
 
 /**
- * Atualiza a placa de um veículo (via chassi)
+ * Busca um  veículo pelo id
  */
-export const atualizarPlaca = async (chassi, novaPlaca) => {
+export const buscaVeiculo = async (idVeiculo) => {
   try {
-    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+    // 1. Buscar veículo por id (campo único)
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
     if (snapshot.empty) {
       throw new Error('Veículo não encontrado.');
     }
+
+    // 2. Localiza ID do veiculo
     const veiculoRef = snapshot.docs[0].ref;
-    await veiculoRef.update({
-      placa: novaPlaca.replace(/-/g, ''),
-      dataAtualizacao: new Date().toISOString(),
-    });
+    const veiculoDoc = await veiculoRef.get();
+    const veiculoData = veiculoDoc.data();
 
-    return { success: true };
+    return { success: true,  veiculo:veiculoData};
   } catch (error) {
-    console.error('Erro ao atualizar placa:', error);
+    console.error('Erro ao localizar id:', error);
     return { success: false, error: error.message };
   }
 };
 
 /**
- * Registra venda de veículo (atualiza status e dataVenda)
+ * Atualiza um veículo no Firestore.
+ * @param {string} idVeiculo - ID do veículo
+ * @param {Object} updates - Campos a serem atualizados
+ * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const registrarVenda = async (chassi, dataVenda) => {
+export const atualizarVeiculo = async (idVeiculo, updates) => {
   try {
-    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+    if (!idVeiculo || !updates || Object.keys(updates).length === 0) {
+      return { success: false, error: 'ID do veículo ou dados de atualização ausentes.' };
+    }
 
-    if (snapshot.empty) throw new Error('Veículo não encontrado.');
+    // 1. Buscar veículo pelo campo 'id' (igual à função buscarPorId)
+    const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
-    await snapshot.docs[0].ref.update({
-      status: 'vendido',
-      dataVenda: new Date(dataVenda).toISOString(),
+    if (snapshot.empty) {
+      return { success: false, error: 'Veículo não encontrado.' };
+    }
+
+    // 2. Obter a referência do documento encontrado
+    const veiculoDocRef = snapshot.docs[0].ref;
+
+    // Clonar o objeto para não alterar o original
+    const updateData = { ...updates };
+
+    // Transformações de tipos
+    if (updateData.placa) updateData.placa = updateData.placa.replace(/-/g, '');
+    if (updateData.quilometragem) updateData.quilometragem = parseInt(updateData.quilometragem);
+    if (updateData.quilometragemNaCompra) updateData.quilometragemNaCompra = parseInt(updateData.quilometragemNaCompra);
+    if (updateData.anoModelo?.fabricacao) updateData.anoModelo.fabricacao = parseInt(updateData.anoModelo.fabricacao);
+    if (updateData.anoModelo?.modelo) updateData.anoModelo.modelo = parseInt(updateData.anoModelo.modelo);
+    if (updateData.dataCompra) updateData.dataCompra = new Date(updateData.dataCompra).toISOString();
+
+    // 3. Atualizar usando a referência do documento correto
+    await veiculoDocRef.update({
+      ...updateData,
       dataAtualizacao: new Date().toISOString(),
     });
 
     return { success: true };
   } catch (error) {
-    console.error('Erro ao registrar venda:', error);
+    console.error(`Erro ao atualizar veículo ${idVeiculo}:`, error);
     return { success: false, error: error.message };
   }
 };
 
 /**
- * Busca veículo por chassi (campo único)
+ * Busca veículo por id (campo único)
  */
-export const buscarPorChassi = async (chassi) => {
-  const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+export const buscarPorId = async (idVeiculo) => {
+  const snapshot = await db.collection('veiculos').where('id', '==', idVeiculo).limit(1).get();
 
   return snapshot.empty ? null : snapshot.docs[0].data();
 };
@@ -115,7 +140,11 @@ export const buscarPorChassi = async (chassi) => {
  */
 export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   try {
-    let query = db.collection('veiculos').orderBy('placa').limit(limite);
+    let query = db.collection('veiculos').limit(limite);
+
+    if (!filtros.status && !filtros.placa && !filtros.marca && !filtros.modelo) {
+      query = query.orderBy('placa');
+    }
 
     if (filtros.placa) {
       query = query.where('placa', '==', filtros.placa.replace(/-/g, ''));
@@ -129,6 +158,11 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
       query = query.where('marca', '==', filtros.marca);
     }
 
+    if (filtros.modelo) {
+      query = query.where('modelo', '==', filtros.modelo);
+    }
+
+    // Paginação
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);
     }

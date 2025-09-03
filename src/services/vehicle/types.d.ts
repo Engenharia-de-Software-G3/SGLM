@@ -27,7 +27,7 @@ export interface GetVehiclesParams {
 
 export interface CreateVehicleInterface extends Omit<VehicleData, 'id'> {
   file?: File | null;
-};
+}
 
 export type UpdateVehicleInterface = Partial<Omit<VehicleData, 'id' | 'chassi' | 'placa'>>;
 
@@ -48,7 +48,7 @@ export interface VehicleActivity {
   date: string;
   status: StatusVehicle;
   statusColor: string;
-  description?: string; 
+  description?: string;
 }
 
-export type StatusVehicle = 'disponivel' | 'alugado' | 'manutencao'
+export type StatusVehicle = 'disponivel' | 'alugado' | 'manutencao';

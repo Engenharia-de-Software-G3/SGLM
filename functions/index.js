@@ -32,7 +32,7 @@ app.use(cors({ origin: true }));
  * @returns {void} Envia uma resposta HTTP.
  */
 app.get('/hello-world', (req, res) => {
-  return res.status(200).send('Hello World!');
+  return res.status(200).send('Hello World from feat/ui-sglm-partial branch!');
 });
 
 /**
@@ -82,6 +82,15 @@ app.use('/vistorias', vistoriasRouter);
  */
 import locacoesRouter from './locacoes.js';
 app.use('/locacoes', locacoesRouter);
+
+// Rota contrato
+/**
+ * Importa e monta o roteador para as operações relacionadas a contratos.
+ * Todas as rotas definidas em './contrato' serão acessíveis sob o prefixo '/contratos'.
+ * @type {express.Router}
+ */
+import contratosRouter from './contrato.js';
+app.use('/contratos', contratosRouter);
 
 /**
  * Exporta o aplicativo Express como uma Cloud Function HTTP.

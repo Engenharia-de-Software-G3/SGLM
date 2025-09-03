@@ -24,5 +24,5 @@ export interface EditVehicleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: VeiculoFormulario) => void;
-  vehicle:  VehicleData| null;
+  vehicle: VehicleData | null;
 }

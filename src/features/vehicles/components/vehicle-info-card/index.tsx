@@ -23,7 +23,7 @@ export function VehicleInfoCard({
   quilometragemAtual,
 }: VehicleInfoCardProps) {
   const getStatusColor = (status: StatusVehicle) => {
-    console.log(`status: getStatusColor`, { status})
+    console.log(`status: getStatusColor`, { status });
     switch (status) {
       case 'disponivel':
         return 'bg-green-100 text-green-800';
@@ -82,4 +82,4 @@ export function VehicleInfoCard({
       </div>
     </Card>
   );
-};
+}
