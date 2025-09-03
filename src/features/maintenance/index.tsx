@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Layout } from '@/shared/components/layout';
 import { Plus, Loader2 } from 'lucide-react';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
@@ -20,7 +21,33 @@ export const Maintenance = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadManutencoes();
+    const fetchManutencoes = async () => {
+      setLoading(true);
+      try {
+        const allManutencoes = await getManutencoes();
+        setManutencoes(allManutencoes);
+      } catch (err) {
+        console.error('Erro ao buscar manutenções:', err);
+        setManutencoes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchManutencoes();
+  }, []);
+
+  useEffect(() => {
+    const storedVehicle = localStorage.getItem('filterMaintenanceByVehicle');
+    if (storedVehicle) {
+      try {
+        const placa = JSON.parse(storedVehicle);
+        setSearchTerm(placa);
+      } catch (error) {
+        console.error('Erro ao parsear filterMaintenanceByVehicle:', error);
+      }
+      localStorage.removeItem('filterMaintenanceByVehicle');
+    }
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -98,6 +125,7 @@ export const Maintenance = () => {
               { key: 'date', title: 'Data' },
               { key: 'value', title: 'Valor' },
               { key: 'mileage', title: 'Quilometragem' },
+              { key: 'status', title: 'Status' },
               { key: 'actions', title: 'Ações' },
             ]}
             renderRow={(m) => (
@@ -116,6 +144,9 @@ export const Maintenance = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {m.quilometragem} km
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <StatusBadge status={m.status || 'em_andamento'} type="maintenance" />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">

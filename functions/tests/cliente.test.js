@@ -207,7 +207,7 @@ describe('Cliente Routes', () => {
 
     test('deve retornar erro 400 quando CPF contém caracteres não numéricos', async () => {
       const clienteData = {
-        cpf: '123.456.789-01',  // CPF formatado com pontos e hífen
+        cpf: '123.456.789-0a',  // CPF formatado com pontos e hífen
         dadosPessoais: {
           nome: 'João Silva'
         }
@@ -958,6 +958,25 @@ describe('Cliente Routes', () => {
         message: 'Erro ao deletar cliente',
         error: 'Erro no Firestore'
       });
+    });
+
+    test('deve impedir deleção de cliente com locações ativas', async () => {
+      const cpf = '12345678901';
+
+      deletarCliente.mockResolvedValue({
+        success: false,
+        error: 'Não é possível deletar o cliente pois ele possui locações ativas. Finalize ou cancele as locações antes de deletar o cliente.'
+      });
+
+      const response = await request(app)
+        .delete(`/clientes/${cpf}`)
+        .expect(500);
+
+      expect(response.body).toEqual({
+        message: 'Erro ao deletar cliente',
+        error: 'Não é possível deletar o cliente pois ele possui locações ativas. Finalize ou cancele as locações antes de deletar o cliente.'
+      });
+      expect(deletarCliente).toHaveBeenCalledWith(cpf);
     });
 
     test('deve capturar erros inesperados na deleção', async () => {

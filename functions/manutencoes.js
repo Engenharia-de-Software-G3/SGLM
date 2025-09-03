@@ -151,6 +151,37 @@ router.delete('/:idManutencao', async (req, res) => {
 });
 
 /**
+ * Rota para REMOVER UMA MANUTENÇÃO PERMANENTEMENTE.
+ * Esta é a nova rota de exclusão real.
+ * @name DELETE /:idManutencao/permanente
+ * @function
+ * @memberof module:manutencoes
+ * @param {object} req - Objeto de requisição do Express.
+ * @param {string} req.params.idManutencao - id da manutenção a ser removida.
+ * @param {object} res - Objeto de resposta do Express para enviar o status e o corpo da resposta.
+ * @returns {Promise<void>} Uma Promessa que resolve quando a resposta é enviada.
+ * @throws {Error} Em caso de erro interno no servidor ou no processo de exclusão no Firestore.
+ */
+router.delete('/:idManutencao/permanente', async (req, res) => {
+  try {
+    const { idManutencao } = req.params;
+
+    const resultado = await removerManutencaoPermanente(idManutencao);
+
+    if (resultado.success) {
+      res.status(200).send({ message: `Manutenção ${idManutencao} removida permanentemente!` });
+    } else {
+      const statusCode = resultado.error === 'Manutenção não encontrada.' ? 404 : 500;
+      res.status(statusCode).send({ message: 'Erro ao remover manutenção', error: resultado.error });
+    }
+  } catch (error) {
+    console.error('Erro inesperado na rota DELETE /manutencoes/:idManutencao/permanente:', error);
+    res.status(500).send('Erro interno do servidor.');
+  }
+});
+
+
+/**
  * Exporta o roteador Express para ser utilizado no arquivo principal (index.js).
  * @type {express.Router}
  */

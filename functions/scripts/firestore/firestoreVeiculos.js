@@ -17,7 +17,19 @@ export const criarVeiculo = async (veiculoData) => {
       throw new Error('Chassi já cadastrado no sistema.');
     }
 
-    // 2. Criar documento com estrutura completa
+    // 2. Validar placa única
+    const placaLimpa = placa.replace(/-/g, '');
+    const placaExistente = await db
+      .collection('veiculos')
+      .where('placa', '==', placaLimpa)
+      .limit(1)
+      .get();
+
+    if (!placaExistente.empty) {
+      throw new Error('Placa já cadastrada no sistema.');
+    }
+
+    // 3. Criar documento com estrutura completa
     await db
       .collection('veiculos')
       .doc(id)

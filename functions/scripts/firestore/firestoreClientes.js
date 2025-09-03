@@ -117,6 +117,58 @@ export const criarCliente = async (clienteData) => {
  */
 export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = {} }) => {
   try {
+    // Se há filtro por CPF, buscar diretamente o documento específico
+    if (filtros.cpf) {
+      const cleanCpf = filtros.cpf.replace(/\D/g, '');
+      const clienteDoc = await db.collection('clientes').doc(cleanCpf).get();
+      
+      if (clienteDoc.exists) {
+        const clienteData = { id: clienteDoc.id, ...clienteDoc.data() };
+        const clienteRef = clienteDoc.ref;
+        
+        // Adicionar CPF formatado
+        const cpf = clienteDoc.id;
+        clienteData.cpf = `${cpf.substring(0, 3)}.${cpf.substring(3, 6)}.${cpf.substring(6, 9)}-${cpf.substring(9, 11)}`;
+        
+        // Buscar dados adicionais das subcoleções
+        try {
+          const dadosBancariosSnapshot = await clienteRef.collection('dados-bancarios').doc('principal').get();
+          if (dadosBancariosSnapshot.exists) {
+            const dadosBancarios = dadosBancariosSnapshot.data();
+            clienteData.dadosBancarios = {
+              banco: dadosBancarios.banco,
+              agencia: `${dadosBancarios.agencia}-${dadosBancarios.agenciaDigito}`,
+              conta: `${dadosBancarios.conta}-${dadosBancarios.contaDigito}`
+            };
+          }
+        } catch (error) {
+          console.warn(`Erro ao buscar dados bancários para cliente ${clienteDoc.id}:`, error);
+        }
+        
+        try {
+          const contatoSnapshot = await clienteRef.collection('contatos').doc('principal').get();
+          if (contatoSnapshot.exists) {
+            const contato = contatoSnapshot.data();
+            clienteData.email = contato.email;
+            clienteData.telefone = contato.telefone;
+          }
+        } catch (error) {
+          console.warn(`Erro ao buscar contato para cliente ${clienteDoc.id}:`, error);
+        }
+        
+        return {
+          clientes: [clienteData],
+          ultimoDoc: null,
+        };
+      } else {
+        return {
+          clientes: [],
+          ultimoDoc: null,
+        };
+      }
+    }
+
+    // Query normal quando não há filtro por CPF
     let query = db.collection('clientes').orderBy('nomeCompleto').limit(limite);
 
     if (filtros.nome) {
@@ -127,11 +179,6 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
 
     if (filtros.tipo) {
       query = query.where('tipo', '==', filtros.tipo);
-    }
-
-    if (filtros.cpf) {
-      const cleanCpf = filtros.cpf.replace(/\D/g, '');
-      query = query.where('cpf', '==', cleanCpf);
     }
 
     if (ultimoDoc) {
@@ -346,6 +393,7 @@ export const buscarClientePorCPF = async (cpf) => {
 
 /**
  * Deleta um cliente e suas subcoleções associadas do Firestore.
+ * Verifica se o cliente possui locações ativas antes de permitir a deleção.
  * @param {string} cpf - CPF do cliente a ser deletado.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
@@ -356,6 +404,21 @@ export const deletarCliente = async (cpf) => {
     const doc = await clienteRef.get();
     if (!doc.exists) {
       return { success: false, error: 'Cliente não encontrado.' };
+    }
+
+    // Verificar se o cliente possui locações ativas
+    const locacoesAtivas = await db
+      .collection('locacoes')
+      .where('clienteId', '==', cpf)
+      .where('status', '==', 'ativa')
+      .limit(1)
+      .get();
+
+    if (!locacoesAtivas.empty) {
+      return { 
+        success: false, 
+        error: 'Não é possível deletar o cliente pois ele possui locações ativas. Finalize ou cancele as locações antes de deletar o cliente.' 
+      };
     }
 
     // Deleta subcoleções (Firestore não deleta subcoleções automaticamente com o documento pai)
