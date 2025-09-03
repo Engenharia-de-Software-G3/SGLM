@@ -16,8 +16,9 @@ export const criarLocacao = async (locacaoData) => {
   try {
     const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor, periocidadePagamento, metodoPagamento } = locacaoData;
 
-    // 1. Validar cliente
-    const clienteRef = db.collection('clientes').doc(cpfLocatario);
+    // 1. Validar cliente - limpar CPF para busca
+    const cpfLimpo = cpfLocatario.replace(/\D/g, '');
+    const clienteRef = db.collection('clientes').doc(cpfLimpo);
     const clienteDoc = await clienteRef.get();
 
     if (!clienteDoc.exists) {
@@ -58,7 +59,7 @@ export const criarLocacao = async (locacaoData) => {
       .doc(id)
       .set({
         id,
-        clienteId: cpfLocatario,
+        clienteId: cpfLimpo,
         veiculoId: veiculoDoc.id,
         placaVeiculo: placaFormatada,
         dataInicio: parseDate(dataInicio).toISOString(),

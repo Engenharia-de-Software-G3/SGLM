@@ -960,6 +960,25 @@ describe('Cliente Routes', () => {
       });
     });
 
+    test('deve impedir deleção de cliente com locações ativas', async () => {
+      const cpf = '12345678901';
+
+      deletarCliente.mockResolvedValue({
+        success: false,
+        error: 'Não é possível deletar o cliente pois ele possui locações ativas. Finalize ou cancele as locações antes de deletar o cliente.'
+      });
+
+      const response = await request(app)
+        .delete(`/clientes/${cpf}`)
+        .expect(500);
+
+      expect(response.body).toEqual({
+        message: 'Erro ao deletar cliente',
+        error: 'Não é possível deletar o cliente pois ele possui locações ativas. Finalize ou cancele as locações antes de deletar o cliente.'
+      });
+      expect(deletarCliente).toHaveBeenCalledWith(cpf);
+    });
+
     test('deve capturar erros inesperados na deleção', async () => {
       const cpf = '12345678901';
 

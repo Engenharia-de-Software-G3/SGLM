@@ -11,4 +11,5 @@ export interface Manutencao {
   valor: number;
   quilometragem: number;
   data: string;
+  status?: string;
 }

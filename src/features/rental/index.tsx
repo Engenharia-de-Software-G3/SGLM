@@ -3,6 +3,7 @@ import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { FileText, Plus, Download } from 'lucide-react';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
@@ -31,6 +32,7 @@ interface DisplayRentalData {
   locatario: string;
   placa: string;
   cpf: string;
+  status: string;
 }
 
 export const Rental = () => {
@@ -101,6 +103,7 @@ export const Rental = () => {
             locatario: client?.nomeCompleto || `Cliente ${locacao.clienteId}` || 'N/A',
             placa: locacao.placaVeiculo || 'N/A',
             cpf: locacao.clienteId || '',
+            status: locacao.status || 'ativa',
           };
         }),
       );
@@ -410,6 +413,7 @@ export const Rental = () => {
               { key: 'locatario', title: 'Locatário' },
               { key: 'placa', title: 'Placa' },
               { key: 'cpf', title: 'CPF/CNPJ' },
+              { key: 'status', title: 'Status' },
               { key: 'actions', title: 'Ações' },
             ]}
             renderRow={(rental) => (
@@ -434,6 +438,9 @@ export const Rental = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatCpfCnpj(rental.cpf)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <StatusBadge status={rental.status} type="rental" />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
