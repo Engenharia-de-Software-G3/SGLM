@@ -135,7 +135,8 @@ export const listarManutencao = async (veiculoId, { limite = 10, ultimoDoc = nul
 };
 
 /**
- * Finaliza uma manutenção (marca como concluída) e libera o veículo
+ * FINALIZA uma manutenção e libera o veículo.
+ * ESTA FUNÇÃO TEM O NOME "deletarManutencao" POR CONVENÇÃO EXISTENTE, MAS SEU PROPÓSITO É FINALIZAR.
  * @param {string} id - id da manutenção a ser finalizada.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
@@ -175,6 +176,31 @@ export const deletarManutencao = async (id) => {
     return { success: true };
   } catch (error) {
     console.error(`Erro ao finalizar manutenção ${id}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Deleta uma manutenção permanentemente do Firestore.
+ * Esta é a função para exclusão real.
+ * @param {string} id - id da manutenção a ser removida.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const removerManutencaoPermanente = async (id) => {
+  try {
+    const manutencaoRef = db.collection('manutencoes').doc(id);
+    
+    // Verifica se a manutenção existe
+    const doc = await manutencaoRef.get();
+    if (!doc.exists) {
+      return { success: false, error: 'Manutenção não encontrada.' };
+    }
+
+    await manutencaoRef.delete();
+    
+    return { success: true };
+  } catch (error) {
+    console.error(`Erro ao remover manutenção ${id}:`, error);
     return { success: false, error: error.message };
   }
 };
