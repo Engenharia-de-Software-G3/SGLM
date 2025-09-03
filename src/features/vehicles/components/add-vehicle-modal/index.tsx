@@ -208,7 +208,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
                 id="local"
                 value={formData.local}
                 onChange={handleChange}
-                placeholder="Local do veículo"
+                placeholder="Local da compra"
               />
               {errors.local && <span className="text-red-500 text-sm">{errors.local}</span>}
             </div>
@@ -233,7 +233,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
               id="nome"
               value={formData.nome}
               onChange={handleChange}
-              placeholder="Nome do veículo"
+              placeholder="Nome do proprietário"
             />
             {errors.nome && <span className="text-red-500 text-sm">{errors.nome}</span>}
           </div>
