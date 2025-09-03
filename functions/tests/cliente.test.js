@@ -207,7 +207,7 @@ describe('Cliente Routes', () => {
 
     test('deve retornar erro 400 quando CPF contém caracteres não numéricos', async () => {
       const clienteData = {
-        cpf: '123.456.789-01',  // CPF formatado com pontos e hífen
+        cpf: '123.456.789-0a',  // CPF formatado com pontos e hífen
         dadosPessoais: {
           nome: 'João Silva'
         }
