@@ -20,12 +20,18 @@ const {
 
 describe('Locações Routes', () => {
   let app;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     // Importa o app aqui para garantir que os mocks sejam aplicados por teste
     const locacoesApp = require('../locacoes.js').default;
     app = locacoesApp;
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   afterEach(() => {

@@ -69,7 +69,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { limite, ultimoDocId, ...filtrosQuery } = req.query;
-    D
+
     // Converter e validar parâmetros
     let limiteNum = 10; // Padrão
     if (limite) {

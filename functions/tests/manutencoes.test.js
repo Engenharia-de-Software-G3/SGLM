@@ -26,9 +26,11 @@ const { db } = require('../firebaseConfig.js');
 describe('Manutenções Routes', () => {
   let app;
   let manutencaoRouter;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     // Import the actual router after mocks are set up
     delete require.cache[require.resolve('../manutencoes.js')];
@@ -37,6 +39,10 @@ describe('Manutenções Routes', () => {
     app = express();
     app.use(express.json());
     app.use('/manutencoes', manutencaoRouter);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   describe('POST /manutencoes', () => {

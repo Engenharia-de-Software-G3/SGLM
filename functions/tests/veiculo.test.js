@@ -3,8 +3,9 @@ const express = require('express');
 
 // Mocks
 const mockGet = jest.fn();
-const mockLimit = jest.fn(() => ({ get: mockGet }));
-const mockWhere = jest.fn(() => ({ limit: mockLimit }));
+const mockOrderBy = jest.fn(() => ({ get: mockGet }));
+const mockLimit = jest.fn(() => ({ orderBy: mockOrderBy, get: mockGet }));
+const mockWhere = jest.fn(() => ({ limit: mockLimit, orderBy: mockOrderBy }));
 
 jest.mock('../firebaseConfig.js', () => ({
   db: {
@@ -13,6 +14,8 @@ jest.mock('../firebaseConfig.js', () => ({
         get: jest.fn().mockResolvedValue({ exists: docId !== 'invalid' }),
       })),
       where: mockWhere,
+      limit: mockLimit,
+      orderBy: mockOrderBy,
     })),
   },
 }));
@@ -35,9 +38,11 @@ const {
 
 describe('Veículos Routes', () => {
   let app;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     // Importa o router aqui para garantir que os mocks sejam aplicados por teste
     const veiculoRouter = require('../veiculo.js').default;
     app = express();
@@ -46,6 +51,7 @@ describe('Veículos Routes', () => {
   });
 
   afterEach(() => {
+    consoleErrorSpy.mockRestore();
     delete require.cache[require.resolve('../veiculo.js')];
   });
 
