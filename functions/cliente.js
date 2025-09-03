@@ -39,7 +39,10 @@ router.post('/', async (req, res) => {
         .send('Dados do cliente incompletos (CPF e dadosPessoais são obrigatórios).');
     }
 
-    if (!/^\d{11}$/.test(clienteData.cpf)) {
+    // Remove formatação do CPF para validação
+    const cpfLimpo = clienteData.cpf.replace(/\D/g, '');
+    
+    if (!/^\d{11}$/.test(cpfLimpo)) {
       return res.status(400).send('CPF inválido');
     }
 

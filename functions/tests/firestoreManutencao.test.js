@@ -258,26 +258,54 @@ describe('firestoreManutencao', () => {
   });
 
   describe('deletarManutencao', () => {
-    test('deve deletar manutenção com sucesso', async () => {
+    test('deve finalizar manutenção com sucesso', async () => {
       const idManutencao = 'manut123';
+      const manutencaoData = { placaVeiculo: 'ABC1234' };
 
       const mockDoc = {
-        get: jest.fn().mockResolvedValue({ exists: true }),
-        delete: jest.fn().mockResolvedValue()
+        get: jest.fn().mockResolvedValue({ 
+          exists: true,
+          data: () => manutencaoData
+        }),
+        update: jest.fn().mockResolvedValue()
       };
 
-      const mockCollection = {
+      const mockVeiculoDoc = {
+        ref: {
+          update: jest.fn().mockResolvedValue()
+        }
+      };
+
+      const mockVeiculosSnapshot = {
+        empty: false,
+        docs: [mockVeiculoDoc]
+      };
+
+      const mockVeiculosQuery = {
+        limit: jest.fn(() => ({
+          get: jest.fn().mockResolvedValue(mockVeiculosSnapshot)
+        }))
+      };
+
+      const mockVeiculosCollection = {
+        where: jest.fn(() => mockVeiculosQuery)
+      };
+
+      const mockManutencoesCollection = {
         doc: jest.fn(() => mockDoc)
       };
 
-      db.collection.mockReturnValue(mockCollection);
+      db.collection
+        .mockReturnValueOnce(mockManutencoesCollection)
+        .mockReturnValueOnce(mockVeiculosCollection);
 
       // Execute
       const resultado = await deletarManutencao(idManutencao);
 
       // Assert
       expect(resultado.success).toBe(true);
-      expect(mockDoc.delete).toHaveBeenCalled();
+      expect(mockDoc.update).toHaveBeenCalled();
+      expect(mockVeiculoDoc.ref.update).toHaveBeenCalled();
     });
 
     test('deve retornar erro quando manutenção não existe', async () => {
@@ -285,7 +313,7 @@ describe('firestoreManutencao', () => {
 
       const mockDoc = {
         get: jest.fn().mockResolvedValue({ exists: false }),
-        delete: jest.fn()
+        update: jest.fn()
       };
 
       const mockCollection = {
@@ -300,15 +328,19 @@ describe('firestoreManutencao', () => {
       // Assert
       expect(resultado.success).toBe(false);
       expect(resultado.error).toBe('Manutenção não encontrada.');
-      expect(mockDoc.delete).not.toHaveBeenCalled();
+      expect(mockDoc.update).not.toHaveBeenCalled();
     });
 
-    test('deve retornar erro quando falha ao deletar', async () => {
+    test('deve retornar erro quando falha ao finalizar', async () => {
       const idManutencao = 'manut123';
+      const manutencaoData = { placaVeiculo: 'ABC1234' };
 
       const mockDoc = {
-        get: jest.fn().mockResolvedValue({ exists: true }),
-        delete: jest.fn().mockRejectedValue(new Error('Erro no Firestore'))
+        get: jest.fn().mockResolvedValue({ 
+          exists: true,
+          data: () => manutencaoData
+        }),
+        update: jest.fn().mockRejectedValue(new Error('Erro no Firestore'))
       };
 
       const mockCollection = {
@@ -322,7 +354,7 @@ describe('firestoreManutencao', () => {
 
       // Assert
       expect(resultado.success).toBe(false);
-      expect(resultado.error).toContain('Erro no Firestore');
+      expect(resultado.error).toBe('Erro no Firestore');
     });
   });
 });

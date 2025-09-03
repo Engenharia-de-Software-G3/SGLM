@@ -43,7 +43,8 @@ export const adicionarManutencao = async (manutencaoData) => {
           placaVeiculo: placaFormatada,
           valor: Number(valor),
           quilometragem: veiculoData.quilometragem,
-          data: new Date().toISOString()
+          data: new Date().toISOString(),
+          status: 'em_andamento'
         });
 
     // 4. Atualizar status do veículo
@@ -134,8 +135,8 @@ export const listarManutencao = async (veiculoId, { limite = 10, ultimoDoc = nul
 };
 
 /**
- * Deleta uma manutenção e suas subcoleções associadas do Firestore.
- * @param {string} id - id da manutenção a ser deletada.
+ * Finaliza uma manutenção (marca como concluída) e libera o veículo
+ * @param {string} id - id da manutenção a ser finalizada.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export const deletarManutencao = async (id) => {
@@ -148,12 +149,32 @@ export const deletarManutencao = async (id) => {
       return { success: false, error: 'Manutenção não encontrada.' };
     }
 
-    // Deleta o documento principal da manutenção
-    await manutencaoRef.delete();
+    const manutencaoData = doc.data();
+    
+    // Marca a manutenção como concluída
+    await manutencaoRef.update({
+      status: 'concluida',
+      dataFinalizacao: new Date().toISOString()
+    });
+
+    // Libera o veículo (volta para disponível)
+    const veiculosSnapshot = await db
+      .collection('veiculos')
+      .where('placa', '==', manutencaoData.placaVeiculo)
+      .limit(1)
+      .get();
+
+    if (!veiculosSnapshot.empty) {
+      const veiculoDoc = veiculosSnapshot.docs[0];
+      await veiculoDoc.ref.update({
+        status: 'disponivel',
+        dataAtualizacao: new Date().toISOString(),
+      });
+    }
 
     return { success: true };
   } catch (error) {
-    console.error(`Erro ao deletar manutenção ${id}:`, error);
+    console.error(`Erro ao finalizar manutenção ${id}:`, error);
     return { success: false, error: error.message };
   }
 };

@@ -17,7 +17,7 @@ export const criarLocacao = async (locacaoData) => {
     const { cpfLocatario, placaVeiculo, dataInicio, dataFim, valor, periocidadePagamento, metodoPagamento } = locacaoData;
 
     // 1. Validar cliente
-    const clienteRef = db.collection('clientes').doc(cpfLocatorio);
+    const clienteRef = db.collection('clientes').doc(cpfLocatario);
     const clienteDoc = await clienteRef.get();
 
     if (!clienteDoc.exists) {
@@ -176,7 +176,7 @@ export const atualizarLocacao = async (id, locacaoData) => {
 };
 
 /**
- * Exclui uma locação
+ * Finaliza uma locação (marca como finalizada) e libera o veículo
  * @param {string} id - ID da locação
  * @returns {Promise<{success: boolean, error?: string}>}
  */
@@ -191,6 +191,14 @@ export const excluirLocacao = async (id) => {
 
     const locacaoData = locacaoDoc.data();
 
+    // Marca a locação como finalizada
+    await locacaoRef.update({
+      status: 'finalizada',
+      dataFinalizacao: new Date().toISOString(),
+      dataAtualizacao: new Date().toISOString()
+    });
+
+    // Libera o veículo se estava ativa
     if (locacaoData.status === 'ativa' && locacaoData.veiculoId) {
       const veiculoRef = db.collection('veiculos').doc(locacaoData.veiculoId);
       await veiculoRef.update({
@@ -199,11 +207,9 @@ export const excluirLocacao = async (id) => {
       });
     }
 
-    await locacaoRef.delete();
-
     return { success: true };
   } catch (error) {
-    console.error('Erro ao excluir locação:', error);
+    console.error('Erro ao finalizar locação:', error);
     return { success: false, error: error.message };
   }
 };
