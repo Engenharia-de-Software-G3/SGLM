@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import type { VehicleActionDialogProps } from './@types';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export const VehicleActionDialog = ({
   isOpen,
@@ -13,6 +14,12 @@ export const VehicleActionDialog = ({
 }: VehicleActionDialogProps) => {
   const [isEditingKm, setIsEditingKm] = useState(false);
   const [newKm, setNewKm] = useState<string>('');
+  const navigate = useNavigate();
+
+  const filterByMaintenance = () => {
+    localStorage.setItem('filterMaintenanceByVehicle', JSON.stringify(vehicle?.placa || ''));
+    navigate('/manutencoes');
+  };
 
   const actions = [
     {
@@ -23,7 +30,10 @@ export const VehicleActionDialog = ({
     {
       label: 'Histórico de Manutenções e Serviços',
       color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: () => console.log(`🛠 Histórico de Manutenções do veículo ${vehicle?.id}`),
+      onClick: () => {
+        console.log(`🛠 Histórico de Manutenções do veículo ${vehicle?.id}`);
+        filterByMaintenance();
+      },
     },
     {
       label: 'Histórico de Locações',

@@ -21,7 +21,33 @@ export const Maintenance = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadManutencoes();
+    const fetchManutencoes = async () => {
+      setLoading(true);
+      try {
+        const allManutencoes = await getManutencoes();
+        setManutencoes(allManutencoes);
+      } catch (err) {
+        console.error('Erro ao buscar manutenções:', err);
+        setManutencoes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchManutencoes();
+  }, []);
+
+  useEffect(() => {
+    const storedVehicle = localStorage.getItem('filterMaintenanceByVehicle');
+    if (storedVehicle) {
+      try {
+        const placa = JSON.parse(storedVehicle);
+        setSearchTerm(placa);
+      } catch (error) {
+        console.error('Erro ao parsear filterMaintenanceByVehicle:', error);
+      }
+      localStorage.removeItem('filterMaintenanceByVehicle');
+    }
   }, []);
 
   const handleDelete = async (id: string) => {
