@@ -30,19 +30,6 @@ interface FormInputProps<T extends FieldValues> {
   children?: ReactNode | ((props: FieldProps) => ReactNode);
 }
 
-const formatCurrency = (value: string): string => {
-  const onlyNumbers = value.replace(/\D/g, '');
-
-  const numberValue = parseInt(onlyNumbers, 10) / 100;
-
-  return numberValue.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
 export function FormInput<T extends FieldValues>({
   label,
   id,
@@ -71,9 +58,16 @@ export function FormInput<T extends FieldValues>({
         render={({ field: { onChange, onBlur, value, name: fieldName } }) => {
           const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
             if (type === 'number') {
-              const formattedValue = formatCurrency(e.target.value);
-              e.target.value = formattedValue;
-              onChange(formattedValue); // Envia string formatada (ex: "R$ 1.234,56")
+              console.log('handleChange - valor original:', e.target.value);
+              // Remove tudo exceto números
+              const onlyNumbers = e.target.value.replace(/\D/g, '');
+              if (onlyNumbers) {
+                const numberValue = parseInt(onlyNumbers, 10) / 100;
+                console.log('handleChange - valor convertido:', numberValue);
+                onChange(numberValue);
+              } else {
+                onChange(0);
+              }
             } else {
               onChange(e.target.value);
             }
@@ -81,16 +75,26 @@ export function FormInput<T extends FieldValues>({
 
           const handleBlur = () => {
             if (type === 'number' && value) {
-              const formattedValue = formatCurrency(String(value));
-              onChange(formattedValue); // string
+              console.log('handleBlur - valor atual:', value);
+              // Preserva zeros à direita
+              const preservedValue = Number(value.toFixed(2));
+              console.log('handleBlur - valor preservado:', preservedValue);
+              onChange(preservedValue);
             }
             onBlur();
           };
 
           const displayValue =
             type === 'number'
-              ? formatCurrency(String(value ?? '')) // sempre string formatada
-              : String(value ?? '');
+              ? value
+                ? value.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : ''
+              : value;
 
           const fieldProps: FieldProps = {
             id,

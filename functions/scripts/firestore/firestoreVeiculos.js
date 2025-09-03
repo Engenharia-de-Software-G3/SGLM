@@ -1,15 +1,9 @@
 import { db } from '../../firebaseConfig.js';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Cadastra um novo veículo com:
- * - ID aleatório (UUID)
- * - Chassi como campo único imutável
- * - Placa como campo normal (atualizável)
- */
 export const criarVeiculo = async (veiculoData) => {
   try {
-    const id = uuidv4(); // ID aleatório universal
+    const id = uuidv4(); 
     const { chassi, placa } = veiculoData;
 
     // 1. Validar chassi único
@@ -28,12 +22,10 @@ export const criarVeiculo = async (veiculoData) => {
       .collection('veiculos')
       .doc(id)
       .set({
-        // Identificação
-        id, // UUID (redundante para facilidade em queries)
-        chassi, // Campo único imutável
-        placa: placa.replace(/-/g, ''), // Formato sem hífen
+        id, 
+        chassi,
+        placa: placa.replace(/-/g, ''), 
 
-        // Dados técnicos (do Figma)
         modelo: veiculoData.modelo,
         cor: veiculoData.cor,
         marca: veiculoData.marca,
@@ -43,18 +35,15 @@ export const criarVeiculo = async (veiculoData) => {
           modelo: veiculoData.anoModelo.modelo,
         },
 
-        // Histórico
         quilometragem: parseInt(veiculoData.quilometragem),
         quilometragemNaCompra: parseInt(veiculoData.quilometragemNaCompra || '0'),
         dataCompra: new Date(veiculoData.dataCompra).toISOString(),
         //dataVenda: veiculoData.dataVenda ? new Date(veiculoData.dataVenda).toISOString() : null,
 
-        // Localização
         local: veiculoData.local,
         nome: veiculoData.nome,
         observacoes: veiculoData.observacoes,
 
-        // Controle
         status: 'disponivel',
         dataCadastro: new Date().toISOString(),
         dataAtualizacao: new Date().toISOString(),
@@ -157,7 +146,6 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
       query = query.orderBy('placa');
     }
 
-    // Aplicar filtros
     if (filtros.placa) {
       query = query.where('placa', '==', filtros.placa.replace(/-/g, ''));
     }
@@ -195,5 +183,52 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
   } catch (error) {
     console.error('Erro ao listar veículos:', error);
     throw error;
+  }
+};
+
+/**
+ * Listar quilometragem de um veículo específico
+ * @param {string} chassi - Chassi do veículo
+ * @returns {Promise<number|null>} - Retorna a quilometragem do veículo ou null se não encontrado
+ * @throws {Error} Em caso de erro no Firestore
+ */
+export const listarQuilometragemVeiculo = async (chassi) => {
+  try {
+    const veiculo = await buscarPorChassi(chassi);
+
+    if (!veiculo) return null;
+
+    return veiculo.quilometragem;
+  } catch (error) {
+    console.error('Erro ao buscar quilometragem:', error);
+    throw error;
+  }
+};
+
+/**
+ * Atualizar a quilometragem do veículo pelo chassi
+ * @param {string} chassi - Chassi do veículo
+ * @param {number} quilometragem - Nova quilometragem do veículo
+ * @returns {Promise<{success: boolean, error?: string}>}
+ * @throws {Error} Em caso de erro no Firestore
+ */
+export const atualizarQuilometragemVeiculo = async (chassi, quilometragem) => {
+  try {
+    const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+
+    if (snapshot.empty) {
+      return { success: false, error: 'Veículo não encontrado.' };
+    }
+
+    const docId = snapshot.docs[0].id;
+
+    await db.collection('veiculos').doc(docId).update({ quilometragem });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('Erro ao atualizar quilometragem:', error);
+    return { success: false, error: error.message };
   }
 };

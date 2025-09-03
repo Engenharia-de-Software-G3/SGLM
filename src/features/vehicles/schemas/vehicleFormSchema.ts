@@ -1,34 +1,35 @@
 import { z } from 'zod';
 
 export const vehicleFormSchema = z.object({
-  marca: z.string().min(1, 'Marca é obrigatória'),
-  modelo: z.string().min(1, 'Modelo é obrigatório'),
-  placa: z.string().min(1, 'Placa é obrigatória'),
-  ano: z.string().regex(/^\d{4}$/, 'Ano deve ser um número de 4 dígitos'),
-  cor: z.string().min(1, 'Cor é obrigatória'),
-  combustivel: z.string().min(1, 'Combustível é obrigatório'),
-  categoria: z.string().min(1, 'Categoria é obrigatória'),
-  renavam: z.string().min(1, 'RENAVAM é obrigatório'),
-  chassi: z.string().min(1, 'Chassi é obrigatório'),
-  motor: z.string().min(1, 'Motor é obrigatório'),
-  portas: z.string().regex(/^\d+$/, 'Número de portas deve ser um número'),
-  assentos: z.string().regex(/^\d+$/, 'Número de assentos deve ser um número'),
-  transmissao: z.string().min(1, 'Transmissão é obrigatória'),
-  valorDiario: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor diário deve ser um número'),
-  quilometragemAtual: z.string().regex(/^\d+$/, 'Quilometragem atual deve ser um número'),
+  marca: z.string().nonempty('Marca é obrigatória'),
+  modelo: z.string().nonempty('Modelo é obrigatório'),
+  placa: z
+    .string()
+    .nonempty('Placa é obrigatória')
+    .regex(
+      /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/,
+      'Placa deve estar no formato Mercosul (ABC1D23) ou antigo (ABC1234)',
+    ),
+  ano: z
+    .string()
+    .nonempty('Ano é obrigatório')
+    .regex(/^\d{4}\/\d{4}$/, 'Ano deve estar no formato AAAA/YYYY'),
+  cor: z.string().nonempty('Cor é obrigatória'),
+  chassi: z.string().nonempty('Chassi é obrigatório'),
+  quilometragemAtual: z
+    .string()
+    .nonempty('Quilometragem atual é obrigatória')
+    .regex(/^\d+$/, 'Quilometragem deve ser numérica'),
   quilometragemCompra: z
     .string()
-    .regex(/^\d+$/, 'Quilometragem de compra deve ser um número')
-    .optional(),
-  proximaManutencao: z.string().regex(/^\d+$/, 'Próxima manutenção deve ser um número'),
-  numeroDocumento: z.string().optional(),
-  dataCompra: z.string().optional(),
-  local: z.string().optional(),
-  nome: z.string().optional(),
+    .nonempty('Quilometragem da compra é obrigatória')
+    .regex(/^\d+$/, 'Quilometragem deve ser numérica'),
+  dataCompra: z
+    .string()
+    .nonempty('Data da compra é obrigatória')
+    .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Data deve estar no formato DD/MM/YYYY'),
+  local: z.string().nonempty('Local de compra é obrigatório'),
+  nome: z.string().nonempty('Nome do proprietário é obrigatório'),
   observacoes: z.string().optional(),
-  status: z
-    .enum(['Disponível', 'Locado', 'Manutenção'], {
-      message: 'Status é obrigatório e deve ser Disponível, Locado ou Manutenção',
-    })
-    .default('Disponível'),
+  status: z.enum(['disponivel', 'alugado', 'manutencao']).default('disponivel'),
 });

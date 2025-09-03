@@ -45,11 +45,9 @@ router.post('/', async (req, res) => {
         );
     }
 
-    // Chame a função do Firestore para criar a vistoria
     const resultado = await criarVistoria(vistoriaData);
 
     if (resultado.success) {
-      // Use o ID retornado pela função criarVistoria
       res.status(201).send({ message: 'Vistoria criada com sucesso!' });
     } else {
       res.status(500).send({ message: 'Erro ao criar Vistoria', error: resultado.error });
@@ -59,8 +57,6 @@ router.post('/', async (req, res) => {
     res.status(500).send('Erro interno do servidor.');
   }
 });
-
-// TODO: Implementar outras rotas para vistoria (PUT, DELETE)
 
 /**
  * Rota GET para listar vistorias.

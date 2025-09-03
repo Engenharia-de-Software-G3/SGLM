@@ -1,98 +1,125 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { Layout } from '@/shared/components/layout';
+import { ReturnHeader } from '@/shared/components/return-header';
 import { RentalInfoCard } from './components/rental-info-card';
+import { Toaster, toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import { useLocacoesQuery } from '@/services/rental';
+import { useClientsQuery } from '@/services/client';
+import { useVehiclesQuery } from '@/services/vehicle';
+import type { LocacaoInterface } from '@/services/rental/types';
+import type { ClientData } from '@/lib/generateContractPDF';
+import type { VehicleData } from '@/services/vehicle/types';
 import type { RentalInfoCardData } from './components/rental-info-card/@types';
 
-// Mock data for demonstration - in a real app this would come from an API
-const mockRentalData: RentalInfoCardData = {
-  // Dados do Locatário
-  locatario: 'João Silva Santos',
-  cnpjcpf: '123.456.789-00',
-  telefone: '(11) 99999-9999',
-  email: 'joao.silva@email.com',
-
-  // Dados do Veículo
-  placaVeiculo: 'ABC1234',
-  marca: 'Toyota',
-  modelo: 'Corolla',
-  ano: '2023',
-  cor: 'Prata',
-  chassi: '9BWZZZ377VT004251',
-
-  // Dados da Locação
-  inicio: '01/12/2024',
-  fim: '15/12/2024',
-  valorLocacao: '150.00',
-  intervaloPagamento: 'semanal',
-  observacoes: 'Veículo em excelente estado',
-
-  // Dados de Pagamento
-  formaPagamento: 'Cartão de crédito',
-  statusPagamento: 'Pago',
-
-  // Dados de Entrega/Devolução
-  localEntrega: 'Rua das Flores, 123 - São Paulo/SP',
-  localDevolucao: 'Rua das Flores, 123 - São Paulo/SP',
-  quilometragemInicial: '50000',
-  quilometragemFinal: '52000',
-};
+function toProfileData(
+  locacao: LocacaoInterface,
+  client: ClientData | null,
+  vehicle: VehicleData | null,
+): RentalInfoCardData {
+  return {
+    id: locacao.id || 'N/A',
+    locatario: client?.nomeCompleto || '',
+    cnpjcpf: client?.cpf || client?.cnpj || '',
+    telefone: client?.telefone || '',
+    email: client?.email || '',
+    placaVeiculo: locacao.placaVeiculo || '',
+    marca: vehicle?.marca || '',
+    modelo: vehicle?.modelo || '',
+    ano: vehicle?.ano || '',
+    cor: vehicle?.cor || '',
+    chassi: vehicle?.chassi || '',
+    inicio: locacao.dataInicio || '',
+    fim: locacao.dataFim || '',
+    valorLocacao: String(locacao.valor) || '',
+    intervaloPagamento: locacao.periocidadePagamento || 'Mensal',
+    formaPagamento: locacao.metodoPagamento || 'Pix',
+    statusPagamento: '',
+    localEntrega: '',
+    localDevolucao: '',
+    quilometragemInicial: vehicle?.quilometragemNaCompra || '',
+    quilometragemFinal: vehicle?.quilometragem || '',
+  };
+}
 
 export const RentalProfile = () => {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [rentalData, setRentalData] = useState<RentalInfoCardData>(mockRentalData);
-  const [loading, setLoading] = useState(true);
+  const { id } = useParams<{ id: string }>();
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchRentalData = async () => {
-      setLoading(true);
-      try {
-        setTimeout(() => {
-          setRentalData(mockRentalData);
-          setLoading(false);
-        }, 500);
-      } catch (error) {
-        console.error('Error fetching rental data:', error);
-        setLoading(false);
-      }
-    };
+  const { data: locacoesData, isLoading, isError } = useLocacoesQuery();
+  console.log('Locacoes carregadas:', locacoesData);
 
-    if (id) {
-      fetchRentalData();
-    }
-  }, [id]);
+  const locacao = useMemo(() => {
+    if (!locacoesData?.locacoes || !id) return null;
+    const found = locacoesData.locacoes.find((l: { id: string }) => l.id === id) || null;
+    console.log('Locação encontrada:', found);
+    return found;
+  }, [locacoesData, id]);
 
-  const handleBack = () => {
-    navigate('/locacoes');
-  };
+  const { data: clientsData } = useClientsQuery();
+  console.log('Clientes carregados:', clientsData);
 
-  if (loading) {
+  const { data: vehiclesData } = useVehiclesQuery();
+  console.log('Veículos carregados:', vehiclesData);
+
+  const client = useMemo<ClientData | null>(() => {
+    if (!locacao || !clientsData?.clientes) return null;
+    const foundClient =
+      clientsData.clientes.find(
+        (c: { cpf?: string }) =>
+          c.cpf?.replace(/\D/g, '') === locacao.clienteId?.replace(/\D/g, ''),
+      ) || null;
+    console.log('Cliente encontrado:', foundClient);
+    return foundClient;
+  }, [locacao, clientsData]);
+
+  const vehicle = useMemo<VehicleData | null>(() => {
+    if (!locacao || !vehiclesData?.veiculos) return null;
+    const placa = locacao.placaVeiculo?.toUpperCase() || '';
+    const foundVehicle =
+      vehiclesData.veiculos.find((v: { placa?: string }) => v.placa?.toUpperCase() === placa) ||
+      null;
+    console.log('Veículo encontrado:', foundVehicle);
+    return foundVehicle;
+  }, [locacao, vehiclesData]);
+
+  const rentalData = useMemo<RentalInfoCardData | null>(() => {
+    if (!locacao) return null;
+    const data = toProfileData(locacao, client, vehicle);
+    console.log('Dados do RentalInfoCard:', data);
+    return data;
+  }, [locacao, client, vehicle]);
+
+  if (isLoading) {
     return (
-      <Layout title="Carregando..." subtitle="Aguarde enquanto carregamos os dados">
-        <div className="flex-1 overflow-auto p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">Carregando dados da locação...</div>
-          </div>
+      <Layout showHeader={false}>
+        <ReturnHeader title="Detalhes da Locação" onBack={() => navigate('/locacoes')} />
+        <Toaster />
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="animate-spin text-gray-500" />
         </div>
       </Layout>
     );
   }
 
-  return (
-    <Layout title={`Locação #${id}`} subtitle="Detalhes completos da locação">
-      <div className="flex-1 overflow-auto p-6">
-        <div className="mb-6">
-          <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar para locações
-          </Button>
-        </div>
+  if (isError || !rentalData) {
+    toast('Locação não encontrada ou erro na requisição');
+    return (
+      <Layout showHeader={false}>
+        <ReturnHeader title="Detalhes da Locação" onBack={() => navigate('/locacoes')} />
+        <Toaster />
+        <div className="text-red-600 p-6">Não foi possível carregar os dados da locação.</div>
+      </Layout>
+    );
+  }
 
-        <RentalInfoCard data={rentalData} setData={setRentalData} />
+  return (
+    <Layout showHeader={false}>
+      <ReturnHeader title={`Locação #${id}`} onBack={() => navigate('/locacoes')} />
+      <Toaster />
+      <div className="p-6">
+        <RentalInfoCard data={rentalData} setData={() => {}} />
       </div>
     </Layout>
   );

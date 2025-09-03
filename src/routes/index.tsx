@@ -32,7 +32,7 @@ const routes = [
     protected: true,
   },
   {
-    path: '/clientes/:Id',
+    path: '/clientes/:id',
     element: <ClientProfile />,
     protected: true,
   },
@@ -47,7 +47,7 @@ const routes = [
     protected: true,
   },
   {
-    path: '/veiculos/:veiculoId',
+    path: '/veiculos/:chassi',
     element: <VehicleProfile />,
     protected: true,
   },

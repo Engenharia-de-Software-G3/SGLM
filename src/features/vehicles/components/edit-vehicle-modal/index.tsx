@@ -3,10 +3,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { vehicleFormSchema } from '../../schemas/vehicleFormSchema';
+import { CloudUpload } from 'lucide-react';
 import type { EditVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
+import { StatusVehicle } from '@/services/vehicle/types';
+
+function maskData(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
+  return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+}
+
+function maskAnoModelo(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  return digits.slice(0, 4) + '/' + digits.slice(4);
+}
 
 export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehicleModalProps) => {
   const [formData, setFormData] = useState<VeiculoFormulario>({
@@ -15,141 +28,94 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
     placa: '',
     ano: '',
     cor: '',
-    combustivel: '',
-    categoria: '',
-    renavam: '',
     chassi: '',
-    motor: '',
-    portas: '',
-    assentos: '',
-    transmissao: '',
-    valorDiario: '',
     quilometragemAtual: '',
     quilometragemCompra: '',
-    proximaManutencao: '',
-    numeroDocumento: '',
     dataCompra: '',
     local: '',
     nome: '',
     observacoes: '',
-    status: 'Disponível',
+    status: 'disponivel',
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
+    console.log({ vehicle });
     if (vehicle) {
-      console.log('Initializing form with vehicle:', vehicle);
-      const newFormData: VeiculoFormulario = {
-        marca: vehicle.brand,
-        modelo: vehicle.model,
-        placa: vehicle.plate,
-        ano: vehicle.year.toString(),
-        cor: vehicle.color,
-        combustivel: vehicle.fuel,
-        categoria: vehicle.category,
-        renavam: vehicle.renavam,
-        chassi: vehicle.chassis,
-        motor: vehicle.engine,
-        portas: vehicle.doors.toString(),
-        assentos: vehicle.seats.toString(),
-        transmissao: vehicle.transmission,
-        valorDiario: vehicle.dailyRate.toString(),
-        quilometragemAtual: vehicle.currentMileage.toString(),
-        quilometragemCompra: vehicle.initialMileage?.toString() || '',
-        proximaManutencao: vehicle.nextMaintenanceKm.toString(),
-        numeroDocumento: vehicle.insurancePolicy || '',
-        dataCompra: vehicle.acquisitionDate || '',
-        local: '',
-        nome: '',
-        observacoes: '',
-        status: vehicle.status || 'Disponível',
-      };
-      setFormData(newFormData);
-      console.log('Form data initialized:', newFormData);
+      setFormData({
+        marca: vehicle.marca || '',
+        modelo: vehicle.modelo || '',
+        placa: vehicle.placa || '',
+        ano: vehicle.ano || '',
+        cor: vehicle.cor,
+        chassi: vehicle.chassi || '',
+        quilometragemAtual: vehicle.quilometragem?.toString() || '',
+        quilometragemCompra: vehicle.quilometragemNaCompra?.toString() || '',
+        dataCompra: vehicle.dataCompra || '',
+        local: vehicle.local || '',
+        nome: vehicle.nome || '',
+        observacoes: vehicle.observacoes || '',
+        status: vehicle.status as StatusVehicle,
+      });
     }
   }, [vehicle]);
 
   const handleInputChange = (
     e:
-      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
       | { target: { id: string; value: string } },
   ) => {
     const { id, value } = 'target' in e ? e.target : e;
-    console.log(`Input changed: ${id} = ${value}`);
-    if (id === 'status') {
-      console.log('Status changed to:', value);
-    }
-    setFormData((prev) => {
-      const newFormData = { ...prev, [id]: value };
-      console.log('Updated form data:', newFormData);
-      return newFormData;
-    });
-    if (errors[id]) {
-      setErrors((prev) => ({ ...prev, [id]: '' }));
-    }
+
+    const maskedValue =
+      id === 'dataCompra' ? maskData(value) : id === 'ano' ? maskAnoModelo(value) : value;
+
+    setFormData((prev) => ({ ...prev, [id]: maskedValue }));
+    if (errors[id]) setErrors((prev) => ({ ...prev, [id]: '' }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form data on submit:', formData);
-    if (!formData.status || !['Disponível', 'Locado', 'Manutenção'].includes(formData.status)) {
-      setErrors({ status: 'Status é obrigatório e deve ser válido' });
-      console.log('Validation failed: Invalid or missing status');
-      return;
-    }
-    const result = vehicleFormSchema.safeParse(formData);
-    if (!result.success) {
-      console.log('Validation errors:', result.error.issues);
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
-        const field = Array.isArray(issue.path) ? issue.path[0]?.toString() : '';
-        if (field) {
-          fieldErrors[field] = issue.message;
-        }
-      });
-      setErrors(fieldErrors);
-      return;
-    }
-
-    // Adiciona log para depurar os dados validados
-    console.log('Data to save before onSave:', result.data);
     setErrors({});
-    onSave(result.data); // Garante que result.data contém status
+
+    console.log({ formData, selectedFile });
+    onSave({ ...formData, arquivo: selectedFile });
     onClose();
+    setSelectedFile(null);
   };
 
   const handleReset = () => {
     if (vehicle) {
-      const newFormData: VeiculoFormulario = {
-        marca: vehicle.brand,
-        modelo: vehicle.model,
-        placa: vehicle.plate,
-        ano: vehicle.year.toString(),
-        cor: vehicle.color,
-        combustivel: vehicle.fuel,
-        categoria: vehicle.category,
-        renavam: vehicle.renavam,
-        chassi: vehicle.chassis,
-        motor: vehicle.engine,
-        portas: vehicle.doors.toString(),
-        assentos: vehicle.seats.toString(),
-        transmissao: vehicle.transmission,
-        valorDiario: vehicle.dailyRate.toString(),
-        quilometragemAtual: vehicle.currentMileage.toString(),
-        quilometragemCompra: vehicle.initialMileage?.toString() || '',
-        proximaManutencao: vehicle.nextMaintenanceKm.toString(),
-        numeroDocumento: vehicle.insurancePolicy || '',
-        dataCompra: vehicle.acquisitionDate || '',
-        local: '',
-        nome: '',
-        observacoes: '',
-        status: vehicle.status || 'Disponível',
-      };
-      setFormData(newFormData);
-      console.log('Form reset to:', newFormData);
-      setErrors({});
+      setFormData({
+        marca: vehicle.marca || '',
+        modelo: vehicle.modelo || '',
+        placa: vehicle.placa || '',
+        ano: vehicle.ano || '',
+        cor: vehicle.cor,
+        chassi: vehicle.chassi || '',
+        quilometragemAtual: vehicle.quilometragem?.toString() || '',
+        quilometragemCompra: vehicle.quilometragemNaCompra?.toString() || '',
+        dataCompra: vehicle.dataCompra || '',
+        local: vehicle.local || '',
+        nome: vehicle.nome || '',
+        observacoes: vehicle.observacoes || '',
+        status: vehicle.status,
+      });
     }
+    setErrors({});
+    setSelectedFile(null);
   };
+
+  useEffect(() => {
+    console.log({ formData });
+  }, [formData]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -162,230 +128,89 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>
-              <Input id="marca" value={formData.marca} onChange={handleInputChange} required />
-              {errors.marca && <p className="text-sm text-red-500">{errors.marca}</p>}
+              <Input
+                id="marca"
+                value={formData.marca}
+                onChange={handleInputChange}
+                className="bg-gray-200 cursor-not-allowed"
+                disabled
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="modelo">Modelo</Label>
-              <Input id="modelo" value={formData.modelo} onChange={handleInputChange} required />
-              {errors.modelo && <p className="text-sm text-red-500">{errors.modelo}</p>}
+              <Input
+                id="modelo"
+                value={formData.modelo}
+                onChange={handleInputChange}
+                className="bg-gray-200 cursor-not-allowed"
+                disabled
+              />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa</Label>
-              <Input id="placa" value={formData.placa} onChange={handleInputChange} required />
-              {errors.placa && <p className="text-sm text-red-500">{errors.placa}</p>}
+              <Input
+                id="placa"
+                value={formData.placa}
+                onChange={handleInputChange}
+                className="bg-gray-200 cursor-not-allowed"
+                disabled={true}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ano">Ano</Label>
+              <Label htmlFor="ano">Fabricação/Modelo</Label>
               <Input
                 id="ano"
-                type="number"
+                placeholder="AAAA/YYYY"
                 value={formData.ano}
                 onChange={handleInputChange}
-                required
+                className="bg-gray-200 cursor-not-allowed"
+                disabled
               />
-              {errors.ano && <p className="text-sm text-red-500">{errors.ano}</p>}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cor">Cor</Label>
-              <Input id="cor" value={formData.cor} onChange={handleInputChange} required />
-              {errors.cor && <p className="text-sm text-red-500">{errors.cor}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria</Label>
-              <RadioGroup
-                value={formData.categoria}
-                onValueChange={(value) => handleInputChange({ target: { id: 'categoria', value } })}
-                required
-                defaultValue={formData.categoria || 'Sedan'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Hatch" id="hatch" />
-                  <Label htmlFor="hatch">Hatch</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Sedan" id="sedan" />
-                  <Label htmlFor="sedan">Sedan</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="SUV" id="suv" />
-                  <Label htmlFor="suv">SUV</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Moto" id="moto" />
-                  <Label htmlFor="moto">Moto</Label>
-                </div>
-              </RadioGroup>
-              {errors.categoria && <p className="text-sm text-red-500">{errors.categoria}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <RadioGroup
-                value={formData.status}
-                onValueChange={(value) => handleInputChange({ target: { id: 'status', value } })}
-                required
-                defaultValue={formData.status || 'Disponível'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Disponível" id="disponivel" />
-                  <Label htmlFor="disponivel">Disponível</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Locado" id="locado" />
-                  <Label htmlFor="locado">Locado</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Manutenção" id="manutencao" />
-                  <Label htmlFor="manutencao">Manutenção</Label>
-                </div>
-              </RadioGroup>
-              {errors.status && <p className="text-sm text-red-500">{errors.status}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="combustivel">Combustível</Label>
-              <RadioGroup
-                value={formData.combustivel}
-                onValueChange={(value) =>
-                  handleInputChange({ target: { id: 'combustivel', value } })
-                }
-                required
-                defaultValue={formData.combustivel || 'Gasolina'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Gasolina" id="gasolina" />
-                  <Label htmlFor="gasolina">Gasolina</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Etanol" id="etanol" />
-                  <Label htmlFor="etanol">Etanol</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Flex" id="flex" />
-                  <Label htmlFor="flex">Flex</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Diesel" id="diesel" />
-                  <Label htmlFor="diesel">Diesel</Label>
-                </div>
-              </RadioGroup>
-              {errors.combustivel && <p className="text-sm text-red-500">{errors.combustivel}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="transmissao">Transmissão</Label>
-              <RadioGroup
-                value={formData.transmissao}
-                onValueChange={(value) =>
-                  handleInputChange({ target: { id: 'transmissao', value } })
-                }
-                required
-                defaultValue={formData.transmissao || 'Manual'}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Manual" id="manual" />
-                  <Label htmlFor="manual">Manual</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Automático" id="automatico" />
-                  <Label htmlFor="automatico">Automático</Label>
-                </div>
-              </RadioGroup>
-              {errors.transmissao && <p className="text-sm text-red-500">{errors.transmissao}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="renavam">RENAVAM</Label>
-              <Input id="renavam" value={formData.renavam} onChange={handleInputChange} required />
-              {errors.renavam && <p className="text-sm text-red-500">{errors.renavam}</p>}
+              <Input id="cor" value={formData.cor} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="chassi">Chassi</Label>
-              <Input id="chassi" value={formData.chassi} onChange={handleInputChange} required />
-              {errors.chassi && <p className="text-sm text-red-500">{errors.chassi}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="motor">Motor</Label>
-              <Input id="motor" value={formData.motor} onChange={handleInputChange} required />
-              {errors.motor && <p className="text-sm text-red-500">{errors.motor}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="portas">Número de Portas</Label>
               <Input
-                id="portas"
-                type="number"
-                value={formData.portas}
-                onChange={handleInputChange}
-                required
+                id="chassi"
+                value={formData.chassi}
+                className="bg-gray-200 cursor-not-allowed"
+                disabled
               />
-              {errors.portas && <p className="text-sm text-red-500">{errors.portas}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="assentos">Número de Assentos</Label>
-              <Input
-                id="assentos"
-                type="number"
-                value={formData.assentos}
-                onChange={handleInputChange}
-                required
-              />
-              {errors.assentos && <p className="text-sm text-red-500">{errors.assentos}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="valorDiario">Valor Diário (R$)</Label>
-              <Input
-                id="valorDiario"
-                type="number"
-                step="0.01"
-                value={formData.valorDiario}
-                onChange={handleInputChange}
-                required
-              />
-              {errors.valorDiario && <p className="text-sm text-red-500">{errors.valorDiario}</p>}
-            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quilometragemAtual">Quilometragem Atual</Label>
               <Input
                 id="quilometragemAtual"
-                type="number"
                 value={formData.quilometragemAtual}
                 onChange={handleInputChange}
-                required
               />
-              {errors.quilometragemAtual && (
-                <p className="text-sm text-red-500">{errors.quilometragemAtual}</p>
-              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="proximaManutencao">Próxima Manutenção (km)</Label>
+              <Label htmlFor="quilometragemCompra">Quilometragem na Compra</Label>
               <Input
-                id="proximaManutencao"
-                type="number"
-                value={formData.proximaManutencao}
+                id="quilometragemCompra"
+                value={formData.quilometragemCompra}
                 onChange={handleInputChange}
-                required
               />
-              {errors.proximaManutencao && (
-                <p className="text-sm text-red-500">{errors.proximaManutencao}</p>
-              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="numeroDocumento">Nº do Documento</Label>
-              <Input
-                id="numeroDocumento"
-                placeholder="Insira o nº do documento"
-                value={formData.numeroDocumento}
-                onChange={handleInputChange}
-              />
-              {errors.numeroDocumento && (
-                <p className="text-sm text-red-500">{errors.numeroDocumento}</p>
-              )}
+              <Label htmlFor="local">Local</Label>
+              <Input id="local" value={formData.local} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataCompra">Data da Compra</Label>
@@ -395,31 +220,38 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
                 value={formData.dataCompra}
                 onChange={handleInputChange}
               />
-              {errors.dataCompra && <p className="text-sm text-red-500">{errors.dataCompra}</p>}
             </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="local">Local</Label>
-              <Input
-                id="local"
-                placeholder="Insira o local de aquisição"
-                value={formData.local}
-                onChange={handleInputChange}
-              />
-              {errors.local && <p className="text-sm text-red-500">{errors.local}</p>}
+              <Label htmlFor="nome">Nome</Label>
+              <Input id="nome" value={formData.nome} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
-                id="nome"
-                placeholder="Insira o nome do dono do veículo"
-                value={formData.nome}
-                onChange={handleInputChange}
-              />
-              {errors.nome && <p className="text-sm text-red-500">{errors.nome}</p>}
+              <Label htmlFor="status">Status</Label>
+              <div className="relative">
+                <select
+                  id="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  disabled
+                  className="w-full h-10 px-3 py-2  rounded-md text-sm  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-gray-100 text-gray-400"
+                >
+                  <option value="disponivel" disabled>
+                    Disponível
+                  </option>
+                  <option value="alugado" disabled>
+                    Locado
+                  </option>
+                  <option value="manutencao" disabled>
+                    Manutenção
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observações</Label>
             <textarea
@@ -430,6 +262,19 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
               onChange={handleInputChange}
             />
           </div>
+
+          <Label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block hover:border-blue-400 transition">
+            <div className="flex justify-center mb-2 text-blue-500">
+              <CloudUpload className="w-10 h-10" />
+            </div>
+            <p className="text-gray-600">Anexe o documento do veículo</p>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </Label>
 
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={handleReset}>

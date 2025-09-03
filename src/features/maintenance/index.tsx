@@ -1,67 +1,80 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Layout } from '@/shared/components/layout';
-import { Plus, Edit, FileText } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { DeleteModal } from '@/shared/components/delete-modal';
-import { Button } from '@/components/ui/button';
 import { ActionButton } from '@/shared/components/display-table/components/action-button';
 import { AddMaintenanceModal } from './components/add-maintenance-modal';
-
-const maintenances = [
-  {
-    id: 1,
-    name: 'Troca de Óleo',
-    supplier: 'Fornecedor X',
-    plate: 'XXX-0001',
-    date: '30/06/2025',
-    value: 'R$ 150,00',
-    mileage: '10.000 km',
-  },
-  {
-    id: 2,
-    name: 'Manutenção dos Freios',
-    supplier: 'Fornecedor X',
-    plate: 'XXX-0002',
-    date: '28/06/2025',
-    value: 'R$ 250,00',
-    mileage: '15.000 km',
-  },
-  {
-    id: 3,
-    name: 'Revisão Geral',
-    supplier: 'Fornecedor Y',
-    plate: 'XXX-0003',
-    date: '01/07/2025',
-    value: 'R$ 400,00',
-    mileage: '20.000 km',
-  },
-];
+import {
+  getManutencoes,
+  createManutencao,
+  deleteManutencao,
+} from '@/services/maintenance/functions';
+import { Manutencao, CreateManutencaoRequest } from '@/services/maintenance/types';
 
 export const Maintenance = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [manutencoes, setManutencoes] = useState<Manutencao[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleView = (id: number) => {
-    console.log('Visualizar manutenção', id);
+  useEffect(() => {
+    loadManutencoes();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteManutencao(id);
+      await loadManutencoes();
+    } catch (error) {
+      console.error('Erro ao deletar manutenção:', error);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    console.log('Excluir manutenção', id);
+  const loadManutencoes = async () => {
+    setLoading(true);
+    try {
+      const res = await getManutencoes();
+      const manutencoesList = Array.isArray(res) ? res : [];
+      setManutencoes(manutencoesList);
+    } catch (err) {
+      console.error('Erro ao buscar manutenções:', err);
+      setManutencoes([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleAdd = async (data: CreateManutencaoRequest) => {
+    try {
+      await createManutencao(data);
+      await loadManutencoes();
+    } catch (error) {
+      console.error('Erro ao criar manutenção:', error);
+    }
+  };
+
+  const filtered = Array.isArray(manutencoes)
+    ? manutencoes.filter(
+        (m) =>
+          m.nomeServico.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.placaVeiculo.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    : [];
 
   return (
-    <Layout title="Manutenções" subtitle="Lista de serviços de manuntenção realizados">
+    <Layout title="Manutenções" subtitle="Lista de serviços de manutenção realizados">
       <div className="flex-1 overflow-auto p-6">
         <DisplayTableHeader>
           <SearchBar
-            placeholder="Filtrar por manuntenção"
+            placeholder="Filtrar por manutenção"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
 
           <AddMaintenanceModal
-            onAdd={(data) => console.log('Nova manutenção adicionada:', data)}
+            onAdd={handleAdd}
             trigger={
               <ActionButton
                 label="Adicionar manutenção"
@@ -72,66 +85,52 @@ export const Maintenance = () => {
           />
         </DisplayTableHeader>
 
-        <PaginatedTable
-          data={maintenances}
-          columns={[
-            { key: 'maintenance', title: 'Serviço' },
-            { key: 'plate', title: 'Placa' },
-            { key: 'date', title: 'Data' },
-            { key: 'value', title: 'Valor' },
-            { key: 'mileage', title: 'Quilometragem' },
-            { key: 'actions', title: 'Ações' },
-          ]}
-          renderRow={(maintenance) => (
-            <tr key={maintenance.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">{maintenance.name}</div>
-                  <div className="text-sm text-gray-500">{maintenance.supplier}</div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {maintenance.plate}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {maintenance.date}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {maintenance.value}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {maintenance.mileage}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleView(maintenance.id)}
-                    className="text-orange-600 border-orange-300 hover:bg-blue-50"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-
-                  <DeleteModal
-                    title="Tem certeza que deseja excluir esta manutenção?"
-                    description="Todos os dados salvos serão excluídos."
-                    actionText="Excluir manutenção"
-                    onConfirm={() => handleDelete(maintenance.id)}
-                  />
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-green-600 border-green-300 hover:bg-green-50"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          )}
-        />
+        {loading ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : (
+          <PaginatedTable
+            data={filtered}
+            columns={[
+              { key: 'maintenance', title: 'Serviço' },
+              { key: 'plate', title: 'Placa' },
+              { key: 'date', title: 'Data' },
+              { key: 'value', title: 'Valor' },
+              { key: 'mileage', title: 'Quilometragem' },
+              { key: 'actions', title: 'Ações' },
+            ]}
+            renderRow={(m) => (
+              <tr key={m.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">{m.nomeServico}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {m.placaVeiculo}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {new Date(m.data).toLocaleDateString('pt-BR')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  R$ {m.valor.toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {m.quilometragem} km
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <DeleteModal
+                      title="Tem certeza que deseja excluir esta manutenção?"
+                      description="Todos os dados salvos serão excluídos."
+                      actionText="Excluir manutenção"
+                      onConfirm={() => handleDelete(m.id)}
+                    />
+                  </div>
+                </td>
+              </tr>
+            )}
+          />
+        )}
       </div>
     </Layout>
   );

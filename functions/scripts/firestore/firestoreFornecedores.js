@@ -16,7 +16,6 @@ export const criarFornecedor = async (fornecedorData) => {
     const id = uuidv4();
     const { cnpj } = fornecedorData;
 
-    // Validar CNPJ único
     const cnpjExistente = await db
       .collection('fornecedores')
       .where('cnpj', '==', cnpj)
@@ -27,7 +26,6 @@ export const criarFornecedor = async (fornecedorData) => {
       throw new Error('CNPJ já cadastrado no sistema.');
     }
 
-    // Criar documento principal
     await db.collection('fornecedores').doc(id).set({
       id,
       nome: fornecedorData.nome,
@@ -38,11 +36,9 @@ export const criarFornecedor = async (fornecedorData) => {
       dataAtualizacao: new Date().toISOString(),
     });
 
-    // Subcoleções em batch
     const batch = db.batch();
     const fornecedorRef = db.collection('fornecedores').doc(id);
 
-    // Serviços (como subcoleção)
     fornecedorData.servicos.forEach((servico) => {
       const servicoRef = fornecedorRef.collection('servicos').doc(uuidv4());
       batch.set(servicoRef, {
@@ -51,7 +47,6 @@ export const criarFornecedor = async (fornecedorData) => {
       });
     });
 
-    // Contato principal
     if (fornecedorData.contato) {
       batch.set(fornecedorRef.collection('contatos').doc('principal'), {
         ...fornecedorData.contato,
@@ -59,7 +54,6 @@ export const criarFornecedor = async (fornecedorData) => {
       });
     }
 
-    // Endereço principal
     if (fornecedorData.endereco) {
       batch.set(fornecedorRef.collection('enderecos').doc('principal'), {
         ...fornecedorData.endereco,
@@ -87,7 +81,6 @@ export const listarFornecedores = async ({ limite = 10, ultimoDoc = null, filtro
   try {
     let query = db.collection('fornecedores').orderBy('nome').limit(limite);
 
-    // Aplicar filtros
     if (filtros.nome) {
       query = query.where('nome', '>=', filtros.nome).where('nome', '<=', filtros.nome + '\uf8ff');
     }
@@ -96,7 +89,6 @@ export const listarFornecedores = async ({ limite = 10, ultimoDoc = null, filtro
       query = query.where('cnpj', '==', filtros.cnpj);
     }
 
-    // Paginação
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);
     }

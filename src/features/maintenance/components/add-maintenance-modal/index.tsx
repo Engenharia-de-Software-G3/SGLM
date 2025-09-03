@@ -24,7 +24,12 @@ export const AddMaintenanceModal = ({ trigger, onAdd }: AddMaintenanceModalProps
   });
 
   const handleAdd = () => {
-    onAdd(form);
+    onAdd({
+      nomeServico: form.name.trim(),
+      placaVeiculo: form.plate.trim(),
+      valor: parseFloat(form.value),
+    });
+
     setForm({ name: '', supplier: '', plate: '', date: '', value: '', mileage: '' });
     setIsOpen(false);
   };
@@ -39,75 +44,32 @@ export const AddMaintenanceModal = ({ trigger, onAdd }: AddMaintenanceModalProps
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name" className="py-2">
-                Serviço
-              </Label>
-              <Input
-                id="name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="supplier" className="py-2">
-                Fornecedor
-              </Label>
-              <Input
-                id="supplier"
-                value={form.supplier}
-                onChange={(e) => setForm({ ...form, supplier: e.target.value })}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="name">Serviço</Label>
+            <Input
+              id="name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="plate" className="py-2">
-                Placa
-              </Label>
-              <Input
-                id="plate"
-                value={form.plate}
-                onChange={(e) => setForm({ ...form, plate: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="date" className="py-2">
-                Data
-              </Label>
-              <Input
-                id="date"
-                placeholder="DD/MM/AAAA"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="plate">Placa</Label>
+            <Input
+              id="plate"
+              value={form.plate}
+              onChange={(e) => setForm({ ...form, plate: e.target.value })}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="value" className="py-2">
-                Valor
-              </Label>
-              <Input
-                id="value"
-                placeholder="R$"
-                value={form.value}
-                onChange={(e) => setForm({ ...form, value: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="mileage" className="py-2">
-                Quilometragem
-              </Label>
-              <Input
-                id="mileage"
-                value={form.mileage}
-                onChange={(e) => setForm({ ...form, mileage: e.target.value })}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="value">Valor</Label>
+            <Input
+              id="value"
+              placeholder="R$"
+              value={form.value}
+              onChange={(e) => setForm({ ...form, value: e.target.value })}
+            />
           </div>
         </div>
 

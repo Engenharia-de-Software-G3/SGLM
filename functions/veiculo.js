@@ -6,7 +6,6 @@
 import express from 'express';
 const router = express.Router();
 
-// Importando funções da Firestore para veículos
 import {
   criarVeiculo,
   listarVeiculos,
@@ -31,7 +30,6 @@ router.post('/', async (req, res) => {
   try {
     const veiculoData = req.body;
 
-    // TODO: Adicionar validação mais robusta (incluindo autenticação por middleware)
     /**
      * @todo Adicionar validação de dados de entrada mais robusta para veiculoData.
      * Considerar usar um esquema de validação (ex: Joi, Yup).
@@ -43,11 +41,9 @@ router.post('/', async (req, res) => {
         .send('Dados do veículo incompletos (chassi, placa e modelo são obrigatórios).');
     }
 
-    // Chame a função do Firestore para criar o veículo
     const resultado = await criarVeiculo(veiculoData);
 
     if (resultado.success) {
-      // Use o ID retornado pela função criarVeiculo
       res.status(201).send({ message: 'Veículo criado com sucesso!', id: resultado.id });
     } else {
       res.status(400).send({ message: 'Erro ao criar veículo', error: resultado.error });
@@ -73,7 +69,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { limite, ultimoDocId, ...filtrosQuery } = req.query;
-
+    D
     // Converter e validar parâmetros
     let limiteNum = 10; // Padrão
     if (limite) {
@@ -91,10 +87,8 @@ router.get('/', async (req, res) => {
       if (filtrosQuery[key]) filtrosParsed[key] = filtrosQuery[key];
     });
 
-    // Obter documento de referência para paginação
     let ultimoDoc = null;
     if (ultimoDocId) {
-      // Need to get the DocumentSnapshot for startAfter
       const lastDocSnapshot = await db.collection('veiculos').doc(ultimoDocId).get();
       if (!lastDocSnapshot.exists) {
         return res.status(400).json({ error: 'ID do último documento inválido' });
@@ -102,14 +96,12 @@ router.get('/', async (req, res) => {
       ultimoDoc = lastDocSnapshot;
     }
 
-    // Chamar função de listagem
     const { veiculos, ultimoDoc: ultimoDocSnapshot } = await listarVeiculos({
       limite: limiteNum,
       ultimoDoc,
       filtros: filtrosParsed,
     });
 
-    // Formatar resposta
     res.status(200).json({
       veiculos,
       paginacao: {
@@ -189,7 +181,6 @@ router.put('/:idVeiculo', async (req, res) => {
       return res.status(400).send('idVeiculo e/ou dados de atualização ausentes.');
     }
 
-    // Check if vehicle exists first
     const veiculo = await buscarPorId(idVeiculo);
     if (!veiculo) {
       return res.status(404).send('Veículo não encontrado.');
@@ -234,7 +225,6 @@ router.delete('/:idVeiculo', async (req, res) => {
 
     const veiculoDocRef = snapshot.docs[0].ref;
 
-    // Delete the document
     await veiculoDocRef.delete();
 
     res.status(200).send({ message: 'Veículo deletado com sucesso!' });

@@ -16,7 +16,6 @@ export const criarServicoAdicional = async (servicoAdicionalData) => {
 
     const id = uuidv4();
 
-    // 1. Documento principal na coleção "servicosAdicionais"
     await db.collection('servicosAdicionais').doc(id).set({
       id: id,
       chassiVeiculo: chassiVeiculo,
@@ -49,7 +48,6 @@ export const listarServicosAdicionais = async ({ limite = 10, ultimoDoc = null, 
   try {
     let query = db.collection('servicosAdicionais').orderBy('id').limit(limite);
 
-    //Aplicar filtros
     if (filtros.chassiVeiculo) {
       query = query.where('chassiVeiculo', '==', filtros.chassiVeiculo);
     }
@@ -66,7 +64,7 @@ export const listarServicosAdicionais = async ({ limite = 10, ultimoDoc = null, 
       query = query.where('valor', '==', filtros.valor);
     }
 
-    // Paginação
+
     if (ultimoDoc) {
       query = query.startAfter(ultimoDoc);
     }

@@ -1,39 +1,19 @@
 import { Layout } from '../../../shared/components/layout';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ReturnHeader } from '@/shared/components/return-header';
 import { ClientInfoCard } from './components/client-info-card';
-import { useState } from 'react';
-import type { ClientInfoCardData } from './components/client-info-card/@types';
 import { Toaster } from 'sonner';
+import { useGetClientQuery } from '@/services/client';
+import { Loader2 } from 'lucide-react';
 
 export const ClientProfile = () => {
   const navigate = useNavigate();
-  const client = {
-    name: 'Lucas Silva',
-    birthDate: '01/01/1982',
-    cpf: '000.000.000-00',
-    phone: '(83) 99999-9999',
-    cep: '58000-000',
-    street: 'Rua das Flores',
-    neighborhood: 'Centro',
-    number: '123',
-    complement: 'Apto 45',
-    email: 'lucas@email.com',
-    city: 'Campina Grande',
-    state: 'PB',
 
-    bank: 'Banco do Brasil',
-    agency: '1234',
-    agencyDigit: '5',
-    account: '987654',
-    accountDigit: '1',
+  const { id } = useParams();
 
-    cnhNumber: '12345678900',
-    cnhCategory: 'B',
-    cnhRegister: '123456789',
-    cnhExpirationDate: '27/12/2030',
-  };
-  const [data, setData] = useState<ClientInfoCardData>(client);
+  console.log({ id });
+
+  const { data: clientData, isLoading } = useGetClientQuery(id!);
 
   return (
     <Layout showHeader={false}>
@@ -41,7 +21,11 @@ export const ClientProfile = () => {
         <ReturnHeader title="Perfil do Cliente" onBack={() => navigate('/clientes')} />
         <Toaster />
         <div className="p-6">
-          <ClientInfoCard data={data} setData={setData} />
+          {isLoading || !clientData ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <ClientInfoCard data={clientData} />
+          )}
         </div>
       </div>
     </Layout>

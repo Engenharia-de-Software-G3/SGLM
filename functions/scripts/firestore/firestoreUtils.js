@@ -1,6 +1,5 @@
 import { db } from '../../firebaseConfig.js';
 
-// Validar CPF/CNPJ duplicado
 export const verificarDocumentoExistente = async (tipo, valor) => {
   const snapshot = await db
     .collection('clientes')
@@ -9,7 +8,6 @@ export const verificarDocumentoExistente = async (tipo, valor) => {
   return !snapshot.empty;
 };
 
-// Formatar dados para o Firestore
 export const formatarDataFirestore = (dataString) => {
   return new Date(dataString).toISOString();
 };

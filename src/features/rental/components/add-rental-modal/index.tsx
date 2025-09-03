@@ -7,13 +7,11 @@ import { addRentalSchema, type AddRentalFormData } from '../../schemas/addRental
 import { MaskedFormInput } from '@/shared/components/masked-form-input';
 import { FormInput } from '@/shared/components/form-input';
 import { FormSelect } from '@/shared/components/form-select';
+import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useState } from 'react';
 
-export const AddRentalModal = ({
-  open,
-  onOpenChange,
-  clientType,
-  onSubmit,
-}: AddRentalModalProps) => {
+export const AddRentalModal = ({ open, onOpenChange, onSubmit }: AddRentalModalProps) => {
   const {
     control,
     handleSubmit,
@@ -22,25 +20,29 @@ export const AddRentalModal = ({
   } = useForm<AddRentalFormData>({
     resolver: zodResolver(addRentalSchema),
     defaultValues: {
-      locatario: '',
       cnpjcpf: '',
       inicio: '',
       fim: '',
       placaVeiculo: '',
-      valorLocacao: '',
-      periodicidadePagamento: '',
+      valorLocacao: 0,
+      periocidadePagamento: '',
+      metodoPagamento: '',
     },
   });
 
-  const handleFormSubmit = async (data: AddRentalFormData) => {
+  const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
+
+  const handleFormSubmit = handleSubmit(async (data: AddRentalFormData) => {
     try {
       await onSubmit(data);
       reset();
       onOpenChange(false);
+      toast('Locação salva com sucesso');
     } catch (error) {
       console.error('Erro ao salvar locação:', error);
+      toast('Erro ao salvar locação');
     }
-  };
+  });
 
   const handleCancel = () => {
     reset();
@@ -54,16 +56,39 @@ export const AddRentalModal = ({
           <DialogTitle>Cadastro de locação</DialogTitle>
           <p className="text-sm text-gray-600">Insira os dados abaixo</p>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          <FormInput
-            label="Locatário"
-            placeholder="Digite o nome do locatário"
-            id="locatario"
-            control={control}
-            name="locatario"
-            error={errors.locatario?.message}
-            required
-          />
+
+        {/* Seleção do tipo de pessoa */}
+        <div className="flex space-x-4 mb-4">
+          <RadioGroup
+            value={clientType}
+            onValueChange={(value) => setClientType(value as 'fisica' | 'juridica')}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value="fisica"
+                id="fisica"
+                className="w-4 h-4 rounded-full border border-gray-400 checked:bg-[#6080BE] checked:border-[#6080BE] focus:ring-2 focus:ring-[#6080BE]"
+              />
+              <label htmlFor="fisica" className="text-sm select-none">
+                Pessoa Física
+              </label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value="juridica"
+                id="juridica"
+                className="w-4 h-4 rounded-full border border-gray-400 checked:bg-[#6080BE] checked:border-[#6080BE] focus:ring-2 focus:ring-[#6080BE]"
+              />
+              <label htmlFor="juridica" className="text-sm select-none">
+                Pessoa Jurídica
+              </label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           <MaskedFormInput
             label={clientType === 'fisica' ? 'CPF' : 'CNPJ'}
             id="cnpjcpf"
@@ -112,23 +137,40 @@ export const AddRentalModal = ({
               name="valorLocacao"
               error={errors.valorLocacao?.message}
               required
-              placeholder="R$00,00"
+              placeholder="R$ 0,00"
               type="number"
             />
           </div>
 
           <div className="col-span-2">
             <FormSelect
-              name="periodicidadePagamento"
+              name="periocidadePagamento"
               control={control}
-              label="Periodicidade do pagamento"
+              label="Periocidade do pagamento"
               required
-              error={errors.periodicidadePagamento?.message}
+              error={errors.periocidadePagamento?.message}
               options={[
                 { value: 'Diária', label: 'Diária' },
                 { value: 'Semanal', label: 'Semanal' },
                 { value: 'Quinzenal', label: 'Quinzenal' },
                 { value: 'Mensal', label: 'Mensal' },
+              ]}
+            />
+          </div>
+
+          <div className="col-span-2">
+            <FormSelect
+              name="metodoPagamento"
+              control={control}
+              label="Método de pagamento"
+              required
+              error={errors.metodoPagamento?.message}
+              options={[
+                { value: 'Pix', label: 'Pix' },
+                { value: 'Dinheiro', label: 'Dinheiro' },
+                { value: 'Débito', label: 'Débito' },
+                { value: 'Crédito', label: 'Crédito' },
+                { value: 'Boleto', label: 'Boleto' },
               ]}
             />
           </div>

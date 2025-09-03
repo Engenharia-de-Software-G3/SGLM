@@ -112,11 +112,8 @@ router.get('/:veiculoId', async (req, res) => {
 
     const listaManutencoes = await listarManutencao(veiculoId);
 
-    // TODO: Implementar tratamento de caso onde o veículo não existe ou não tem manutenções
-
     res.status(200).send(listaManutencoes);
   } catch (error) {
-    // Captura erros inesperados durante o processamento da rota
     console.error(`Erro inesperado na rota GET /manutencoes/${req.params.veiculoId}:`, error);
     res.status(500).send('Erro interno do servidor.');
   }

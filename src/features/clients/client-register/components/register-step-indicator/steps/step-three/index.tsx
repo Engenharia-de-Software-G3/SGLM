@@ -26,7 +26,7 @@ export const StepThree = ({ data, setData }: StepThreeProps) => (
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
+      {/* <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Registro</label>
         <Input
           type="number"
@@ -34,7 +34,7 @@ export const StepThree = ({ data, setData }: StepThreeProps) => (
           value={data.registro || ''}
           onChange={(e) => setData((old) => ({ ...old, registro: e.target.value }))}
         />
-      </div>
+      </div> */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Data de Validade</label>
         <div className="relative">

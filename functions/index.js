@@ -1,4 +1,3 @@
-// functions/index.js
 /**
  * @file Ponto de entrada principal para as Cloud Functions do SGLM.
  * Configura o aplicativo Express e encaminha as requisições HTTP
@@ -22,7 +21,6 @@ app.use(express.json());
  */
 app.use(cors({ origin: true }));
 
-// Teste da API (opcional)
 /**
  * Rota de teste simples para verificar se a API está respondendo.
  * Responde com "Hello World!".
@@ -37,7 +35,6 @@ app.get('/hello-world', (req, res) => {
   return res.status(200).send('Hello World from feat/ui-sglm-partial branch!');
 });
 
-// Rota cliente
 /**
  * Importa e monta o roteador para as operações relacionadas a clientes.
  * Todas as rotas definidas em './cliente' serão acessíveis sob o prefixo '/clientes'.
@@ -46,7 +43,6 @@ app.get('/hello-world', (req, res) => {
 import clientesRouter from './cliente.js';
 app.use('/clientes', clientesRouter);
 
-// Rota veículo
 /**
  * Importa e monta o roteador para as operações relacionadas a veículos.
  * Todas as rotas definidas em './veiculo' serão acessíveis sob o prefixo '/veiculos'.
@@ -55,7 +51,6 @@ app.use('/clientes', clientesRouter);
 import veiculosRouter from './veiculo.js';
 app.use('/veiculos', veiculosRouter);
 
-// Rota fornecedor
 /**
  * Importa e monta o roteador para as operações relacionadas a fornecedores.
  * Todas as rotas definidas em './fornecedores' serão acessíveis sob o prefixo '/fornecedores'.
@@ -64,7 +59,6 @@ app.use('/veiculos', veiculosRouter);
 import fornecedoresRouter from './fornecedores.js';
 app.use('/fornecedores', fornecedoresRouter);
 
-// Rota manutenções
 /**
  * Importa e monta o roteador para as operações relacionadas a histórico de manutenções.
  * Todas as rotas definidas em './manutencoes' serão acessíveis sob o prefixo '/manutencoes'.
@@ -73,7 +67,6 @@ app.use('/fornecedores', fornecedoresRouter);
 import manutencoesRouter from './manutencoes.js'; // Importe o roteador de manutenções
 app.use('/manutencoes', manutencoesRouter); // Use o roteador com o prefixo '/manutencoes'
 
-// Rota vistoria
 /**
  * Importa e monta o roteador para as operações relacionadas a vistorias.
  * Todas as rotas definidas em './vistoria' serão acessíveis sob o prefixo '/vistoria'.
@@ -82,7 +75,6 @@ app.use('/manutencoes', manutencoesRouter); // Use o roteador com o prefixo '/ma
 import vistoriasRouter from './vistoria.js';
 app.use('/vistorias', vistoriasRouter);
 
-// Rota locações
 /**
  * Importa e monta o roteador para as operações relacionadas a locações.
  * Todas as rotas definidas em './locacoes' serão acessíveis sob o prefixo '/locacoes'.

@@ -10,7 +10,6 @@ export const CardLogin = () => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  // Aqui deveria ficar a lógica de autenticação do Firebase
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     navigate('/dashboard');
