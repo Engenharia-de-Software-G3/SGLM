@@ -4,6 +4,11 @@ export const requiredString = z.string().min(1, 'Campo Obrigatório');
 
 function parseDDMMYYYY(dateStr: string): Date {
   const [day, month, year] = dateStr.split('/').map(Number);
+
+  if (month < 1 || month > 12 || day < 1 || year < 1) {
+     throw new Error(`Data inválida: ${dateStr}`);
+  }
+
   return new Date(year, month - 1, day);
 }
 
