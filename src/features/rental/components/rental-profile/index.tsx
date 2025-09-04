@@ -116,7 +116,7 @@ export const RentalProfile = () => {
 
   return (
     <Layout showHeader={false}>
-      <ReturnHeader title={`Locação #${id}`} onBack={() => navigate('/locacoes')} />
+      <ReturnHeader title={`Locação`} onBack={() => navigate('/locacoes')} />
       <Toaster />
       <div className="p-6">
         <RentalInfoCard data={rentalData} setData={() => {}} />

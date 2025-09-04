@@ -111,6 +111,7 @@ export const VehicleActionDialog = ({
                 Cancelar
               </Button>
               <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => {
                   if (!vehicle) return;
 
