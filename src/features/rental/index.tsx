@@ -26,6 +26,7 @@ import {
 } from '@/lib/generateContractPDF';
 import { getClientByCpf } from '@/services/client/functions';
 import { getVehicleByPlaca } from '@/services/vehicle/functions';
+import { ClienteCompleto } from '@/services/client/types';
 
 interface DisplayRentalData {
   id: string;
@@ -168,14 +169,13 @@ export const Rental = () => {
         client: {
           nomeCompleto: client?.nomeCompleto || 'Não informado',
           cpf: cleanCpf,
-          cnpj: client?.cnpj || '',
-          rg: client?.rg || 'Não informado',
+          rg: 'Não informado',
           email: client?.email || 'Não informado',
           telefone: client?.telefone || 'Não informado',
-          endereco: client?.endereco || 'Não informado',
-          nacionalidade: client?.nacionalidade || 'Brasileiro',
-          estadoCivil: client?.estadoCivil || 'Solteiro',
-          profissao: client?.profissao || 'Autônomo',
+          endereco: getEnderecoAsString(client) || 'Não informado',
+          nacionalidade: 'Brasileiro',
+          estadoCivil: 'Solteiro',
+          profissao: 'Autônomo',
         },
         vehicle: {
           id: vehicle?.id,
@@ -237,6 +237,15 @@ export const Rental = () => {
     }
   };
 
+  function getEnderecoAsString(client: ClienteCompleto | undefined) {
+    let endereco = ''
+    if (!client) return endereco;
+    for (const value of Object.values(client?.enderecos?.principal || {})) {
+      endereco += value + " ";
+    }
+    return endereco;
+  }
+
   const handleViewContract = async (id: string) => {
     try {
       setLoadingContractId(id);
@@ -281,14 +290,12 @@ export const Rental = () => {
         client: {
           nomeCompleto: client?.nomeCompleto || 'Não informado',
           cpf: locacao.clienteId,
-          cnpj: client?.cnpj || '',
-          rg: client?.rg || 'Não informado',
           email: client?.email || 'Não informado',
           telefone: client?.telefone || 'Não informado',
-          endereco: client?.endereco || 'Não informado',
-          nacionalidade: client?.nacionalidade || 'Brasileiro',
-          estadoCivil: client?.estadoCivil || 'Solteiro',
-          profissao: client?.profissao || 'Autônomo',
+          endereco: getEnderecoAsString(client) || 'Não informado',
+          nacionalidade:  'Brasileiro',
+          estadoCivil:  'Solteiro',
+          profissao: 'Autônomo',
         },
         vehicle: {
           id: vehicle?.id || 'Não informado',

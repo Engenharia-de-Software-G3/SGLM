@@ -1,8 +1,8 @@
-import { SingleClientResponse } from '@/services/client/types';
+import { ClienteCompletoResponse } from '@/services/client/types';
 import { z } from 'zod';
 
 export interface ClientInfoCardProps {
-  data: SingleClientResponse;
+  data: ClienteCompletoResponse ;
 }
 
 export type ClientInfoCardData = z.infer<typeof clientInfoCardSchema>;
