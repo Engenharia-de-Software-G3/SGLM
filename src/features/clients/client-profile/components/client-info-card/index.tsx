@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useUpdateClientMutation } from '@/services/client';
 import { useNavigate } from 'react-router-dom';
 import { AtualizarClienteParams } from '@/services/client/types';
+import { onlyNumbers } from '@/services/utils/onlyNumbers';
 
 export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const [isReadOnly, setIsReadOnly] = useState(false);
@@ -17,7 +18,10 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const navigate = useNavigate();
 
   const filterByClient = () => {
-    localStorage.setItem('filterRentalsByClient', JSON.stringify(flattenedData.nomeCompleto || ''));
+    localStorage.setItem(
+      'filterRentalsByClient',
+      JSON.stringify(onlyNumbers(flattenedData.cpf) || ''),
+    );
     navigate('/locacoes');
   };
 
@@ -80,7 +84,6 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
         contaDigito: '',
       },
     };
-
 
     console.log(restored);
     return restored;
@@ -261,9 +264,12 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Banco</label>
-          <Input placeholder="Insira o nome do banco" value={flattenedData.dadosBancarios_banco}
-          onChange={(e) => updateFlattenedData('dadosBancarios_banco', e.target.value)}
-          readOnly={isReadOnly} />
+          <Input
+            placeholder="Insira o nome do banco"
+            value={flattenedData.dadosBancarios_banco}
+            onChange={(e) => updateFlattenedData('dadosBancarios_banco', e.target.value)}
+            readOnly={isReadOnly}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Agência</label>

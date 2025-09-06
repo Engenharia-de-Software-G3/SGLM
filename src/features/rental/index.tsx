@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Layout } from '../../shared/components/layout';
 import { Button } from '@/components/ui/button';
-import { DeleteModal } from '@/shared/components/delete-modal';
 import { FileText, Plus, Download } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { PaginatedTable } from '@/shared/components/display-table';
@@ -27,6 +26,7 @@ import {
 import { getClientByCpf } from '@/services/client/functions';
 import { getVehicleByPlaca } from '@/services/vehicle/functions';
 import { ClienteCompleto } from '@/services/client/types';
+import { UpdateModal } from '@/shared/components/update-modal';
 
 interface DisplayRentalData {
   id: string;
@@ -238,10 +238,10 @@ export const Rental = () => {
   };
 
   function getEnderecoAsString(client: ClienteCompleto | undefined) {
-    let endereco = ''
+    let endereco = '';
     if (!client) return endereco;
     for (const value of Object.values(client?.enderecos?.principal || {})) {
-      endereco += value + " ";
+      endereco += value + ' ';
     }
     return endereco;
   }
@@ -293,8 +293,8 @@ export const Rental = () => {
           email: client?.email || 'Não informado',
           telefone: client?.telefone || 'Não informado',
           endereco: getEnderecoAsString(client) || 'Não informado',
-          nacionalidade:  'Brasileiro',
-          estadoCivil:  'Solteiro',
+          nacionalidade: 'Brasileiro',
+          estadoCivil: 'Solteiro',
           profissao: 'Autônomo',
         },
         vehicle: {
@@ -459,10 +459,10 @@ export const Rental = () => {
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
-                    <DeleteModal
-                      title="Tem certeza que deseja excluir essa locação?"
-                      description="Todos os dados salvos serão excluídos."
-                      actionText="Excluir locação"
+                    <UpdateModal
+                      title="Tem certeza que deseja atualizar o status dessa locação?"
+                      description=""
+                      actionText="Atualizar locação"
                       onConfirm={() => handleDeleteRental(rental.id as string)}
                     />
                     <Button
