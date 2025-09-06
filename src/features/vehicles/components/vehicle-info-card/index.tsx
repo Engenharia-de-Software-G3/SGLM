@@ -4,13 +4,13 @@ import { Car } from 'lucide-react';
 import { StatusVehicle } from '@/services/vehicle/types';
 
 interface VehicleInfoCardProps {
-  marca: string;
-  modelo: string;
-  placa: string;
-  ano: string;
-  cor: string;
-  status: StatusVehicle;
-  quilometragemAtual: string;
+  readonly marca: string;
+  readonly modelo: string;
+  readonly placa: string;
+  readonly ano: string;
+  readonly cor: string;
+  readonly status: StatusVehicle;
+  readonly quilometragemAtual: string;
 }
 
 export function VehicleInfoCard({

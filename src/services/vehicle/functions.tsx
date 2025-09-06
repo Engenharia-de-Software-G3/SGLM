@@ -3,7 +3,6 @@ import {
   VehicleData,
   CreateVehicleInterface,
   ListManyVehicles,
-  SingleVehicleResponse,
   UpdateVehicleInterface,
   GetVehiclesParams,
 } from './types';
@@ -30,10 +29,10 @@ export async function getVehiclesFunction({
 
     const response = await api.get('/veiculos', {
       params: {
-        status: status ? status : undefined,
-        page: page ? page : undefined,
+        status: status || undefined,
+        page: page || undefined,
 
-        marca: search ? search : undefined,
+        marca: search || undefined,
         // placa: search ? search : undefined,
         // modelo: search ? search : undefined,
       },
@@ -45,7 +44,7 @@ export async function getVehiclesFunction({
 
     const data = response.data;
 
-    if (data && data.veiculos && Array.isArray(data.veiculos)) {
+    if (Array.isArray(data?.veiculos)) {
       data.veiculos.map((vehicle: Record<string, unknown>) => {
         try {
           const anoModelo = vehicle.anoModelo as { fabricacao: string; modelo: string };
@@ -123,16 +122,16 @@ export async function getVehicleFunction(id: string) {
 
     const vehicle: VehicleData = {
       ...response.data.veiculo,
-      dataCompra: response.data.veiculo.dataCompra.split('T')[0],
+      dataCompra: response.data.veiculo?.dataCompra?.split('T')[0] || '',
     };
 
-    vehicle.dataCompra = vehicle.dataCompra.split('T')[0];
+    vehicle.dataCompra = vehicle.dataCompra?.split('T')[0] || '';
     vehicle.ano =
-      response.data.veiculo.anoModelo.fabricacao + '/' + response.data.veiculo.anoModelo.modelo;
+      response.data.veiculo?.anoModelo?.fabricacao + '/' + response.data.veiculo?.anoModelo?.modelo;
 
     console.log(vehicle.ano);
 
-    return vehicle as SingleVehicleResponse;
+    return vehicle;
   } catch (error) {
     console.error('❌ Error fetching vehicle by id:', error);
     throw error;
@@ -206,7 +205,7 @@ export async function getVehicleByPlaca(placa: string): Promise<VehicleData> {
     });
 
     const data = response.data;
-    if (!data || !data.veiculos || !Array.isArray(data.veiculos) || data.veiculos.length === 0) {
+    if (!Array.isArray(data?.veiculos) || data.veiculos.length === 0) {
       throw new Error('Veículo não encontrado');
     }
 

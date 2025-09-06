@@ -9,7 +9,7 @@ export function PaginatedTable<T>({
   columns,
   renderRow,
   rowsPerPageOptions = [5, 10, 20],
-}: PaginatedTableProps<T>) {
+}: Readonly<PaginatedTableProps<T>>) {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(rowsPerPageOptions[0]);
 

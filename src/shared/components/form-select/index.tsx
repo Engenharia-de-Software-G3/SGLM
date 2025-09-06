@@ -30,7 +30,7 @@ export function FormSelect<T extends FieldValues>({
   options,
   error,
   required,
-}: FormSelectProps<T>) {
+}: Readonly<FormSelectProps<T>>) {
   return (
     <div className="w-full space-y-2">
       <Label htmlFor={name} className="text-sm font-medium whitespace-normal w-full">

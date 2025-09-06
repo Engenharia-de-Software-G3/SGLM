@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { CloudUpload } from 'lucide-react';
 import type { EditVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
-import { StatusVehicle } from '@/services/vehicle/types';
 
 function maskData(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 8);
@@ -57,7 +56,7 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
         local: vehicle.local || '',
         nome: vehicle.nome || '',
         observacoes: vehicle.observacoes || '',
-        status: vehicle.status as StatusVehicle,
+        status: vehicle.status,
       });
     }
   }, [vehicle]);
@@ -69,8 +68,12 @@ export const EditVehicleModal = ({ isOpen, onClose, onSave, vehicle }: EditVehic
   ) => {
     const { id, value } = 'target' in e ? e.target : e;
 
-    const maskedValue =
-      id === 'dataCompra' ? maskData(value) : id === 'ano' ? maskAnoModelo(value) : value;
+    let maskedValue = value;
+    if (id === 'dataCompra') {
+      maskedValue = maskData(value);
+    } else if (id === 'ano') {
+      maskedValue = maskAnoModelo(value);
+    }
 
     setFormData((prev) => ({ ...prev, [id]: maskedValue }));
     if (errors[id]) setErrors((prev) => ({ ...prev, [id]: '' }));

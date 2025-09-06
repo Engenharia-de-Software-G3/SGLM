@@ -7,7 +7,6 @@ import { CloudUpload } from 'lucide-react';
 import type { AddVehicleModalProps } from './@types';
 import type { VeiculoFormulario } from '@/features/vehicles/types';
 import { vehicleFormSchema } from '@/features/vehicles/schemas/vehicleFormSchema';
-import z from 'zod';
 
 export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModalProps) => {
   const [formData, setFormData] = useState<VeiculoFormulario>({
@@ -65,7 +64,7 @@ export const AddVehicleModal = ({ open, onOpenChange, onSubmit }: AddVehicleModa
     const result = vehicleFormSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof VeiculoFormulario, string>> = {};
-      result.error.issues.forEach((error: z.ZodIssue) => {
+      result.error.issues.forEach((error) => {
         const field = error.path[0] as keyof VeiculoFormulario;
         fieldErrors[field] = error.message;
       });

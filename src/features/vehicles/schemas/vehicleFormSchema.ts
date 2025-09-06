@@ -7,7 +7,7 @@ export const vehicleFormSchema = z.object({
     .string()
     .nonempty('Placa é obrigatória')
     .regex(
-      /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/,
+      /^[A-Z]{3}\d[\dA-Z]\d{2}$/,
       'Placa deve estar no formato Mercosul (ABC1D23) ou antigo (ABC1234)',
     ),
   ano: z

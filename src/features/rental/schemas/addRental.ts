@@ -6,7 +6,7 @@ function parseDDMMYYYY(dateStr: string): Date {
   const [day, month, year] = dateStr.split('/').map(Number);
 
   if (month < 1 || month > 12 || day < 1 || year < 1) {
-     throw new Error(`Data inválida: ${dateStr}`);
+    throw new Error(`Data inválida: ${dateStr}`);
   }
 
   return new Date(year, month - 1, day);
@@ -23,7 +23,7 @@ export const addRentalSchema = z
     fim: requiredString,
 
     placaVeiculo: requiredString.regex(
-      /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/,
+      /^[A-Z]{3}\d[\dA-Z]\d{2}$/,
       'Placa deve estar no formato Mercosul (ABC1D23) ou antigo (ABC1234)',
     ),
 

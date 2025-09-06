@@ -126,7 +126,7 @@ export const Vehicles = () => {
       quilometragemNaCompra: data.quilometragemCompra,
       ano: data.ano,
       renavam: '',
-      status: data.status as StatusVehicle,
+      status: data.status,
       dataCadastro: data.dataCompra,
       dataAtualizacao: '',
       dataVenda: '',
@@ -144,7 +144,7 @@ export const Vehicles = () => {
   };
 
   const filteredVehicles = useMemo(() => {
-    if (!vehicles || !vehicles.veiculos) return [];
+    if (!vehicles?.veiculos) return [];
     return vehicles.veiculos;
   }, [vehicles]);
 

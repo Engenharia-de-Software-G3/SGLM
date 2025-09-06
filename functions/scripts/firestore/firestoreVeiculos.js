@@ -199,6 +199,16 @@ export const listarVeiculos = async ({ limite = 10, ultimoDoc = null, filtros = 
 };
 
 /**
+ * Busca veículo por chassi
+ * @param {string} chassi - Chassi do veículo
+ * @returns {Promise<Object|null>} - Retorna o veículo ou null se não encontrado
+ */
+export const buscarPorChassi = async (chassi) => {
+  const snapshot = await db.collection('veiculos').where('chassi', '==', chassi).limit(1).get();
+  return snapshot.empty ? null : snapshot.docs[0].data();
+};
+
+/**
  * Listar quilometragem de um veículo específico
  * @param {string} chassi - Chassi do veículo
  * @returns {Promise<number|null>} - Retorna a quilometragem do veículo ou null se não encontrado

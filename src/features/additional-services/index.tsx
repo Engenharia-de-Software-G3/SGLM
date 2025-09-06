@@ -17,7 +17,7 @@ const mockData = [
 
 export const AdditionalServices = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isFormModalOpen, setFormModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     valor: '',
@@ -35,7 +35,7 @@ export const AdditionalServices = () => {
   const handleFormSubmit = () => {
     console.log('Serviço adicional cadastrado:', formData);
     setFormData({ nome: '', valor: '', descricao: '' });
-    setFormModalOpen(false);
+    setIsFormModalOpen(false);
   };
 
   return (
@@ -50,7 +50,7 @@ export const AdditionalServices = () => {
           <ActionButton
             label="Cadastrar Serviço"
             icon={<Plus className="h-4 w-4 mr-1" />}
-            onClick={() => setFormModalOpen(true)}
+            onClick={() => setIsFormModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700"
           />
         </DisplayTableHeader>
@@ -94,7 +94,7 @@ export const AdditionalServices = () => {
 
       <AddServiceModal
         open={isFormModalOpen}
-        onOpenChange={setFormModalOpen}
+        onOpenChange={setIsFormModalOpen}
         formData={formData}
         onChange={handleFormChange}
         onSubmit={handleFormSubmit}

@@ -43,7 +43,7 @@ export function FormInput<T extends FieldValues>({
   className = '',
   children,
   ...props
-}: FormInputProps<T>) {
+}: Readonly<FormInputProps<T>>) {
   return (
     <div className="space-y-2">
       {label && (
@@ -84,17 +84,19 @@ export function FormInput<T extends FieldValues>({
             onBlur();
           };
 
-          const displayValue =
-            type === 'number'
-              ? value
-                ? value.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })
-                : ''
-              : value;
+          let displayValue = value;
+          if (type === 'number') {
+            if (value) {
+              displayValue = value.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              });
+            } else {
+              displayValue = '';
+            }
+          }
 
           const fieldProps: FieldProps = {
             id,

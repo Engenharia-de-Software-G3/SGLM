@@ -2,7 +2,8 @@ const {
   adicionarManutencao, 
   listarManutencoes, 
   listarManutencao, 
-  deletarManutencao 
+  deletarManutencao,
+  removerManutencaoPermanente
 } = require('../scripts/firestore/firestoreManutencao.js');
 
 // Mock das dependências
@@ -355,6 +356,190 @@ describe('firestoreManutencao', () => {
       // Assert
       expect(resultado.success).toBe(false);
       expect(resultado.error).toBe('Erro no Firestore');
+    });
+  });
+
+  describe('listarManutencoes', () => {
+    test('deve listar manutenções com paginação usando ultimoDoc', async () => {
+      const mockManutencoes = [
+        { id: 'manut1', nomeServico: 'Troca de óleo', valor: 150 },
+        { id: 'manut2', nomeServico: 'Revisão', valor: 300 }
+      ];
+
+      const mockSnapshot = {
+        docs: mockManutencoes.map(m => ({
+          id: m.id,
+          data: () => m
+        }))
+      };
+
+      const mockUltimoDoc = { id: 'ultimo' };
+      const mockQuery = {
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        startAfter: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue(mockSnapshot)
+      };
+
+      const mockCollection = {
+        orderBy: jest.fn(() => mockQuery)
+      };
+
+      db.collection.mockReturnValue(mockCollection);
+
+      const resultado = await listarManutencoes({ limite: 10, ultimoDoc: mockUltimoDoc });
+
+      expect(resultado.manutencoes).toHaveLength(2);
+      expect(mockQuery.startAfter).toHaveBeenCalledWith(mockUltimoDoc);
+    });
+
+    test('deve lançar erro quando Firestore falha em listarManutencoes', async () => {
+      const mockQuery = {
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockRejectedValue(new Error('Firestore error'))
+      };
+
+      const mockCollection = {
+        orderBy: jest.fn(() => mockQuery)
+      };
+
+      db.collection.mockReturnValue(mockCollection);
+
+      await expect(listarManutencoes(10)).rejects.toThrow('Firestore error');
+    });
+  });
+
+  describe('listarManutencao (por veículo)', () => {
+    test('deve listar manutenções por veículo com ultimoDoc', async () => {
+      const veiculoId = 'veiculo123';
+      const mockManutencoes = [
+        { id: 'manut1', nomeServico: 'Troca de óleo', valor: 150 }
+      ];
+
+      const mockSnapshot = {
+        docs: mockManutencoes.map(m => ({
+          id: m.id,
+          data: () => m
+        }))
+      };
+
+      const mockUltimoDoc = { id: 'ultimo' };
+      const mockSubQuery = {
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        startAfter: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue(mockSnapshot)
+      };
+
+      const mockSubCollection = {
+        orderBy: jest.fn(() => mockSubQuery)
+      };
+
+      const mockDoc = {
+        collection: jest.fn(() => mockSubCollection)
+      };
+
+      const mockCollection = {
+        doc: jest.fn(() => mockDoc)
+      };
+
+      db.collection.mockReturnValue(mockCollection);
+
+      const resultado = await listarManutencao(veiculoId, { limite: 10, ultimoDoc: mockUltimoDoc });
+
+      expect(resultado.manutencoes).toHaveLength(1);
+      expect(mockSubQuery.startAfter).toHaveBeenCalledWith(mockUltimoDoc);
+      expect(resultado.ultimoDoc).toBeDefined();
+    });
+
+    test('deve lançar erro quando Firestore falha em listarManutencao', async () => {
+      const veiculoId = 'veiculo123';
+      const mockSubQuery = {
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockRejectedValue(new Error('Firestore error'))
+      };
+
+      const mockSubCollection = {
+        orderBy: jest.fn(() => mockSubQuery)
+      };
+
+      const mockDoc = {
+        collection: jest.fn(() => mockSubCollection)
+      };
+
+      const mockCollection = {
+        doc: jest.fn(() => mockDoc)
+      };
+
+      db.collection.mockReturnValue(mockCollection);
+
+      await expect(listarManutencao(veiculoId, { limite: 10 }))
+        .rejects.toThrow('Firestore error');
+    });
+  });
+
+  describe('removerManutencaoPermanente', () => {
+    test('deve remover manutenção permanentemente', async () => {
+      const idManutencao = 'manut123';
+      
+      const mockDoc = {
+        get: jest.fn().mockResolvedValue({ 
+          exists: true,
+          data: () => ({ id: idManutencao })
+        }),
+        delete: jest.fn().mockResolvedValue()
+      };
+
+      const mockCollection = {
+        doc: jest.fn(() => mockDoc)
+      };
+
+      db.collection.mockReturnValue(mockCollection);
+
+      const resultado = await removerManutencaoPermanente(idManutencao);
+
+      expect(resultado.success).toBe(true);
+      expect(mockDoc.delete).toHaveBeenCalled();
+    });
+
+    test('deve retornar erro quando manutenção não existe para remoção', async () => {
+      const idManutencao = 'inexistente';
+      
+      const mockDoc = {
+        get: jest.fn().mockResolvedValue({ exists: false }),
+      };
+
+      const mockCollection = {
+        doc: jest.fn(() => mockDoc)
+      };
+
+      db.collection.mockReturnValue(mockCollection);
+
+      const resultado = await removerManutencaoPermanente(idManutencao);
+
+      expect(resultado.success).toBe(false);
+      expect(resultado.error).toBe('Manutenção não encontrada.');
+    });
+
+    test('deve retornar erro quando Firestore falha em removerManutencaoPermanente', async () => {
+      const idManutencao = 'manut123';
+      
+      const mockDoc = {
+        get: jest.fn().mockRejectedValue(new Error('Firestore error'))
+      };
+
+      const mockCollection = {
+        doc: jest.fn(() => mockDoc)
+      };
+
+      db.collection.mockReturnValue(mockCollection);
+
+      const resultado = await removerManutencaoPermanente(idManutencao);
+
+      expect(resultado.success).toBe(false);
+      expect(resultado.error).toBe('Firestore error');
     });
   });
 });

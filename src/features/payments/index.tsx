@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Layout } from '@/shared/components/layout';
-import { Edit } from 'lucide-react';
+import { Edit, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';

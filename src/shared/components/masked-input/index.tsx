@@ -40,7 +40,7 @@ export function MaskedInput({
   disabled,
   readOnly,
   ...rest
-}: MaskedInputProps) {
+}: Readonly<MaskedInputProps>) {
   return (
     <IMaskInput
       mask={maskConfig[type]}

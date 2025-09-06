@@ -105,6 +105,92 @@ export const criarCliente = async (clienteData) => {
 };
 
 /**
+ * Formata CPF para exibição
+ * @param {string} cpf - CPF sem formatação
+ * @returns {string} CPF formatado
+ */
+const formatarCPF = (cpf) => {
+  return `${cpf.substring(0, 3)}.${cpf.substring(3, 6)}.${cpf.substring(6, 9)}-${cpf.substring(9, 11)}`;
+};
+
+/**
+ * Busca dados bancários de um cliente
+ * @param {Object} clienteRef - Referência do cliente
+ * @param {Object} clienteData - Dados do cliente a serem atualizados
+ */
+const buscarDadosBancarios = async (clienteRef, clienteData) => {
+  try {
+    const dadosBancariosSnapshot = await clienteRef.collection('dados-bancarios').doc('principal').get();
+    if (dadosBancariosSnapshot.exists) {
+      const dadosBancarios = dadosBancariosSnapshot.data();
+      clienteData.dadosBancarios = {
+        banco: dadosBancarios.banco,
+        agencia: `${dadosBancarios.agencia}-${dadosBancarios.agenciaDigito}`,
+        conta: `${dadosBancarios.conta}-${dadosBancarios.contaDigito}`
+      };
+    }
+  } catch (error) {
+    console.warn(`Erro ao buscar dados bancários para cliente ${clienteData.id}:`, error);
+  }
+};
+
+/**
+ * Busca contatos de um cliente
+ * @param {Object} clienteRef - Referência do cliente
+ * @param {Object} clienteData - Dados do cliente a serem atualizados
+ */
+const buscarContatos = async (clienteRef, clienteData) => {
+  try {
+    const contatoSnapshot = await clienteRef.collection('contatos').doc('principal').get();
+    if (contatoSnapshot.exists) {
+      const contato = contatoSnapshot.data();
+      clienteData.email = contato.email;
+      clienteData.telefone = contato.telefone;
+    }
+  } catch (error) {
+    console.warn(`Erro ao buscar contato para cliente ${clienteData.id}:`, error);
+  }
+};
+
+/**
+ * Enriquece dados do cliente com subcoleções
+ * @param {Object} doc - Documento do Firestore
+ * @returns {Object} Dados do cliente enriquecidos
+ */
+const enriquecerClienteData = async (doc) => {
+  const clienteData = { id: doc.id, ...doc.data() };
+  const clienteRef = doc.ref;
+  
+  // Adicionar CPF formatado
+  clienteData.cpf = formatarCPF(doc.id);
+  
+  // Buscar dados adicionais das subcoleções
+  await Promise.all([
+    buscarDadosBancarios(clienteRef, clienteData),
+    buscarContatos(clienteRef, clienteData)
+  ]);
+  
+  return clienteData;
+};
+
+/**
+ * Busca cliente específico por CPF para listagem
+ * @param {string} cpf - CPF para busca
+ * @returns {Object} Resultado da busca
+ */
+const buscarClienteParaListagem = async (cpf) => {
+  const cleanCpf = cpf.replace(/\D/g, '');
+  const clienteDoc = await db.collection('clientes').doc(cleanCpf).get();
+  
+  if (!clienteDoc.exists) {
+    return { clientes: [], ultimoDoc: null };
+  }
+  
+  const clienteData = await enriquecerClienteData(clienteDoc);
+  return { clientes: [clienteData], ultimoDoc: null };
+};
+
+/**
  * Lista clientes com paginação e filtros
  * @param {Object} params
  * @param {number} [params.limite=10] - Número máximo de resultados
@@ -119,53 +205,7 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
   try {
     // Se há filtro por CPF, buscar diretamente o documento específico
     if (filtros.cpf) {
-      const cleanCpf = filtros.cpf.replace(/\D/g, '');
-      const clienteDoc = await db.collection('clientes').doc(cleanCpf).get();
-      
-      if (clienteDoc.exists) {
-        const clienteData = { id: clienteDoc.id, ...clienteDoc.data() };
-        const clienteRef = clienteDoc.ref;
-        
-        // Adicionar CPF formatado
-        const cpf = clienteDoc.id;
-        clienteData.cpf = `${cpf.substring(0, 3)}.${cpf.substring(3, 6)}.${cpf.substring(6, 9)}-${cpf.substring(9, 11)}`;
-        
-        // Buscar dados adicionais das subcoleções
-        try {
-          const dadosBancariosSnapshot = await clienteRef.collection('dados-bancarios').doc('principal').get();
-          if (dadosBancariosSnapshot.exists) {
-            const dadosBancarios = dadosBancariosSnapshot.data();
-            clienteData.dadosBancarios = {
-              banco: dadosBancarios.banco,
-              agencia: `${dadosBancarios.agencia}-${dadosBancarios.agenciaDigito}`,
-              conta: `${dadosBancarios.conta}-${dadosBancarios.contaDigito}`
-            };
-          }
-        } catch (error) {
-          console.warn(`Erro ao buscar dados bancários para cliente ${clienteDoc.id}:`, error);
-        }
-        
-        try {
-          const contatoSnapshot = await clienteRef.collection('contatos').doc('principal').get();
-          if (contatoSnapshot.exists) {
-            const contato = contatoSnapshot.data();
-            clienteData.email = contato.email;
-            clienteData.telefone = contato.telefone;
-          }
-        } catch (error) {
-          console.warn(`Erro ao buscar contato para cliente ${clienteDoc.id}:`, error);
-        }
-        
-        return {
-          clientes: [clienteData],
-          ultimoDoc: null,
-        };
-      } else {
-        return {
-          clientes: [],
-          ultimoDoc: null,
-        };
-      }
+      return await buscarClienteParaListagem(filtros.cpf);
     }
 
     // Query normal quando não há filtro por CPF
@@ -189,44 +229,7 @@ export const listarClientes = async ({ limite = 10, ultimoDoc = null, filtros = 
     
     // Para cada cliente, buscar dados adicionais das subcoleções
     const clientes = await Promise.all(
-      snapshot.docs.map(async (doc) => {
-        const clienteData = { id: doc.id, ...doc.data() };
-        const clienteRef = doc.ref;
-        
-        // Adicionar CPF formatado
-        const cpf = doc.id;
-        clienteData.cpf = `${cpf.substring(0, 3)}.${cpf.substring(3, 6)}.${cpf.substring(6, 9)}-${cpf.substring(9, 11)}`;
-        
-        // Buscar dados bancários (se existir)
-        try {
-          const dadosBancariosSnapshot = await clienteRef.collection('dados-bancarios').doc('principal').get();
-          if (dadosBancariosSnapshot.exists) {
-            const dadosBancarios = dadosBancariosSnapshot.data();
-            clienteData.dadosBancarios = {
-              banco: dadosBancarios.banco,
-              agencia: `${dadosBancarios.agencia}-${dadosBancarios.agenciaDigito}`,
-              conta: `${dadosBancarios.conta}-${dadosBancarios.contaDigito}`
-            };
-          }
-        } catch (error) {
-          // Se houver erro ao buscar dados bancários, não interrompe a listagem
-          console.warn(`Erro ao buscar dados bancários para cliente ${doc.id}:`, error);
-        }
-        
-        // Buscar contato principal (email)
-        try {
-          const contatoSnapshot = await clienteRef.collection('contatos').doc('principal').get();
-          if (contatoSnapshot.exists) {
-            const contato = contatoSnapshot.data();
-            clienteData.email = contato.email;
-            clienteData.telefone = contato.telefone;
-          }
-        } catch (error) {
-          console.warn(`Erro ao buscar contato para cliente ${doc.id}:`, error);
-        }
-        
-        return clienteData;
-      })
+      snapshot.docs.map(enriquecerClienteData)
     );
 
     return {

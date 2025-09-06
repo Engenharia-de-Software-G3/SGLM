@@ -123,8 +123,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       <p className="text-xl font-semibold mb-1">Dados Pessoais</p>
       <div className="grid grid-cols-1 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
+          <label htmlFor="nomeCompleto" className="block text-sm font-medium text-gray-700 mb-2">
+            Nome Completo
+          </label>
           <Input
+            id="nomeCompleto"
             placeholder="Insira o Nome Completo"
             value={flattenedData.nomeCompleto || ''}
             onChange={(e) => updateFlattenedData('nomeCompleto', e.target.value)}
@@ -135,9 +138,12 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Data de Nascimento</label>
+          <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 mb-2">
+            Data de Nascimento
+          </label>
           <div className="relative">
             <MaskedInput
+              id="dataNascimento"
               type="date"
               value={flattenedData.dataNascimento || ''}
               onAccept={(value) => updateFlattenedData('dataNascimento', value)}
@@ -149,8 +155,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
         <div>
           {initialData.cliente?.cpf?.length === 14 ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
+              <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 mb-2">
+                CPF
+              </label>
               <MaskedInput
+                id="cpf"
                 type="cpf"
                 value={flattenedData.cpf || ''}
                 onAccept={(value) => updateFlattenedData('cpf', value)}
@@ -159,8 +168,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">CNPJ</label>
+              <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700 mb-2">
+                CNPJ
+              </label>
               <MaskedInput
+                id="cnpj"
                 type="cnpj"
                 value={flattenedData.cpf || ''}
                 onAccept={(value) => updateFlattenedData('cpf', value)}
@@ -170,8 +182,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+          <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-2">
+            Telefone
+          </label>
           <MaskedInput
+            id="telefone"
             type="phone"
             value={flattenedData.telefone || ''}
             onAccept={(value) => updateFlattenedData('telefone', value)}
@@ -182,8 +197,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">CEP</label>
+          <label htmlFor="cep" className="block text-sm font-medium text-gray-700 mb-2">
+            CEP
+          </label>
           <MaskedInput
+            id="cep"
             type="cep"
             value={flattenedData.enderecos_principal_cep || ''}
             onAccept={(value) =>
@@ -193,8 +211,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Rua</label>
+          <label htmlFor="rua" className="block text-sm font-medium text-gray-700 mb-2">
+            Rua
+          </label>
           <Input
+            id="rua"
             placeholder="Insira sua rua"
             value={flattenedData.enderecos_principal_rua || ''}
             onChange={(e) => updateFlattenedData('enderecos_principal_rua', e.target.value)}
@@ -205,8 +226,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Bairro</label>
+          <label htmlFor="bairro" className="block text-sm font-medium text-gray-700 mb-2">
+            Bairro
+          </label>
           <Input
+            id="bairro"
             placeholder="Insira seu bairro"
             value={flattenedData.enderecos_principal_bairro || ''}
             onChange={(e) => updateFlattenedData('enderecos_principal_bairro', e.target.value)}
@@ -214,8 +238,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Número</label>
+          <label htmlFor="numero" className="block text-sm font-medium text-gray-700 mb-2">
+            Número
+          </label>
           <Input
+            id="numero"
             type="number"
             placeholder="Número da residência"
             value={flattenedData.enderecos_principal_numero || ''}
@@ -224,8 +251,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            E-mail
+          </label>
           <Input
+            id="email"
             placeholder="Ex: nome@gmail.com"
             value={flattenedData.email || ''}
             onChange={(e) => updateFlattenedData('email', e.target.value)}
@@ -236,8 +266,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+          <label htmlFor="cidade" className="block text-sm font-medium text-gray-700 mb-2">
+            Cidade
+          </label>
           <Input
+            id="cidade"
             placeholder="Insira sua cidade"
             value={flattenedData.enderecos_principal_cidade || ''}
             onChange={(e) => updateFlattenedData('enderecos_principal_cidade', e.target.value)}
@@ -245,8 +278,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+          <label htmlFor="estado" className="block text-sm font-medium text-gray-700 mb-2">
+            Estado
+          </label>
           <Input
+            id="estado"
             placeholder="Insira seu estado"
             value={flattenedData.enderecos_principal_estado || ''}
             onChange={(e) => updateFlattenedData('enderecos_principal_estado', e.target.value)}
@@ -259,8 +295,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       <p className="text-xl font-semibold mt-5 mb-1">Dados Bancários</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Banco</label>
+          <label htmlFor="banco" className="block text-sm font-medium text-gray-700 mb-2">
+            Banco
+          </label>
           <Input
+            id="banco"
             placeholder="Insira o nome do banco"
             value={flattenedData.dadosBancarios_banco}
             onChange={(e) => updateFlattenedData('dadosBancarios_banco', e.target.value)}
@@ -268,8 +307,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Agência</label>
+          <label htmlFor="agencia" className="block text-sm font-medium text-gray-700 mb-2">
+            Agência
+          </label>
           <Input
+            id="agencia"
             placeholder="Insira o número de sua agência"
             value={flattenedData.dadosBancarios_agencia}
             onChange={(e) => updateFlattenedData('dadosBancarios_agencia', e.target.value)}
@@ -277,8 +319,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Conta</label>
+          <label htmlFor="conta" className="block text-sm font-medium text-gray-700 mb-2">
+            Conta
+          </label>
           <Input
+            id="conta"
             placeholder="Insira o número da conta"
             value={flattenedData.dadosBancarios_conta}
             onChange={(e) => updateFlattenedData('dadosBancarios_conta', e.target.value)}
@@ -291,8 +336,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       <p className="text-xl font-semibold mt-5 mb-1">Dados da CNH</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Nº da CNH</label>
+          <label htmlFor="numeroCnh" className="block text-sm font-medium text-gray-700 mb-2">
+            Nº da CNH
+          </label>
           <Input
+            id="numeroCnh"
             type="number"
             placeholder="Insira o número de CNH"
             value={flattenedData.documentos_cnh_numero}
@@ -301,8 +349,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+          <label htmlFor="categoria" className="block text-sm font-medium text-gray-700 mb-2">
+            Categoria
+          </label>
           <Input
+            id="categoria"
             placeholder="Insira a categoria"
             value={flattenedData.documentos_cnh_categoria || ''}
             onChange={(e) => updateFlattenedData('documentos_cnh_categoria', e.target.value)}
@@ -313,9 +364,12 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Data de Validade</label>
+          <label htmlFor="dataValidade" className="block text-sm font-medium text-gray-700 mb-2">
+            Data de Validade
+          </label>
           <div className="relative">
             <MaskedInput
+              id="dataValidade"
               type="date"
               placeholder="Ex: 27/12/2030"
               value={flattenedData.documentos_cnh_dataValidade || ''}
@@ -326,8 +380,11 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+          <label htmlFor="tipoCnh" className="block text-sm font-medium text-gray-700 mb-2">
+            Tipo
+          </label>
           <Input
+            id="tipoCnh"
             placeholder="Insira o tipo da CNH"
             value={flattenedData.documentos_cnh_tipo || ''}
             onChange={(e) => updateFlattenedData('documentos_cnh_tipo', e.target.value)}

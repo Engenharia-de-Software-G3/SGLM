@@ -168,16 +168,7 @@
 <a name='L103'></a><a href='#L103'>103</a>
 <a name='L104'></a><a href='#L104'>104</a>
 <a name='L105'></a><a href='#L105'>105</a>
-<a name='L106'></a><a href='#L106'>106</a>
-<a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a>
-<a name='L109'></a><a href='#L109'>109</a>
-<a name='L110'></a><a href='#L110'>110</a>
-<a name='L111'></a><a href='#L111'>111</a>
-<a name='L112'></a><a href='#L112'>112</a>
-<a name='L113'></a><a href='#L113'>113</a>
-<a name='L114'></a><a href='#L114'>114</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L106'></a><a href='#L106'>106</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -210,18 +201,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -239,6 +219,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -248,7 +235,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -257,9 +243,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -289,8 +273,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">// functions/index.js
-/**
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @file Ponto de entrada principal para as Cloud Functions do SGLM.
  * Configura o aplicativo Express e encaminha as requisições HTTP
  * para os roteadores específicos (clientes, veiculos, etc.).
@@ -313,7 +296,6 @@ app.use(express.json());
  */
 app.use(cors({ origin: true }));
 &nbsp;
-// Teste da API (opcional)
 /**
  * Rota de teste simples para verificar se a API está respondendo.
  * Responde com "Hello World!".
@@ -328,7 +310,6 @@ app.get('/hello-world', (req, res) =&gt; {
   return res.status(200).send('Hello World from feat/ui-sglm-partial branch!');
 });
 &nbsp;
-// Rota cliente
 /**
  * Importa e monta o roteador para as operações relacionadas a clientes.
  * Todas as rotas definidas em './cliente' serão acessíveis sob o prefixo '/clientes'.
@@ -337,7 +318,6 @@ app.get('/hello-world', (req, res) =&gt; {
 import clientesRouter from './cliente.js';
 app.use('/clientes', clientesRouter);
 &nbsp;
-// Rota veículo
 /**
  * Importa e monta o roteador para as operações relacionadas a veículos.
  * Todas as rotas definidas em './veiculo' serão acessíveis sob o prefixo '/veiculos'.
@@ -346,7 +326,6 @@ app.use('/clientes', clientesRouter);
 import veiculosRouter from './veiculo.js';
 app.use('/veiculos', veiculosRouter);
 &nbsp;
-// Rota fornecedor
 /**
  * Importa e monta o roteador para as operações relacionadas a fornecedores.
  * Todas as rotas definidas em './fornecedores' serão acessíveis sob o prefixo '/fornecedores'.
@@ -355,7 +334,6 @@ app.use('/veiculos', veiculosRouter);
 import fornecedoresRouter from './fornecedores.js';
 app.use('/fornecedores', fornecedoresRouter);
 &nbsp;
-// Rota manutenções
 /**
  * Importa e monta o roteador para as operações relacionadas a histórico de manutenções.
  * Todas as rotas definidas em './manutencoes' serão acessíveis sob o prefixo '/manutencoes'.
@@ -364,7 +342,6 @@ app.use('/fornecedores', fornecedoresRouter);
 import manutencoesRouter from './manutencoes.js'; // Importe o roteador de manutenções
 app.use('/manutencoes', manutencoesRouter); // Use o roteador com o prefixo '/manutencoes'
 &nbsp;
-// Rota vistoria
 /**
  * Importa e monta o roteador para as operações relacionadas a vistorias.
  * Todas as rotas definidas em './vistoria' serão acessíveis sob o prefixo '/vistoria'.
@@ -373,7 +350,6 @@ app.use('/manutencoes', manutencoesRouter); // Use o roteador com o prefixo '/ma
 import vistoriasRouter from './vistoria.js';
 app.use('/vistorias', vistoriasRouter);
 &nbsp;
-// Rota locações
 /**
  * Importa e monta o roteador para as operações relacionadas a locações.
  * Todas as rotas definidas em './locacoes' serão acessíveis sob o prefixo '/locacoes'.
@@ -409,7 +385,7 @@ export const api = functions.https.onRequest(app);</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-31T04:37:36.247Z
+                at 2025-09-06T23:49:57.511Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -7,7 +7,7 @@ interface TanstackProviderProps {
   children: ReactNode;
 }
 
-export function TanstackProvider({ children }: TanstackProviderProps) {
+export function TanstackProvider({ children }: Readonly<TanstackProviderProps>) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}

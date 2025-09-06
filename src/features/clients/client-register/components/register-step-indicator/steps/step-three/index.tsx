@@ -7,8 +7,11 @@ export const StepThree = ({ data, setData }: StepThreeProps) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Nº da CNH</label>
+        <label htmlFor="cnhNumero" className="block text-sm font-medium text-gray-700 mb-2">
+          Nº da CNH
+        </label>
         <Input
+          id="cnhNumero"
           type="number"
           placeholder="Insira o número de CNH"
           value={data.cnhNumero || ''}
@@ -16,8 +19,11 @@ export const StepThree = ({ data, setData }: StepThreeProps) => (
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+        <label htmlFor="categoria" className="block text-sm font-medium text-gray-700 mb-2">
+          Categoria
+        </label>
         <Input
+          id="categoria"
           placeholder="Insira a categoria"
           value={data.categoria || ''}
           onChange={(e) => setData((old) => ({ ...old, categoria: e.target.value }))}
@@ -36,9 +42,12 @@ export const StepThree = ({ data, setData }: StepThreeProps) => (
         />
       </div> */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Data de Validade</label>
+        <label htmlFor="dataValidade" className="block text-sm font-medium text-gray-700 mb-2">
+          Data de Validade
+        </label>
         <div className="relative">
           <MaskedInput
+            id="dataValidade"
             type="date"
             placeholder="Ex: 27/12/2030"
             value={data.validade || ''}

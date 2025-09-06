@@ -304,17 +304,7 @@
 <a name='L239'></a><a href='#L239'>239</a>
 <a name='L240'></a><a href='#L240'>240</a>
 <a name='L241'></a><a href='#L241'>241</a>
-<a name='L242'></a><a href='#L242'>242</a>
-<a name='L243'></a><a href='#L243'>243</a>
-<a name='L244'></a><a href='#L244'>244</a>
-<a name='L245'></a><a href='#L245'>245</a>
-<a name='L246'></a><a href='#L246'>246</a>
-<a name='L247'></a><a href='#L247'>247</a>
-<a name='L248'></a><a href='#L248'>248</a>
-<a name='L249'></a><a href='#L249'>249</a>
-<a name='L250'></a><a href='#L250'>250</a>
-<a name='L251'></a><a href='#L251'>251</a>
-<a name='L252'></a><a href='#L252'>252</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L242'></a><a href='#L242'>242</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -342,11 +332,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -359,11 +347,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -407,10 +393,8 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -418,9 +402,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -503,7 +485,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
@@ -550,7 +531,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -573,7 +553,6 @@
 import express from 'express';
 const router = express.Router();
 &nbsp;
-// Importando funções da Firestore para veículos
 import {
   criarVeiculo,
   listarVeiculos,
@@ -598,7 +577,6 @@ router.post('/', async (req, res) =&gt; {
   try {
     const veiculoData = req.body;
 &nbsp;
-    // TODO: Adicionar validação mais robusta (incluindo autenticação por middleware)
     /**
      * @todo Adicionar validação de dados de entrada mais robusta para veiculoData.
      * Considerar usar um esquema de validação (ex: Joi, Yup).
@@ -610,11 +588,9 @@ router.post('/', async (req, res) =&gt; {
         .send('Dados do veículo incompletos (chassi, placa e modelo são obrigatórios).');
     }
 &nbsp;
-    // Chame a função do Firestore para criar o veículo
     const resultado = await criarVeiculo(veiculoData);
 &nbsp;
     if (resultado.success) {
-      // Use o ID retornado pela função criarVeiculo
       res.status(201).send({ message: 'Veículo criado com sucesso!', id: resultado.id });
     } else {
       res.status(400).send({ message: 'Erro ao criar veículo', error: resultado.error });
@@ -658,10 +634,8 @@ router.get('/', async (req, res) =&gt; {
       <span class="missing-if-branch" title="else path not taken" >E</span>if (filtrosQuery[key]) filtrosParsed[key] = filtrosQuery[key];
     });
 &nbsp;
-    // Obter documento de referência para paginação
     let ultimoDoc = null;
     if (ultimoDocId) {
-      // Need to get the DocumentSnapshot for startAfter
       const lastDocSnapshot = await db.collection('veiculos').doc(ultimoDocId).get();
       <span class="missing-if-branch" title="else path not taken" >E</span>if (!lastDocSnapshot.exists) {
         return res.status(400).json({ error: 'ID do último documento inválido' });
@@ -669,14 +643,12 @@ router.get('/', async (req, res) =&gt; {
 <span class="cstat-no" title="statement not covered" >      ultimoDoc = lastDocSnapshot;</span>
     }
 &nbsp;
-    // Chamar função de listagem
     const { veiculos, ultimoDoc: ultimoDocSnapshot } = await listarVeiculos({
       limite: limiteNum,
       ultimoDoc,
       filtros: filtrosParsed,
     });
 &nbsp;
-    // Formatar resposta
     res.status(200).json({
       veiculos,
       paginacao: {
@@ -756,7 +728,6 @@ router.put('/:idVeiculo', async (req, res) =&gt; {
       return res.status(400).send('idVeiculo e/ou dados de atualização ausentes.');
     }
 &nbsp;
-    // Check if vehicle exists first
     const veiculo = await buscarPorId(idVeiculo);
     if (!veiculo) {
       return res.status(404).send('Veículo não encontrado.');
@@ -801,7 +772,6 @@ router.delete('/:idVeiculo', async (req, res) =&gt; {
 &nbsp;
     const veiculoDocRef = snapshot.docs[0].ref;
 &nbsp;
-    // Delete the document
     await veiculoDocRef.delete();
 &nbsp;
     res.status(200).send({ message: 'Veículo deletado com sucesso!' });
@@ -823,7 +793,7 @@ export default router;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-31T04:37:36.247Z
+                at 2025-09-06T23:49:57.511Z
             </div>
         <script src="../prettify.js"></script>
         <script>

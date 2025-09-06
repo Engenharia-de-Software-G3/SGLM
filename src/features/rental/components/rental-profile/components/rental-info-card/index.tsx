@@ -90,23 +90,31 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
       <div className="grid grid-cols-1 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
-          <Input value={data.locatario || ''} readOnly />
+          <label htmlFor="nomeCompleto" className="block text-sm font-medium text-gray-700 mb-2">
+            Nome Completo
+          </label>
+          <Input id="nomeCompleto" value={data.locatario || ''} readOnly />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">CPF/CNPJ</label>
-          <MaskedInput type="cpf" value={data.cnpjcpf || ''} readOnly />
+          <label htmlFor="cpfCnpj" className="block text-sm font-medium text-gray-700 mb-2">
+            CPF/CNPJ
+          </label>
+          <MaskedInput id="cpfCnpj" type="cpf" value={data.cnpjcpf || ''} readOnly />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-          <MaskedInput type="phone" value={data.telefone || ''} readOnly />
+          <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-2">
+            Telefone
+          </label>
+          <MaskedInput id="telefone" type="phone" value={data.telefone || ''} readOnly />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-          <Input type="email" value={data.email || ''} readOnly />
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            E-mail
+          </label>
+          <Input id="email" type="email" value={data.email || ''} readOnly />
         </div>
       </div>
 
@@ -117,23 +125,31 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Placa</label>
-          <Input value={data.placaVeiculo || ''} readOnly />
+          <label htmlFor="placa" className="block text-sm font-medium text-gray-700 mb-2">
+            Placa
+          </label>
+          <Input id="placa" value={data.placaVeiculo || ''} readOnly />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Chassi</label>
-          <Input value={data.chassi || ''} readOnly />
+          <label htmlFor="chassi" className="block text-sm font-medium text-gray-700 mb-2">
+            Chassi
+          </label>
+          <Input id="chassi" value={data.chassi || ''} readOnly />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Marca</label>
-          <Input value={data.marca || ''} readOnly />
+          <label htmlFor="marca" className="block text-sm font-medium text-gray-700 mb-2">
+            Marca
+          </label>
+          <Input id="marca" value={data.marca || ''} readOnly />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Modelo</label>
-          <Input value={data.modelo || ''} readOnly />
+          <label htmlFor="modelo" className="block text-sm font-medium text-gray-700 mb-2">
+            Modelo
+          </label>
+          <Input id="modelo" value={data.modelo || ''} readOnly />
         </div>
       </div>
 
@@ -144,19 +160,26 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Data de Início</label>
-          <MaskedInput type="date" value={data.inicio || ''} readOnly />
+          <label htmlFor="dataInicio" className="block text-sm font-medium text-gray-700 mb-2">
+            Data de Início
+          </label>
+          <MaskedInput id="dataInicio" type="date" value={data.inicio || ''} readOnly />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Data de Fim</label>
-          <MaskedInput type="date" value={data.fim || ''} readOnly />
+          <label htmlFor="dataFim" className="block text-sm font-medium text-gray-700 mb-2">
+            Data de Fim
+          </label>
+          <MaskedInput id="dataFim" type="date" value={data.fim || ''} readOnly />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Valor da Locação</label>
+          <label htmlFor="valorLocacao" className="block text-sm font-medium text-gray-700 mb-2">
+            Valor da Locação
+          </label>
           <Input
+            id="valorLocacao"
             value={
               data.valorLocacao
                 ? new Intl.NumberFormat('pt-BR', {
@@ -169,14 +192,21 @@ export const RentalInfoCard = ({ data }: RentalInfoCardProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="intervaloPagamento"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Intervalo de Pagamento
           </label>
-          <p className="p-2 border rounded bg-gray-50">{data.intervaloPagamento || '-'}</p>
+          <p id="intervaloPagamento" className="p-2 border rounded bg-gray-50">
+            {data.intervaloPagamento || '-'}
+          </p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-          <Input value={data.formaPagamento || ''} readOnly />
+          <label htmlFor="formaPagamento" className="block text-sm font-medium text-gray-700 mb-2">
+            Forma de Pagamento
+          </label>
+          <Input id="formaPagamento" value={data.formaPagamento || ''} readOnly />
         </div>
       </div>
 

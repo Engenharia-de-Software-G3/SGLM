@@ -26,7 +26,7 @@ export function MaskedFormInput<T extends FieldValues>({
   required = false,
   disabled = false,
   ...props
-}: MaskedFormInputProps<T>) {
+}: Readonly<MaskedFormInputProps<T>>) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-sm font-medium">

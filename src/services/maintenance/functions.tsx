@@ -12,7 +12,7 @@ export async function getManutencoes(): Promise<Manutencao[]> {
   const { data } = await axios.get(API_URL);
   console.log('Raw API response:', data);
 
-  if (data && data.manutencoes && Array.isArray(data.manutencoes)) {
+  if (data?.manutencoes && Array.isArray(data.manutencoes)) {
     console.log('Using data.manutencoes:', data.manutencoes);
     return data.manutencoes;
   }

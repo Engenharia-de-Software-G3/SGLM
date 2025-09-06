@@ -38,8 +38,8 @@ interface DisplayRentalData {
 
 export const Rental = () => {
   const [search, setSearch] = useState('');
-  const [isTypeModalOpen, setTypeModalOpen] = useState(false);
-  const [isFormModalOpen, setFormModalOpen] = useState(false);
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [clientType, setClientType] = useState<'fisica' | 'juridica'>('fisica');
   const [loadingContractId, setLoadingContractId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -353,13 +353,13 @@ export const Rental = () => {
 
   const handleOpenForm = () => {
     setClientType('fisica');
-    setFormModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
   const handleTypeSelect = (type: 'fisica' | 'juridica') => {
     setClientType(type);
-    setTypeModalOpen(false);
-    setFormModalOpen(true);
+    setIsTypeModalOpen(false);
+    setIsFormModalOpen(true);
   };
 
   function handleViewRental(id: string) {
@@ -465,7 +465,7 @@ export const Rental = () => {
                         title="Tem certeza que deseja atualizar o status dessa locação?"
                         description=""
                         actionText="Atualizar locação"
-                        onConfirm={() => handleDeleteRental(rental.id as string)}
+                        onConfirm={() => handleDeleteRental(rental.id)}
                       />
                       <Button
                         variant="outline"
@@ -497,14 +497,14 @@ export const Rental = () => {
 
       <RentalTypeModal
         open={isTypeModalOpen}
-        onOpenChange={setTypeModalOpen}
+        onOpenChange={setIsTypeModalOpen}
         clientType={clientType}
         onSelect={handleTypeSelect}
       />
 
       <AddRentalModal
         open={isFormModalOpen}
-        onOpenChange={setFormModalOpen}
+        onOpenChange={setIsFormModalOpen}
         clientType={clientType}
         onSubmit={submitRental}
       />

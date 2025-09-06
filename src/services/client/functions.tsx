@@ -79,7 +79,7 @@ export async function getClientByCpf(cpf: string): Promise<ClienteCompleto> {
     const cleanCpf = cpf.replace(/\D/g, '');
     if (cleanCpf === '') throw new Error('CPF inválido');
 
-    const response = (await api.get(`/clientes/${cleanCpf}`)) as ClienteCompletoResponse;
+    const response = await api.get(`/clientes/${cleanCpf}`);
     console.log(response);
     console.log('\n ---- espaço ---- \n');
 

@@ -59,7 +59,7 @@ function getClientStatusProps(status: string) {
   }
 }
 
-export function StatusBadge({ status, type }: StatusBadgeProps) {
+export function StatusBadge({ status, type }: Readonly<StatusBadgeProps>) {
   let statusProps;
 
   switch (type) {
