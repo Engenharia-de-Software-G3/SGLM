@@ -73,6 +73,7 @@ export interface AtualizarClienteParams {
 export interface ClienteResponse {
   success: boolean;
   error?: string;
+  data?: ClienteCompletoResponse;
 }
 
 export interface ClienteCompletoResponse extends ClienteResponse {

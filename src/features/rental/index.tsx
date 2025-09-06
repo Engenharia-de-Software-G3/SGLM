@@ -423,71 +423,74 @@ export const Rental = () => {
               { key: 'status', title: 'Status' },
               { key: 'actions', title: 'Ações' },
             ]}
-            renderRow={(rental) => (
-              <tr key={rental.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-blue-600 font-medium">
-                        {rental.locatario
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </span>
+            renderRow={(rental) => {
+              console.log('Rental atual:', rental);
+              return (
+                <tr key={rental.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <span className="text-blue-600 font-medium">
+                          {rental.locatario
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{rental.locatario}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{rental.locatario}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {rental.placa}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatCpfCnpj(rental.cpf)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <StatusBadge status={rental.status} type="rental" />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                        onClick={() => handleViewRental(rental.id)}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <UpdateModal
+                        title="Tem certeza que deseja atualizar o status dessa locação?"
+                        description=""
+                        actionText="Atualizar locação"
+                        onConfirm={() => handleDeleteRental(rental.id as string)}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-green-600 border-green-300 hover:bg-green-50"
+                        onClick={() => handleViewContract(rental.id)}
+                        disabled={loadingContractId === rental.id}
+                      >
+                        {loadingContractId === rental.id ? (
+                          <>
+                            <Download className="h-4 w-4 mr-1 animate-spin" />
+                            Gerando...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-4 w-4 mr-1" />
+                            Ver contrato
+                          </>
+                        )}
+                      </Button>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {rental.placa}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatCpfCnpj(rental.cpf)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <StatusBadge status={rental.status} type="rental" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                      onClick={() => handleViewRental(rental.id)}
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                    <UpdateModal
-                      title="Tem certeza que deseja atualizar o status dessa locação?"
-                      description=""
-                      actionText="Atualizar locação"
-                      onConfirm={() => handleDeleteRental(rental.id as string)}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-green-600 border-green-300 hover:bg-green-50"
-                      onClick={() => handleViewContract(rental.id)}
-                      disabled={loadingContractId === rental.id}
-                    >
-                      {loadingContractId === rental.id ? (
-                        <>
-                          <Download className="h-4 w-4 mr-1 animate-spin" />
-                          Gerando...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="h-4 w-4 mr-1" />
-                          Ver contrato
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            )}
+                  </td>
+                </tr>
+              );
+            }}
           />
         )}
       </div>

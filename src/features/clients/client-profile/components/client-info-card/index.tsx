@@ -9,7 +9,6 @@ import { useEffect, useState } from 'react';
 import { useUpdateClientMutation } from '@/services/client';
 import { useNavigate } from 'react-router-dom';
 import { AtualizarClienteParams } from '@/services/client/types';
-import { onlyNumbers } from '@/services/utils/onlyNumbers';
 
 export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const [isReadOnly, setIsReadOnly] = useState(false);
@@ -18,10 +17,7 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const navigate = useNavigate();
 
   const filterByClient = () => {
-    localStorage.setItem(
-      'filterRentalsByClient',
-      JSON.stringify(onlyNumbers(flattenedData.cpf) || ''),
-    );
+    localStorage.setItem('filterRentalsByClient', JSON.stringify(flattenedData.nomeCompleto || ''));
     navigate('/locacoes');
   };
 
