@@ -47,7 +47,10 @@ export async function getClientFunction(id: string): Promise<ClienteCompletoResp
   return response.data as ClienteCompletoResponse;
 }
 
-export async function updateClientFunction(id: string, payload: AtualizarClienteParams): Promise<ClienteResponse> { 
+export async function updateClientFunction(
+  id: string,
+  payload: AtualizarClienteParams,
+): Promise<ClienteResponse> {
   const response = await api.put(`/clientes/${id}`, payload);
 
   console.log('Should send', payload);
@@ -76,9 +79,11 @@ export async function getClientByCpf(cpf: string): Promise<ClienteCompleto> {
     const cleanCpf = cpf.replace(/\D/g, '');
     if (cleanCpf === '') throw new Error('CPF inválido');
 
-    const response = await api.get(`/clientes/${cleanCpf}`) as ClienteCompletoResponse;
+    const response = (await api.get(`/clientes/${cleanCpf}`)) as ClienteCompletoResponse;
+    console.log(response);
+    console.log('\n ---- espaço ---- \n');
 
-    const cliente = response.cliente as ClienteCompleto;
+    const cliente = response.data.cliente as ClienteCompleto;
 
     return cliente;
   } catch (error) {
