@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { ReturnHeader } from '@/shared/components/return-header';
 import { SuccessRegisterCard } from './components/success-register-card';
 import { RegisterStepIndicator } from './components/register-step-indicator';
-import { Toaster } from 'sonner';
+import { toast, Toaster } from 'sonner';
 import type { NewClient } from './components/register-step-indicator/@types';
-import { CreateClientInterface } from '@/services/client/types';
 import { useCreateClientMutation } from '@/services/client';
+import { ClienteData } from '@/services/client/types';
 
 export const ClientRegister = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -50,14 +50,28 @@ export const ClientRegister = () => {
           dataValidade: newClient.validade,
         },
       },
-    } as unknown as CreateClientInterface;
+      dadosBancarios: {
+        banco: newClient.banco,
+        agencia: newClient.agencia,
+        agenciaDigito: newClient.digitoAgencia,
+        conta: newClient.conta,
+        contaDigito: newClient.digitoConta,
+      },
+    } as ClienteData;
+
+    let timeout = null
 
     try {
       await createClient(payload);
-      setTimeout(() => {
+      timeout = setTimeout(() => {
         navigate('/clientes');
       }, 1000);
-    } catch (error) {
+    } catch (error: unknown) {
+
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      toast.error('Erro ao criar cliente' + (error as Error).message);
       console.log({ error });
     }
   }

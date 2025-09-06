@@ -5,7 +5,6 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { PaginatedTable } from '@/shared/components/display-table';
 import { SearchBar } from '@/shared/components/display-table/components/search-bar';
 import { DisplayTableHeader } from '@/shared/components/display-table/components/display-table-header';
-import { DeleteModal } from '@/shared/components/delete-modal';
 import { ActionButton } from '@/shared/components/display-table/components/action-button';
 import { AddMaintenanceModal } from './components/add-maintenance-modal';
 import {
@@ -14,6 +13,7 @@ import {
   deleteManutencao,
 } from '@/services/maintenance/functions';
 import { Manutencao, CreateManutencaoRequest } from '@/services/maintenance/types';
+import { UpdateModal } from '@/shared/components/update-modal';
 
 export const Maintenance = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -150,10 +150,10 @@ export const Maintenance = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
-                    <DeleteModal
-                      title="Tem certeza que deseja excluir esta manutenção?"
-                      description="Todos os dados salvos serão excluídos."
-                      actionText="Excluir manutenção"
+                    <UpdateModal
+                      title="Tem certeza que deseja atualizar o status dessa manutenção?"
+                      description=""
+                      actionText="Atualizar manutenção"
                       onConfirm={() => handleDelete(m.id)}
                     />
                   </div>

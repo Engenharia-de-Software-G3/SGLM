@@ -6,7 +6,7 @@ import {
   getClientsFunction,
   updateClientFunction,
 } from './functions';
-import { UpdateClientInterface } from './types';
+import { AtualizarClienteParams } from './types';
 
 export function useClientsQuery() {
   return useQuery({
@@ -30,17 +30,18 @@ export function useUpdateClientMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateClientInterface }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: AtualizarClienteParams }) =>
       updateClientFunction(id, payload),
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['clients', id] });
     },
   });
 }
 
 export function useGetClientQuery(id: string) {
   return useQuery({
-    queryKey: ['client', id],
+    queryKey: ['clients', id],
     queryFn: () => getClientFunction(id),
   });
 }

@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { useUpdateClientMutation } from '@/services/client';
 import { useNavigate } from 'react-router-dom';
+import { AtualizarClienteParams } from '@/services/client/types';
+import { onlyNumbers } from '@/services/utils/onlyNumbers';
 
 export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const [isReadOnly, setIsReadOnly] = useState(false);
@@ -16,51 +18,74 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
   const navigate = useNavigate();
 
   const filterByClient = () => {
-    localStorage.setItem('filterRentalsByClient', JSON.stringify(flattenedData.nomeCompleto || ''));
+    localStorage.setItem(
+      'filterRentalsByClient',
+      JSON.stringify(onlyNumbers(flattenedData.cpf) || ''),
+    );
     navigate('/locacoes');
   };
 
   const [flattenedData, setFlattenedData] = useState(() => {
     return {
-      id: initialData.id,
-      nomeCompleto: initialData.nomeCompleto,
-      dataNascimento: initialData.dataNascimento,
-      cpf: initialData.cpf,
-      telefone: initialData.telefone,
-      email: initialData.email,
-      enderecos_principal_cep: initialData.enderecos?.principal?.cep || '',
-      enderecos_principal_rua: initialData.enderecos?.principal?.rua || '',
-      enderecos_principal_numero: initialData.enderecos?.principal?.numero || '',
-      enderecos_principal_bairro: initialData.enderecos?.principal?.bairro || '',
-      enderecos_principal_cidade: initialData.enderecos?.principal?.cidade || '',
-      enderecos_principal_estado: initialData.enderecos?.principal?.estado || '',
-      documentos_cnh_numero: initialData.documentos?.cnh?.numero || '',
-      documentos_cnh_categoria: initialData.documentos?.cnh?.categoria || '',
-      documentos_cnh_dataValidade: initialData.documentos?.cnh?.dataValidade || '',
-      documentos_cnh_tipo: initialData.documentos?.cnh?.tipo || '',
+      id: initialData.cliente?.id,
+      nomeCompleto: initialData.cliente?.nomeCompleto,
+      dataNascimento: initialData.cliente?.dataNascimento,
+      cpf: initialData.cliente?.cpf,
+      telefone: initialData.cliente?.telefone,
+      email: initialData.cliente?.email,
+      enderecos_principal_cep: initialData.cliente?.enderecos?.principal?.cep || '',
+      enderecos_principal_rua: initialData.cliente?.enderecos?.principal?.rua || '',
+      enderecos_principal_numero: initialData.cliente?.enderecos?.principal?.numero || '',
+      enderecos_principal_bairro: initialData.cliente?.enderecos?.principal?.bairro || '',
+      enderecos_principal_cidade: initialData.cliente?.enderecos?.principal?.cidade || '',
+      enderecos_principal_estado: initialData.cliente?.enderecos?.principal?.estado || '',
+      documentos_cnh_numero: initialData.cliente?.documentos?.cnh?.numero || '',
+      documentos_cnh_categoria: initialData.cliente?.documentos?.cnh?.categoria || '',
+      documentos_cnh_dataValidade: initialData.cliente?.documentos?.cnh?.dataValidade || '',
+      documentos_cnh_tipo: initialData.cliente?.documentos?.cnh?.tipo || '',
+      dadosBancarios_banco: initialData.cliente?.dadosBancarios?.banco || '',
+      dadosBancarios_agencia: initialData.cliente?.dadosBancarios?.agencia || '',
+      dadosBancarios_conta: initialData.cliente?.dadosBancarios?.conta || '',
+      dadosBancarios_dataCriacao: initialData.cliente?.dadosBancarios?.dataCriacao || '',
     };
   });
 
-  const restoreData = (flattened: Record<string, unknown>): Record<string, unknown> => {
-    const restored: Record<string, unknown> = {};
+  const restoreData = (flattened: typeof flattenedData): AtualizarClienteParams => {
+    const restored: AtualizarClienteParams = {
+      cpf: flattened.cpf || '',
+      dadosPessoais: {
+        nome: flattened.nomeCompleto || '',
+        dataNascimento: flattened.dataNascimento || '',
+      },
+      endereco: {
+        cep: flattened.enderecos_principal_cep || '',
+        rua: flattened.enderecos_principal_rua || '',
+        numero: flattened.enderecos_principal_numero || '',
+        bairro: flattened.enderecos_principal_bairro || '',
+        cidade: flattened.enderecos_principal_cidade || '',
+        estado: flattened.enderecos_principal_estado || '',
+      },
+      contato: {
+        email: flattened.email || '',
+        telefone: flattened.telefone || '',
+      },
+      documentos: {
+        cnh: {
+          numero: flattened.documentos_cnh_numero || '',
+          categoria: flattened.documentos_cnh_categoria || '',
+          dataValidade: flattened.documentos_cnh_dataValidade || '',
+        },
+      },
+      dadosBancarios: {
+        banco: flattened.dadosBancarios_banco || '',
+        agencia: flattened.dadosBancarios_agencia || '',
+        conta: flattened.dadosBancarios_conta || '',
+        agenciaDigito: '',
+        contaDigito: '',
+      },
+    };
 
-    for (const key in flattened) {
-      if (Object.prototype.hasOwnProperty.call(flattened, key)) {
-        const keys = key.split('_');
-        let current = restored as Record<string, unknown>;
-
-        for (let i = 0; i < keys.length - 1; i++) {
-          const currentKey = keys[i];
-          if (!current[currentKey]) {
-            current[currentKey] = {};
-          }
-          current = current[currentKey] as Record<string, unknown>;
-        }
-
-        current[keys[keys.length - 1]] = flattened[key];
-      }
-    }
-
+    console.log(restored);
     return restored;
   };
 
@@ -83,9 +108,13 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       toast('Preencha todos os campos obrigatórios');
       return;
     }
+    if (!initialData.cliente?.id) {
+      toast('Cliente não encontrado');
+      return;
+    }
 
-    const restoredData = restoreData(parsed.data);
-    await updateClient({ id: initialData.id, payload: restoredData });
+    const restoredData = restoreData(flattenedData);
+    await updateClient({ id: initialData.cliente?.id, payload: restoredData });
     toast('Salvo com sucesso');
     setTimeout(() => {
       navigate('/clientes');
@@ -122,7 +151,7 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
           </div>
         </div>
         <div>
-          {flattenedData.cpf.length === 14 ? (
+          {initialData.cliente?.cpf?.length === 14 ? (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">CPF</label>
               <MaskedInput
@@ -235,26 +264,29 @@ export const ClientInfoCard = ({ data: initialData }: ClientInfoCardProps) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Banco</label>
-          <Input placeholder="Insira o nome do banco" value="" readOnly={true} disabled={true} />
+          <Input
+            placeholder="Insira o nome do banco"
+            value={flattenedData.dadosBancarios_banco}
+            onChange={(e) => updateFlattenedData('dadosBancarios_banco', e.target.value)}
+            readOnly={isReadOnly}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Agência</label>
           <Input
-            type="number"
             placeholder="Insira o número de sua agência"
-            value=""
-            readOnly={true}
-            disabled={true}
+            value={flattenedData.dadosBancarios_agencia}
+            onChange={(e) => updateFlattenedData('dadosBancarios_agencia', e.target.value)}
+            readOnly={isReadOnly}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Conta</label>
           <Input
-            type="number"
             placeholder="Insira o número da conta"
-            value=""
-            readOnly={true}
-            disabled={true}
+            value={flattenedData.dadosBancarios_conta}
+            onChange={(e) => updateFlattenedData('dadosBancarios_conta', e.target.value)}
+            readOnly={isReadOnly}
           />
         </div>
       </div>

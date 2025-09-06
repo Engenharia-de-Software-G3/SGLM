@@ -10,8 +10,8 @@ import { DisplayTableHeader } from '@/shared/components/display-table/components
 import { DeleteModal } from '@/shared/components/delete-modal';
 import { Badge } from '@/components/ui/badge';
 import { useClientsQuery, useDeleteClientMutation } from '@/services/client';
-import type { ClientData } from '@/services/client/types';
 import { toast } from 'sonner';
+import { ClienteCompleto } from '@/services/client/types';
 
 export const Clients = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,7 +82,7 @@ export const Clients = () => {
               { key: 'status', title: 'Status' },
               { key: 'actions', title: 'Ações' },
             ]}
-            renderRow={(client: ClientData & { dataNascimento?: string; status?: string }) => (
+            renderRow={(client: ClienteCompleto) => (
               <tr key={client.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
