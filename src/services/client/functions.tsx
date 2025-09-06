@@ -83,7 +83,7 @@ export async function getClientByCpf(cpf: string): Promise<ClienteCompleto> {
     console.log(response);
     console.log('\n ---- espaço ---- \n');
 
-    const cliente = response.data.cliente as ClienteCompleto;
+    const cliente = response?.data?.cliente as ClienteCompleto;
 
     return cliente;
   } catch (error) {
